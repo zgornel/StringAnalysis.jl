@@ -158,10 +158,10 @@ deps = ["Distributed", "Mmap", "Random", "Serialization"]
 uuid = "1a1011a3-84de-559e-8e89-a11a2f7dc383"
 
 [[SnowballStemmer]]
-deps = ["BinDeps", "Libdl"]
-git-tree-sha1 = "4ca5cd0254d23ba52fd9dca125237020d60f5add"
-repo-rev = "master"
-repo-url = "https://github.com/sadit/SnowballStemmer.jl.git"
+deps = ["BinDeps", "Libdl", "Test"]
+git-tree-sha1 = "8df8c1151aec04b50cefaa5e5af80755c9d04496"
+repo-rev = "latest"
+repo-url = "https://github.com/zgornel/SnowballStemmer.jl"
 uuid = "0089d5a0-cc9e-11e8-15b2-431392cf18df"
 version = "0.1.1"
 
