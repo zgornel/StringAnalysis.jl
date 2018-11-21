@@ -1,0 +1,15 @@
+name = "StringAnalysis"
+uuid = "f2e5b97c-ed87-11e8-3fa8-a300efcc83e4"
+authors = ["Corneliu Cofaru <cornel@oxoaresearch.com>"]
+version = "0.0.0"
+
+[deps]
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+Languages = "8ef0a80b-9436-5d2c-a485-80b904378c43"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+SnowballStemmer = "0089d5a0-cc9e-11e8-15b2-431392cf18df"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+WordTokenizers = "796a5d58-b03d-544a-977e-18100b691f6e"
