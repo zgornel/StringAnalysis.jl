@@ -1,7 +1,7 @@
 name = "StringAnalysis"
 uuid = "f2e5b97c-ed87-11e8-3fa8-a300efcc83e4"
 authors = ["Corneliu Cofaru <cornel@oxoaresearch.com>"]
-version = "0.0.0"
+version = "0.1.0"
 
 [deps]
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
