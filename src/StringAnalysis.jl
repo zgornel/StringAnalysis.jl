@@ -31,25 +31,13 @@ module StringAnalysis
     export lda!, lda
     export frequent_terms, sparse_terms, prepare!,
            strip_patterns, strip_corrupt_utf8, strip_case, stem_words,
-           tag_part_of_speech, strip_whitespace, strip_punctuation,
+           strip_whitespace, strip_punctuation,
            strip_numbers, strip_non_letters, strip_indefinite_articles,
            strip_definite_articles, strip_articles, strip_prepositions,
            strip_pronouns, strip_stopwords, strip_sparse_terms,
-           strip_frequent_terms, strip_html_tags
-    ### export remove_corrupt_utf8
-    ### export remove_corrupt_utf8!
-    ### export remove_punctuation, remove_numbers, remove_case, remove_whitespace
-    ### export remove_punctuation!, remove_numbers!, remove_case!, remove_whitespace!
-    ### export remove_nonletters, remove_nonletters!
-    ### export remove_words, remove_stop_words, remove_articles
-    ### export remove_words!, remove_stop_words!, remove_articles!
-    ### export remove_definite_articles, remove_indefinite_articles
-    ### export remove_definite_articles!, remove_indefinite_articles!
-    ### export remove_prepositions, remove_pronouns
-    ### export remove_prepositions!, remove_pronouns!
-    ### export remove_html_tags, remove_html_tags!
-    ### export remove_frequent_terms!, remove_sparse_terms!
-    ### export remove_patterns!, remove_patterns
+           strip_frequent_terms, strip_html_tags,
+           remove_words!, remove_patterns!, remove_patterns,
+           remove_frequent_terms!, remove_sparse_terms!
 
     # Include section
     include("defaults.jl")

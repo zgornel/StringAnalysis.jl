@@ -2,7 +2,7 @@ const strip_patterns                = UInt32(0)
 const strip_corrupt_utf8            = UInt32(0x1) << 0
 const strip_case                    = UInt32(0x1) << 1
 const stem_words                    = UInt32(0x1) << 2
-const tag_part_of_speech            = UInt32(0x1) << 3
+#const tag_part_of_speech            = UInt32(0x1) << 3
 
 const strip_whitespace              = UInt32(0x1) << 5
 const strip_punctuation             = UInt32(0x1) << 6
@@ -148,10 +148,8 @@ end
 
 
 # Drop terms based on frequency
-function sparse_terms(crps::Corpus, alpha::Real = alpha_sparse)
-    update_lexicon!(crps)
-    update_inverse_index!(crps)
-    res = Array(String, 0)
+function sparse_terms(crps::Corpus, alpha = alpha_sparse)
+    res = Vector{String}(undef, 0)
     ndocs = length(crps.documents)
     for term in keys(crps.lexicon)
         f = length(crps.inverse_index[term]) / ndocs
@@ -162,10 +160,8 @@ function sparse_terms(crps::Corpus, alpha::Real = alpha_sparse)
     return res
 end
 
-function frequent_terms(crps::Corpus, alpha::Real = alpha_frequent)
-    update_lexicon!(crps)
-    update_inverse_index!(crps)
-    res = Array(String, 0)
+function frequent_terms(crps::Corpus, alpha = alpha_frequent)
+    res = Vector{String}(undef, 0)
     ndocs = length(crps.documents)
     for term in keys(crps.lexicon)
         f = length(crps.inverse_index[term]) / ndocs
@@ -184,12 +180,7 @@ remove_frequent_terms!(crps::Corpus, alpha::Real = alpha_frequent) = remove_word
 
 
 
-##############################################################################
-#
 # Remove parts from document based on flags or regular expressions
-#
-##############################################################################
-
 function prepare!(crps::Corpus, flags::UInt32; skip_patterns = Set{AbstractString}(), skip_words = Set{AbstractString}())
     ((flags & strip_sparse_terms) > 0) && union!(skip_words, sparse_terms(crps))
     ((flags & strip_frequent_terms) > 0) && union!(skip_words, frequent_terms(crps))
@@ -203,7 +194,7 @@ function prepare!(crps::Corpus, flags::UInt32; skip_patterns = Set{AbstractStrin
     !isempty(r.pattern) && remove_patterns!(crps, r)
 
     ((flags & stem_words) > 0) && stem!(crps)
-    ((flags & tag_part_of_speech) > 0) && tag_pos!(crps)
+    #((flags & tag_part_of_speech) > 0) && tag_pos!(crps)
     nothing
 end
 
@@ -216,7 +207,7 @@ function prepare!(d::AbstractDocument, flags::UInt32; skip_patterns = Set{Abstra
     !isempty(r.pattern) && remove_patterns!(d, r)
 
     ((flags & stem_words) > 0) && stem!(d)
-    ((flags & tag_part_of_speech) > 0) && tag_pos!(d)
+    #((flags & tag_part_of_speech) > 0) && tag_pos!(d)
     nothing
 end
 
