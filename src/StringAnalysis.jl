@@ -6,11 +6,12 @@ module StringAnalysis
     using WordTokenizers
 
     import Base: depwarn, show, summary, names
+    import Languages: name
 
     export AbstractDocument,
            Document, FileDocument, StringDocument,
            TokenDocument, NGramDocument, GenericDocument
-    export DocumentMetdata
+    export DocumentMetdata, metadata
     export Corpus, DirectoryCorpus
     export stemmer_types, Stemmer
     export stem!, stem
@@ -43,7 +44,6 @@ module StringAnalysis
     ### export remove_html_tags, remove_html_tags!
     ### export remove_frequent_terms!, remove_sparse_terms!
     ### export remove_patterns!, remove_patterns
-    ### export tag_pos!, tag_pos
     export prepare!
     export frequent_terms, sparse_terms
     export dtv, each_dtv, dtm, tdm

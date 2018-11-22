@@ -36,11 +36,7 @@ function mk_regex(regex_string)
 end
 
 
-##############################################################################
-#
 # Remove corrupt UTF8 characters
-#
-##############################################################################
 function remove_corrupt_utf8(s::AbstractString)
     return map(x->isvalid(x) ? x : ' ', s)
 end
@@ -77,12 +73,8 @@ function remove_corrupt_utf8!(crps::Corpus)
     end
 end
 
-##############################################################################
-#
-# Conversion to lowercase
-#
-##############################################################################
 
+# Conversion to lowercase
 remove_case(s::T) where {T <: AbstractString} = lowercase(s)
 
 remove_case!(d::FileDocument) = error("FileDocument cannot be modified")
@@ -117,11 +109,8 @@ function remove_case!(crps::Corpus)
     end
 end
 
-##############################################################################
-#
+
 # Stripping HTML tags
-#
-##############################################################################
 const script_tags = Regex("<script\\b[^>]*>([\\s\\S]*?)</script>")
 const html_tags = Regex("<[^>]*>")
 
@@ -145,36 +134,20 @@ function remove_html_tags!(crps::Corpus)
     end
 end
 
-##############################################################################
-#
+
 # Remove specified words
-#
-##############################################################################
-function remove_words!(entity::(Union{AbstractDocument,Corpus}),
-               words::Vector{T}) where T <: AbstractString
+function remove_words!(entity, words::Vector{T}) where T <: AbstractString
     skipwords = Set{AbstractString}()
     union!(skipwords, words)
     prepare!(entity, strip_patterns, skip_words = skipwords)
 end
 
 
-
-##############################################################################
-#
 # Part-of-Speech tagging
-#
-##############################################################################
-
-tag_pos!(entity) = error("Not yet implemented")
+### tag_pos!(entity) = error("Not yet implemented")
 
 
-
-##############################################################################
-#
 # Drop terms based on frequency
-#
-##############################################################################
-
 function sparse_terms(crps::Corpus, alpha::Real = alpha_sparse)
     update_lexicon!(crps)
     update_inverse_index!(crps)
