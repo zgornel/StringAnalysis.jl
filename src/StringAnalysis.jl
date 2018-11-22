@@ -1,5 +1,6 @@
 module StringAnalysis
 
+    using Unicode
     using SparseArrays
     using LinearAlgebra
     using Languages
@@ -30,8 +31,8 @@ module StringAnalysis
     export lda!, lda
     export frequent_terms, sparse_terms, prepare!,
            strip_patterns, strip_corrupt_utf8, strip_case, stem_words,
-           strip_whitespace, strip_punctuation,
-           strip_numbers, strip_non_letters, strip_indefinite_articles,
+           strip_accents, strip_whitespace, strip_punctuation,
+           strip_numbers, strip_non_ascii, strip_indefinite_articles,
            strip_definite_articles, strip_articles, strip_prepositions,
            strip_pronouns, strip_stopwords, strip_sparse_terms,
            strip_frequent_terms, strip_html_tags,

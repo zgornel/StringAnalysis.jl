@@ -1,7 +1,7 @@
 
 @testset "Preprocessing" begin
 
-    sample_text1 = "This is 1 MESSED υπ string!"
+    sample_text1 = "This is, 1 MESSED υπ string!..."
     sample_text1_wo_punctuation = "This is 1 MESSED υπ string"
     sample_text1_wo_punctuation_numbers = "This is  MESSED υπ string"
     sample_text1_wo_punctuation_numbers_case = "this is  messed υπ string"
@@ -20,7 +20,7 @@
         sd = StringDocument(str)
         prepare!(
             sd,
-            strip_punctuation | strip_numbers | strip_case | strip_whitespace | strip_non_letters
+            strip_punctuation | strip_numbers | strip_case | strip_whitespace | strip_non_ascii
         )
         @test isequal(strip(sd.text), "this is messed string")
     end
@@ -56,6 +56,10 @@
 
     doc = Document("this is sample text")
     prepare!(doc, strip_whitespace)
+    @test isequal(doc.text, "this is sample text")
+
+    doc = Document("this îs sămple text")
+    prepare!(doc, strip_accents)
     @test isequal(doc.text, "this is sample text")
 
     # stem!(sd)

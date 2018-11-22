@@ -1,32 +1,28 @@
-const strip_patterns                = UInt32(0)
-const strip_corrupt_utf8            = UInt32(0x1) << 0
-const strip_case                    = UInt32(0x1) << 1
-const stem_words                    = UInt32(0x1) << 2
-#const tag_part_of_speech            = UInt32(0x1) << 3
-
-const strip_whitespace              = UInt32(0x1) << 5
-const strip_punctuation             = UInt32(0x1) << 6
-const strip_numbers                 = UInt32(0x1) << 7
-const strip_non_letters             = UInt32(0x1) << 8
-
-const strip_indefinite_articles     = UInt32(0x1) << 9
-const strip_definite_articles       = UInt32(0x1) << 10
-const strip_articles                = (strip_indefinite_articles |
-                                       strip_definite_articles)
-
-const strip_prepositions            = UInt32(0x1) << 13
-const strip_pronouns                = UInt32(0x1) << 14
-
-const strip_stopwords               = UInt32(0x1) << 16
-const strip_sparse_terms            = UInt32(0x1) << 17
-const strip_frequent_terms          = UInt32(0x1) << 18
-
-const strip_html_tags               = UInt32(0x1) << 20
-
-const alpha_sparse      = 0.05
-const alpha_frequent    = 0.95
-
+const strip_patterns            = UInt32(0)
+const strip_corrupt_utf8        = UInt32(0x1) << 0
+const strip_case                = UInt32(0x1) << 1
+const stem_words                = UInt32(0x1) << 2
+const strip_accents             = UInt32(0x1) << 4
+#const tag_part_of_speech       = UInt32(0x1) << 3
+const strip_whitespace          = UInt32(0x1) << 5
+const strip_punctuation         = UInt32(0x1) << 6
+const strip_numbers             = UInt32(0x1) << 7
+const strip_non_ascii           = UInt32(0x1) << 8
+const strip_indefinite_articles = UInt32(0x1) << 9
+const strip_definite_articles   = UInt32(0x1) << 10
+const strip_prepositions        = UInt32(0x1) << 13
+const strip_pronouns            = UInt32(0x1) << 14
+const strip_stopwords           = UInt32(0x1) << 16
+const strip_sparse_terms        = UInt32(0x1) << 17
+const strip_frequent_terms      = UInt32(0x1) << 18
+const strip_html_tags           = UInt32(0x1) << 20
+const strip_articles            = (strip_indefinite_articles |
+                                   strip_definite_articles)
+const alpha_sparse = 0.05
+const alpha_frequent = 0.95
 const regex_cache = Dict{AbstractString, Regex}()
+
+
 function mk_regex(regex_string)
     d = haskey(regex_cache, regex_string) ?
             regex_cache[regex_string] :
@@ -40,6 +36,21 @@ end
 function remove_corrupt_utf8(s::AbstractString)
     return map(x->isvalid(x) ? x : ' ', s)
 end
+
+# Conversion to lowercase
+remove_case(s::T) where {T <: AbstractString} = lowercase(s)
+
+# Removing accents
+remove_accents(s::T) where T<:AbstractString =
+    Unicode.normalize(s, stripmark=true)
+
+# Remove punctuation
+# TODO(Corneliu) Replace regex
+remove_punctuation(s::T) where T<:AbstractString =
+    filter(x->!ispunct(x), s)
+
+# TODO(Corneliu): Generate Document/Corpus methods automagically (code repeats itself)
+
 
 remove_corrupt_utf8!(d::FileDocument) = error("FileDocument cannot be modified")
 
@@ -74,8 +85,7 @@ function remove_corrupt_utf8!(crps::Corpus)
 end
 
 
-# Conversion to lowercase
-remove_case(s::T) where {T <: AbstractString} = lowercase(s)
+
 
 remove_case!(d::FileDocument) = error("FileDocument cannot be modified")
 
@@ -106,6 +116,43 @@ end
 function remove_case!(crps::Corpus)
     for doc in crps
         remove_case!(doc)
+    end
+end
+
+
+
+
+
+
+remove_accents!(d::FileDocument) = error("FileDocument cannot be modified")
+
+function remove_accents!(d::StringDocument)
+    d.text = remove_accents(d.text)
+    nothing
+end
+
+function remove_accents!(d::TokenDocument)
+    for i in 1:length(d.tokens)
+        d.tokens[i] = remove_accents(d.tokens[i])
+    end
+end
+
+function remove_accents!(d::NGramDocument)
+    new_ngrams = Dict{AbstractString, Int}()
+    for token in keys(d.ngrams)
+        new_token = remove_accents(token)
+        if haskey(new_ngrams, new_token)
+            new_ngrams[new_token] = new_ngrams[new_token] + 1
+        else
+            new_ngrams[new_token] = 1
+        end
+    end
+    d.ngrams = new_ngrams
+end
+
+function remove_accents!(crps::Corpus)
+    for doc in crps
+        remove_accents!(doc)
     end
 end
 
@@ -187,6 +234,7 @@ function prepare!(crps::Corpus, flags::UInt32; skip_patterns = Set{AbstractStrin
 
     ((flags & strip_corrupt_utf8) > 0) && remove_corrupt_utf8!(crps)
     ((flags & strip_case) > 0) && remove_case!(crps)
+    ((flags & strip_accents) > 0) && remove_accents!(crps)
     ((flags & strip_html_tags) > 0) && remove_html_tags!(crps)
 
     lang = language(crps.documents[1])   # assuming all documents are of the same language - practically true
@@ -201,6 +249,7 @@ end
 function prepare!(d::AbstractDocument, flags::UInt32; skip_patterns = Set{AbstractString}(), skip_words = Set{AbstractString}())
     ((flags & strip_corrupt_utf8) > 0) && remove_corrupt_utf8!(d)
     ((flags & strip_case) > 0) && remove_case!(d)
+    ((flags & strip_accents) > 0) && remove_accents!(d)
     ((flags & strip_html_tags) > 0) && remove_html_tags!(d)
 
     r = _build_regex(language(d), flags, skip_patterns, skip_words)
@@ -300,7 +349,7 @@ end
 
 function _build_regex_patterns(lang, flags::UInt32, patterns::Set{T}, words::Set{T}) where T <: AbstractString
     ((flags & strip_whitespace) > 0) && push!(patterns, "\\s+")
-    if (flags & strip_non_letters) > 0
+    if (flags & strip_non_ascii) > 0
         push!(patterns, "[^a-zA-Z\\s]")
     else
         ((flags & strip_punctuation) > 0) && push!(patterns, "[,;:.!?()-\\\\]+")
@@ -335,3 +384,29 @@ function _build_words_pattern(words::Vector{T}) where T <: AbstractString
     write(iob, ")\\b")
     String(take!(iob))
 end
+
+### # Useful regular expressions
+### replace.(select(tt2,2),r"([A-Z]\s|[A-Z]\.\s)","")  # replace middle initial
+### replace.(select(tt2,2),r"[\s]+$","")  # replace end spaces
+###
+### # Define base filtering functions
+###
+### remove_punctuation(s) = filter(x->!ispunct(x), s)
+###
+### remove_singlechars(s) = filter(x->length(x) > 1, s)
+###
+### split_space_tab(s) = split(s, r"(\s|\t|-)")
+###
+### normalizer(s) = normalize_string(s, decompose=true, compat=true, casefold=true,
+### 				    stripmark=true, stripignore=true)
+###
+### function searchquery_preprocess(s)
+### String.(
+###     remove_singlechars(
+### 	split_space_tab(
+### 		remove_punctuation(
+### 			normalizer(s)
+### 		)
+### 	)
+### ))
+### end

@@ -72,8 +72,15 @@ function stem(stemmer::Stemmer, bstr::AbstractString)
 end
 
 
-function stem_all(stemmer::Stemmer, lang::S, sentence::AbstractString) where S <: Language
-    tokens = StringAnalysis.tokenize(lang, sentence)
+function stem_all(stemmer::Stemmer,
+                  lang::S,
+                  sentence::AbstractString;
+                  method="fast") where S <: Language
+    if method == "fast"
+        tokens = tokenize_fast(sentence)
+    else
+        tokens = tokenize(sentence)
+    end
     stemmed = stem(stemmer, tokens)
     join(stemmed, ' ')
 end
