@@ -11,10 +11,9 @@ This is a hard fork of [TextAnalysis.jl](https://github.com/JuliaText/TextAnalys
 This is work in progress and under heavy development...¯\\_(ツ)_/¯:
 - [ ] **(WIP)** Cleaner API
 - [x] Lower the number of dependencies i.e. `Printf.jl`, `DataFrames.jl`, `Flux.jl`, `JSON.jl`
-- [x] Remove deprecations, sentiment analysis
-- [ ] **(WIP)** Add faster version of summarization (`LightGraphs.jl`-based [TextRank](https://en.wikipedia.org/wiki/Automatic_summarization#Unsupervised_approach:_TextRank))
+- [x] Remove deprecations, sentiment analysis, summarization
 - [ ] **(WIP)** Improved code documentation i.e. docstrings, comments and show methods
-- [ ] Bugfixes
+- [ ] **(WIP)** Bugfixes
 
 
 ## Introduction
