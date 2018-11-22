@@ -4,3 +4,7 @@
 #
 # Note: Constants that have local scope (such as preprocessing.jl constants)
 #       should not be added here.
+
+# Regular expression on which to split text into tokens;
+# It used by the tokenize_fast function
+const DEFAULT_TOKENIZATION_REGEX = r"(,|\n|\r|\:|\\|\/|;|\.|\[|\]|\{|\}|\'|\`|\"|\"|\?|\!|\=|\~|\&|\s+)"
