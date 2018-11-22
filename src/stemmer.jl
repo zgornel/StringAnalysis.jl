@@ -59,6 +59,7 @@ function release(stm::Stemmer)
     nothing
 end
 
+# Stemming methods with explicit stemmer
 function stem(stemmer::Stemmer, bstr::AbstractString)
     sres = ccall((:sb_stemmer_stem, libstemmer),
                 Ptr{UInt8},
@@ -77,15 +78,49 @@ function stem_all(stemmer::Stemmer, lang::S, sentence::AbstractString) where S <
     join(stemmed, ' ')
 end
 
-function stem(stemmer::Stemmer, words::Array)
+function stem!(stemmer::Stemmer, words::Vector{S}) where S<:AbstractString
     l::Int = length(words)
-    ret = Array{String}(undef, l)
-    for idx in 1:l
-        ret[idx] = stem(stemmer, words[idx])
+    @inbounds for idx in 1:l
+        words[idx] = stem(stemmer, words[idx])
     end
-    ret
 end
 
+function stem(stemmer::Stemmer, words::Vector{S}) where S<:AbstractString
+    l::Int = length(words)
+    ret = [words[i] for i in 1:l]
+    stem!(ret)
+    return ret
+end
+
+# Stemming methods with implicit stemmer generated from language
+function stem(sentence::AbstractString;
+              language::Language=Languages.English())
+    stemmer = Stemmer(lowercase(name(language)))
+    ret = stem_all(stemmer, language, sentence)
+    release(stemmer)
+    return ret
+end
+
+function stem!(words::Vector{S}; language::Language=Languages.English()
+              ) where S<:AbstractString
+    stemmer = Stemmer(lowercase(name(language)))
+    l::Int = length(words)
+    @inbounds for idx in 1:l
+        words[idx] = stem(stemmer, words[idx])
+    end
+    release(stemmer)
+    return nothing
+end
+
+function stem(words::Vector{S}; language::Language=Languages.English()
+              ) where S<:AbstractString
+    l::Int = length(words)
+    ret = [words[i] for i in 1:l]
+    stem!(ret, language=language)
+    return ret
+end
+
+# Stemming methods for documents
 function stemmer_for_document(d::AbstractDocument)
     Stemmer(lowercase(name(language(d))))
 end
