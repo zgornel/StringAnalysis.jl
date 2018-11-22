@@ -14,7 +14,7 @@ include("corpus.jl")
 include("preprocessing.jl")
 include("dtm.jl")
 include("stemmer.jl")
-include("tf_idf.jl")
+include("stats.jl")
 include("lda.jl")
 
 end

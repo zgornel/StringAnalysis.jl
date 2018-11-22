@@ -27,7 +27,7 @@
 
     # Need to only remove words at word boundaries
     doc = Document("this is sample text")
-    remove_words!(doc, ["sample"])
+    StringAnalysis.remove_words!(doc, ["sample"])
     @test isequal(doc.text, "this is   text")
 
     doc = Document("this is sample text")
@@ -64,7 +64,7 @@
     # Do preprocessing on TokenDocument, NGramDocument, Corpus
     d = NGramDocument("this is sample text")
     @test haskey(d.ngrams, "sample")
-    remove_words!(d, ["sample"])
+    StringAnalysis.remove_words!(d, ["sample"])
     @test !haskey(d.ngrams, "sample")
 
     d = StringDocument(
@@ -79,10 +79,10 @@
         </html>
         """
     )
-    remove_html_tags!(d)
+    StringAnalysis.remove_html_tags!(d)
     @test "Hello world" == strip(d.text)
 
     #Test #62
-    remove_corrupt_utf8("abc") == "abc"
-    remove_corrupt_utf8(String([0x43, 0xf0])) == "C "
+    StringAnalysis.remove_corrupt_utf8("abc") == "abc"
+    StringAnalysis.remove_corrupt_utf8(String([0x43, 0xf0])) == "C "
 end

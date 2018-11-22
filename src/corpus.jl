@@ -71,33 +71,6 @@ Base.length(crps::Corpus) = length(crps.documents)
 
 ##############################################################################
 #
-# Convert a Corpus to a DataFrame
-#
-##############################################################################
-
-function Base.convert(::Type{DataFrame}, crps::Corpus)
-    df = DataFrame()
-    n = length(crps)
-    df[:Language] = Array{Union{String,Missing}}(n)
-    df[:Name] = Array{Union{String,Missing}}(n)
-    df[:Author] = Array{Union{String,Missing}}(n)
-    df[:TimeStamp] = Array{Union{String,Missing}}(n)
-    df[:Length] = Array{Union{Int,Missing}}(n)
-    df[:Text] = Array{Union{String,Missing}}(n)
-    for i in 1:n
-        d = crps.documents[i]
-        df[i, :Language] = string(language(d))
-        df[i, :Name] = name(d)
-        df[i, :Author] = author(d)
-        df[i, :TimeStamp] = timestamp(d)
-        df[i, :Length] = length(d)
-        df[i, :Text] = text(d)
-    end
-    return df
-end
-
-##############################################################################
-#
 # Treat a Corpus as an iterable
 #
 ##############################################################################
@@ -133,8 +106,8 @@ Base.delete!(crps::Corpus, index::Integer) = delete!(crps.documents, index)
 #
 ##############################################################################
 
-Base.getindex(crps::Corpus, ind::Real) = crps.documents[ind]
-Base.getindex(crps::Corpus, inds::Vector{T}) where {T <: Real} = crps.documents[inds]
+Base.getindex(crps::Corpus, ind::Integer) = crps.documents[ind]
+Base.getindex(crps::Corpus, inds::Vector{T}) where {T <: Integer} = crps.documents[inds]
 Base.getindex(crps::Corpus, r::AbstractRange) = crps.documents[r]
 Base.getindex(crps::Corpus, term::AbstractString) = get(crps.inverse_index, term, Int[])
 

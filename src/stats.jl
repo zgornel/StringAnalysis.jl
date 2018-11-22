@@ -1,9 +1,4 @@
-##############################################################################
-#
-# TF
-#
-##############################################################################
-
+# TF: Term frequency
 tf(dtm::Matrix{T}) where {T <: Real} = tf!(dtm, Array{Float64}(undef, size(dtm)...))
 
 tf(dtm::SparseMatrixCSC{T}) where {T <: Real} =  tf!(dtm, similar(dtm, Float64))
@@ -51,12 +46,9 @@ function tf!(dtm::SparseMatrixCSC{T}, tf::SparseMatrixCSC{F}) where {T <: Real, 
     tf
 end
 
-##############################################################################
-#
-# TF-IDF
-#
-##############################################################################
 
+
+# TF-IDF: Term frequency - Inverse document frequency
 tf_idf(dtm::Matrix{T}) where {T <: Real} = tf_idf!(dtm, Array{Float64}(undef, size(dtm)...))
 
 tf_idf(dtm::SparseMatrixCSC{T}) where {T <: Real} =  tf_idf!(dtm, similar(dtm, Float64))

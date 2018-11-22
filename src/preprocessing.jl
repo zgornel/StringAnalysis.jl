@@ -1,4 +1,3 @@
-
 const strip_patterns                = UInt32(0)
 const strip_corrupt_utf8            = UInt32(0x1) << 0
 const strip_case                    = UInt32(0x1) << 1

@@ -1,5 +1,5 @@
 
-@testset "TFIDF" begin
+@testset "Stats (TF,TF-IDF etc.)" begin
 
     doc1 = "a a a sample text text"
     doc2 = "another example example text text"
