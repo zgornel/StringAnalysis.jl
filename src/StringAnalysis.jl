@@ -11,7 +11,7 @@ module StringAnalysis
     export AbstractDocument,
            Document, FileDocument, StringDocument,
            TokenDocument, NGramDocument, GenericDocument
-    export DocumentMetdata, metadata
+    export DocumentMetadata, metadata
     export Corpus, DirectoryCorpus, documents, standardize!
     export lexicon, update_lexicon!, lexical_frequency, lexicon_size
     export inverse_index, update_inverse_index!, index_size
