@@ -1,198 +1,159 @@
 const strip_patterns            = UInt32(0)
+# Flags that activate function-based processors
 const strip_corrupt_utf8        = UInt32(0x1) << 0
 const strip_case                = UInt32(0x1) << 1
-const stem_words                = UInt32(0x1) << 2
-const strip_accents             = UInt32(0x1) << 4
-#const tag_part_of_speech       = UInt32(0x1) << 3
-const strip_whitespace          = UInt32(0x1) << 5
-const strip_punctuation         = UInt32(0x1) << 6
-const strip_numbers             = UInt32(0x1) << 7
-const strip_non_ascii           = UInt32(0x1) << 8
-const strip_indefinite_articles = UInt32(0x1) << 9
-const strip_definite_articles   = UInt32(0x1) << 10
-const strip_prepositions        = UInt32(0x1) << 13
-const strip_pronouns            = UInt32(0x1) << 14
-const strip_stopwords           = UInt32(0x1) << 16
-const strip_sparse_terms        = UInt32(0x1) << 17
-const strip_frequent_terms      = UInt32(0x1) << 18
-const strip_html_tags           = UInt32(0x1) << 20
+const strip_accents             = UInt32(0x1) << 2
+const strip_punctuation         = UInt32(0x1) << 3
+# Flags that activate function-based processors (external to this file)
+const stem_words                = UInt32(0x1) << 7
+# Flags that activate Regex based processors
+const strip_whitespace          = UInt32(0x1) << 10
+const strip_numbers             = UInt32(0x1) << 11
+const strip_non_ascii           = UInt32(0x1) << 12
+const strip_single_chars        = UInt32(0x1) << 13
+const strip_html_tags           = UInt32(0x1) << 14
+# Word list based
+const strip_indefinite_articles = UInt32(0x1) << 20
+const strip_definite_articles   = UInt32(0x1) << 21
+const strip_prepositions        = UInt32(0x1) << 22
+const strip_pronouns            = UInt32(0x1) << 23
+const strip_stopwords           = UInt32(0x1) << 24
 const strip_articles            = (strip_indefinite_articles |
                                    strip_definite_articles)
-const alpha_sparse = 0.05
-const alpha_frequent = 0.95
-const regex_cache = Dict{AbstractString, Regex}()
+const strip_sparse_terms        = UInt32(0x1) << 25
+const strip_frequent_terms      = UInt32(0x1) << 26
+
+# RegEx Expressions for various stripping flags
+# Format: flag => (match=>replacement)
+const REGEX_CACHE = Dict{UInt32,Regex}(
+    strip_whitespace => r"\s+",
+    strip_numbers => r"\d+",
+    strip_non_ascii => r"[^a-zA-Z\s]",
+    strip_single_chars => r"[\s]+[A-Za-z]{1}[\s]+",
+    strip_html_tags => r"(<script\b[^>]*>([\s\S]*?)</script>|<[^>]*>)"
+)
 
 
-function mk_regex(regex_string)
-    d = haskey(regex_cache, regex_string) ?
-            regex_cache[regex_string] :
-            (regex_cache[regex_string] = Regex(regex_string))
-    (length(regex_cache) > 50) && empty!(regex_cache)
-    d
-end
-
-
+# Basic string processing functions
 # Remove corrupt UTF8 characters
-function remove_corrupt_utf8(s::AbstractString)
+remove_corrupt_utf8(s::AbstractString) = begin
     return map(x->isvalid(x) ? x : ' ', s)
 end
 
 # Conversion to lowercase
-remove_case(s::T) where {T <: AbstractString} = lowercase(s)
+remove_case(s::T) where T<:AbstractString = lowercase(s)
 
 # Removing accents
 remove_accents(s::T) where T<:AbstractString =
     Unicode.normalize(s, stripmark=true)
 
 # Remove punctuation
-# TODO(Corneliu) Replace regex
 remove_punctuation(s::T) where T<:AbstractString =
     filter(x->!ispunct(x), s)
 
-# TODO(Corneliu): Generate Document/Corpus methods automagically (code repeats itself)
-
-
-remove_corrupt_utf8!(d::FileDocument) = error("FileDocument cannot be modified")
-
-function remove_corrupt_utf8!(d::StringDocument)
-    d.text = remove_corrupt_utf8(d.text)
-    nothing
-end
-
-function remove_corrupt_utf8!(d::TokenDocument)
-    for i in 1:length(d.tokens)
-        d.tokens[i] = remove_corrupt_utf8(d.tokens[i])
-    end
-end
-
-function remove_corrupt_utf8!(d::NGramDocument)
-    new_ngrams = Dict{AbstractString, Int}()
-    for token in keys(d.ngrams)
-        new_token = remove_corrupt_utf8(token)
-        if haskey(new_ngrams, new_token)
-            new_ngrams[new_token] = new_ngrams[new_token] + 1
-        else
-            new_ngrams[new_token] = 1
+# Generate automatically functions for various Document types and Corpus
+# Note: One has to add a simple method for `AbstractString` and the name
+#       of the function in the `for` container to generate all needed
+#       methods
+# Note2: There is no distinction made for TokenDocument, NGramDocument
+#        in the case of `remove_punctuation` because, depending on the
+#        tokenization function, punctuation may creep up into the document
+#        i.e. ngrams/tokens containing tags, punctuation.
+for fname in [:remove_corrupt_utf8, :remove_case, :remove_accents, :remove_punctuation]
+    # File document
+    # TODO(Corneliu): Make these work on file documents
+    #                 i.e. load file, process, re-write
+    definition = """
+        $(fname)!(d::FileDocument) = error("FileDocument cannot be modified.")
+        """
+    eval(Meta.parse(definition))
+    # String Document
+    definition = """
+        function $(fname)!(d::StringDocument)
+            d.text = $(fname)(d.text)
+            return nothing
         end
-    end
-    d.ngrams = new_ngrams
-end
-
-function remove_corrupt_utf8!(crps::Corpus)
-    for doc in crps
-        remove_corrupt_utf8!(doc)
-    end
-end
-
-
-
-
-remove_case!(d::FileDocument) = error("FileDocument cannot be modified")
-
-function remove_case!(d::StringDocument)
-    d.text = remove_case(d.text)
-    nothing
-end
-
-function remove_case!(d::TokenDocument)
-    for i in 1:length(d.tokens)
-        d.tokens[i] = remove_case(d.tokens[i])
-    end
-end
-
-function remove_case!(d::NGramDocument)
-    new_ngrams = Dict{AbstractString, Int}()
-    for token in keys(d.ngrams)
-        new_token = remove_case(token)
-        if haskey(new_ngrams, new_token)
-            new_ngrams[new_token] = new_ngrams[new_token] + 1
-        else
-            new_ngrams[new_token] = 1
+        """
+    eval(Meta.parse(definition))
+    # Token Document
+    definition = """
+        function $(fname)!(d::TokenDocument)
+            @inbounds for i in 1:length(d.tokens)
+                d.tokens[i] = $(fname)(d.tokens[i])
+            end
         end
-    end
-    d.ngrams = new_ngrams
-end
-
-function remove_case!(crps::Corpus)
-    for doc in crps
-        remove_case!(doc)
-    end
-end
-
-
-
-
-
-
-remove_accents!(d::FileDocument) = error("FileDocument cannot be modified")
-
-function remove_accents!(d::StringDocument)
-    d.text = remove_accents(d.text)
-    nothing
-end
-
-function remove_accents!(d::TokenDocument)
-    for i in 1:length(d.tokens)
-        d.tokens[i] = remove_accents(d.tokens[i])
-    end
-end
-
-function remove_accents!(d::NGramDocument)
-    new_ngrams = Dict{AbstractString, Int}()
-    for token in keys(d.ngrams)
-        new_token = remove_accents(token)
-        if haskey(new_ngrams, new_token)
-            new_ngrams[new_token] = new_ngrams[new_token] + 1
-        else
-            new_ngrams[new_token] = 1
+        """
+    eval(Meta.parse(definition))
+    # NGramDocument
+    definition = """
+        function $(fname)!(d::NGramDocument{S}) where S
+            _ngrams = Dict{S, Int}()
+            for token in keys(d.ngrams)
+                _token = $(fname)(token)
+                _ngrams[_token] = get(_ngrams, _token, 0) + 1
+            end
+            d.ngrams = _ngrams
+            return nothing
         end
-    end
-    d.ngrams = new_ngrams
+        """
+    eval(Meta.parse(definition))
+    # Corpus
+    definition = """
+        function $(fname)!(crps::Corpus)
+            for doc in crps
+                $(fname)!(doc)
+            end
+        end
+        """
+    eval(Meta.parse(definition))
 end
 
-function remove_accents!(crps::Corpus)
-    for doc in crps
-        remove_accents!(doc)
-    end
-end
+# The `remove_patterns` methods cannot be generated in the loop, different signature
+remove_patterns(s::AbstractString, rex::Regex, rep="") =
+    replace(s, rex => rep)
 
+remove_patterns!(d::FileDocument, rex::Regex, rep="") = error("FileDocument cannot be modified.")
 
-# Stripping HTML tags
-const script_tags = Regex("<script\\b[^>]*>([\\s\\S]*?)</script>")
-const html_tags = Regex("<[^>]*>")
-
-function remove_html_tags(s::AbstractString)
-    s = remove_patterns(s, script_tags)
-    remove_patterns(s, html_tags)
-end
-
-function remove_html_tags!(d::AbstractDocument)
-    error("HTML tags can be removed only from a StringDocument")
-end
-
-function remove_html_tags!(d::StringDocument)
-    d.text = remove_html_tags(d.text)
+remove_patterns!(d::StringDocument, rex::Regex, rep="") = begin
+    d.text = remove_patterns(d.text, rex, rep)
     nothing
 end
 
-function remove_html_tags!(crps::Corpus)
+remove_patterns!(d::TokenDocument, rex::Regex, rep="") = begin
+    for i in 1:length(d.tokens)
+        d.tokens[i] = remove_patterns(d.tokens[i], rex, rep)
+    end
+end
+
+remove_patterns!(d::NGramDocument{S}, rex::Regex, rep="") where S = begin
+    _ngrams = Dict{S, Int}()
+    for token in keys(d.ngrams)
+        _token = remove_patterns(token, rex, rep)
+        _ngrams[_token] = get(_ngrams, _token, 0) + 1
+    end
+    d.ngrams = _ngrams
+    return nothing
+end
+
+function remove_patterns!(crps::Corpus, rex::Regex, rep="")
     for doc in crps
-        remove_html_tags!(doc)
+        remove_patterns!(doc, rex, rep)
     end
 end
 
 
 # Remove specified words
-function remove_words!(entity, words::Vector{T}) where T <: AbstractString
-    skipwords = Set{AbstractString}()
+function remove_words!(entity, words::Vector{T}) where T<: AbstractString
+    skipwords = Set{T}()
     union!(skipwords, words)
     prepare!(entity, strip_patterns, skip_words = skipwords)
 end
 
 
-# Part-of-Speech tagging
-### tag_pos!(entity) = error("Not yet implemented")
 
+const alpha_sparse = 0.05
+const alpha_frequent = 0.95
+# TODO(Corneliu) get sparse terms for Document types, AbstractString
 
 # Drop terms based on frequency
 function sparse_terms(crps::Corpus, alpha = alpha_sparse)
@@ -219,194 +180,100 @@ function frequent_terms(crps::Corpus, alpha = alpha_frequent)
     return res
 end
 
-# Sparse terms occur in less than x percent of all documents
-remove_sparse_terms!(crps::Corpus, alpha::Real = alpha_sparse) = remove_words!(crps, sparse_terms(crps, alpha))
+_build_words_pattern(words::Set{T}) where T<:AbstractString =
+    Regex(ifelse(isempty(words), "", "\\b("* join(words,"|","|") *")\\b"))
 
-# Frequent terms occur in more than x percent of all documents
-remove_frequent_terms!(crps::Corpus, alpha::Real = alpha_frequent) = remove_words!(crps, frequent_terms(crps, alpha))
-
-
-
-# Remove parts from document based on flags or regular expressions
-function prepare!(crps::Corpus, flags::UInt32; skip_patterns = Set{AbstractString}(), skip_words = Set{AbstractString}())
-    ((flags & strip_sparse_terms) > 0) && union!(skip_words, sparse_terms(crps))
-    ((flags & strip_frequent_terms) > 0) && union!(skip_words, frequent_terms(crps))
-
-    ((flags & strip_corrupt_utf8) > 0) && remove_corrupt_utf8!(crps)
-    ((flags & strip_case) > 0) && remove_case!(crps)
-    ((flags & strip_accents) > 0) && remove_accents!(crps)
-    ((flags & strip_html_tags) > 0) && remove_html_tags!(crps)
-
-    lang = language(crps.documents[1])   # assuming all documents are of the same language - practically true
-    r = _build_regex(lang, flags, skip_patterns, skip_words)
-    !isempty(r.pattern) && remove_patterns!(crps, r)
-
-    ((flags & stem_words) > 0) && stem!(crps)
-    #((flags & tag_part_of_speech) > 0) && tag_pos!(crps)
-    nothing
-end
-
-function prepare!(d::AbstractDocument, flags::UInt32; skip_patterns = Set{AbstractString}(), skip_words = Set{AbstractString}())
-    ((flags & strip_corrupt_utf8) > 0) && remove_corrupt_utf8!(d)
-    ((flags & strip_case) > 0) && remove_case!(d)
-    ((flags & strip_accents) > 0) && remove_accents!(d)
-    ((flags & strip_html_tags) > 0) && remove_html_tags!(d)
-
-    r = _build_regex(language(d), flags, skip_patterns, skip_words)
-    !isempty(r.pattern) && remove_patterns!(d, r)
-
-    ((flags & stem_words) > 0) && stem!(d)
-    #((flags & tag_part_of_speech) > 0) && tag_pos!(d)
-    nothing
-end
-
-function remove_patterns(s::AbstractString, rex::Regex)
-    iob = IOBuffer()
-    ibegin = 1
-    v=codeunits(s)
-    for m in eachmatch(rex, s)
-        len = m.match.offset-ibegin+1
-        if len > 0
-            Base.write_sub(iob, v, ibegin, len)
-            write(iob, ' ')
-        end
-        ibegin = nextind(s, lastindex(m.match)+m.match.offset)
-    end
-    len = length(v) - ibegin + 1
-    (len > 0) && Base.write_sub(iob, v, ibegin, len)
-    String(take!(iob))
-end
-
-function remove_patterns(s::SubString{T}, rex::Regex) where T <: String
-    iob = IOBuffer()
-    ioffset = s.offset
-    data = codeunits(s.string)
-    ibegin = 1
-    for m in eachmatch(rex, s)
-        len = m.match.offset-ibegin+1
-        if len > 0
-            Base.write_sub(iob, data, ibegin+ioffset, len)
-            write(iob, ' ')
-        end
-        ibegin = nextind(s, lastindex(m.match)+m.match.offset)
-    end
-    len = lastindex(s) - ibegin + 1
-    (len > 0) && Base.write_sub(iob, data, ibegin+ioffset, len)
-    String(take!(iob))
-end
-
-remove_patterns!(d::FileDocument, rex::Regex) = error("FileDocument cannot be modified")
-
-function remove_patterns!(d::StringDocument, rex::Regex)
-    d.text = remove_patterns(d.text, rex)
-    nothing
-end
-
-function remove_patterns!(d::TokenDocument, rex::Regex)
-    for i in 1:length(d.tokens)
-        d.tokens[i] = remove_patterns(d.tokens[i], rex)
-    end
-end
-
-function remove_patterns!(d::NGramDocument, rex::Regex)
-    new_ngrams = Dict{AbstractString, Int}()
-    for token in keys(d.ngrams)
-        new_token = remove_patterns(token, rex)
-        if haskey(new_ngrams, new_token)
-            new_ngrams[new_token] = new_ngrams[new_token] + 1
-        else
-            new_ngrams[new_token] = 1
-        end
-    end
-    d.ngrams = new_ngrams
-    nothing
-end
-
-function remove_patterns!(crps::Corpus, rex::Regex)
-    for doc in crps
-        remove_patterns!(doc, rex)
-    end
-end
-
-##
-# internal helper methods
-
-_build_regex(lang, flags::UInt32) = _build_regex(lang, flags, Set{AbstractString}(), Set{AbstractString}())
-_build_regex(lang, flags::UInt32, patterns::Set{T}, words::Set{T}) where {T <: AbstractString} = _combine_regex(_build_regex_patterns(lang, flags, patterns, words))
-
-function _combine_regex(regex_parts::Set{T}) where T <: AbstractString
-    l = length(regex_parts)
-    (0 == l) && return r""
-    (1 == l) && return mk_regex(pop!(regex_parts))
-
-    iob = IOBuffer()
-    write(iob, "($(pop!(regex_parts)))")
-    for part in regex_parts
-        write(iob, "|($part)")
-    end
-    mk_regex(String(take!(iob)))
-end
-
-function _build_regex_patterns(lang, flags::UInt32, patterns::Set{T}, words::Set{T}) where T <: AbstractString
-    ((flags & strip_whitespace) > 0) && push!(patterns, "\\s+")
-    if (flags & strip_non_ascii) > 0
-        push!(patterns, "[^a-zA-Z\\s]")
+_build_regex_pattern(regexes::Set{T}) where T<:Regex = begin
+    l = length(regexes)
+    if l == 0
+        return r""
+    elseif l == 1
+        return pop!(regexes)
     else
-        ((flags & strip_punctuation) > 0) && push!(patterns, "[,;:.!?()-\\\\]+")
-        ((flags & strip_numbers) > 0) && push!(patterns, "\\d+")
+        iob = IOBuffer()
+        write(iob, "($(pop!(regexes).pattern))")
+        for re in regexes
+            write(iob, "|($(re.pattern))")
+        end
+        return Regex(String(take!(iob)))
     end
-    if (flags & strip_articles) > 0
-        union!(words, articles(lang))
-    else
-        ((flags & strip_indefinite_articles) > 0) && union!(words, indefinite_articles(lang))
-        ((flags & strip_definite_articles) > 0) && union!(words, definite_articles(lang))
-    end
-    ((flags & strip_prepositions) > 0) && union!(words, prepositions(lang))
-    ((flags & strip_pronouns) > 0) && union!(words, pronouns(lang))
-    ((flags & strip_stopwords) > 0) && union!(words, stopwords(lang))
-
-    words_pattern = _build_words_pattern(collect(words))
-    !isempty(words_pattern) && push!(patterns, words_pattern)
-    patterns
 end
 
-function _build_words_pattern(words::Vector{T}) where T <: AbstractString
-    isempty(words) && return ""
 
-    iob = IOBuffer()
-    write(iob, "\\b(")
-    write(iob, words[1])
-    l = length(words)
-    for idx in 2:l
-        write(iob, '|')
-        write(iob, words[idx])
-    end
-    write(iob, ")\\b")
-    String(take!(iob))
-end
 
-### # Useful regular expressions
-### replace.(select(tt2,2),r"([A-Z]\s|[A-Z]\.\s)","")  # replace middle initial
-### replace.(select(tt2,2),r"[\s]+$","")  # replace end spaces
-###
-### # Define base filtering functions
-###
-### remove_punctuation(s) = filter(x->!ispunct(x), s)
-###
-### remove_singlechars(s) = filter(x->length(x) > 1, s)
-###
-### split_space_tab(s) = split(s, r"(\s|\t|-)")
-###
-### normalizer(s) = normalize_string(s, decompose=true, compat=true, casefold=true,
-### 				    stripmark=true, stripignore=true)
-###
-### function searchquery_preprocess(s)
-### String.(
-###     remove_singlechars(
-### 	split_space_tab(
-### 		remove_punctuation(
-### 			normalizer(s)
-### 		)
-### 	)
-### ))
+### # Remove parts from document based on flags or regular expressions
+### function prepare!(crps::Corpus, flags::UInt32; skip_patterns = Set{AbstractString}(), skip_words = Set{AbstractString}())
+###     ((flags & strip_sparse_terms) > 0) && union!(skip_words, sparse_terms(crps))
+###     ((flags & strip_frequent_terms) > 0) && union!(skip_words, frequent_terms(crps))
+### 
+###     ((flags & strip_corrupt_utf8) > 0) && remove_corrupt_utf8!(crps)
+###     ((flags & strip_case) > 0) && remove_case!(crps)
+###     ((flags & strip_accents) > 0) && remove_accents!(crps)
+###     ((flags & strip_punctuation) > 0) && remove_punctuation!(d)
+### 
+###     lang = language(crps.documents[1])   # assuming all documents are of the same language - practically true
+###     r = _build_regex(lang, flags, skip_patterns, skip_words)
+###     !isempty(r.pattern) && remove_patterns!(crps, r)
+### 
+###     ((flags & stem_words) > 0) && stem!(crps)
+###     nothing
 ### end
+
+function prepare!(entity, flags::UInt32; skip_patterns = Set{AbstractString}(), skip_words = Set{AbstractString}())
+    ((flags & strip_sparse_terms) > 0) && union!(skip_words, sparse_terms(entity))
+    ((flags & strip_frequent_terms) > 0) && union!(skip_words, frequent_terms(entity))
+
+    ((flags & strip_corrupt_utf8) > 0) && remove_corrupt_utf8!(entity)
+    ((flags & strip_case) > 0) && remove_case!(entity)
+    ((flags & strip_accents) > 0) && remove_accents!(entity)
+    ((flags & strip_punctuation) > 0) && remove_punctuation!(entity)
+    ###r = _build_regex(language(d), flags, skip_patterns, skip_words)
+    ###!isempty(r.pattern) && remove_patterns!(d, r)
+    ((flags & stem_words) > 0) && stem!(d)
+    nothing
+end
+
+function prepare(s::AbstractString,
+                 flags::UInt32;
+                 lang::Language = DEFAULT_LANGUAGE,
+                 skip_patterns = Set{Regex}(),
+                 skip_words = Set{AbstractString}())
+    os = s  # Initialize output string
+    # function-based stripping
+    ((flags & strip_corrupt_utf8) > 0) && (os = remove_corrupt_utf8(os))
+    ((flags & strip_case) > 0)         && (os = remove_case(os))
+    ((flags & strip_accents) > 0)      && (os = remove_accents(os))
+    ((flags & strip_punctuation) > 0)  && (os = remove_punctuation(os))
+    # regex-based stripping
+    rpatterns = Set{Regex}()  # patterns to remove
+    ((flags & strip_whitespace) > 0) && push!(rpatterns, REGEX_CACHE[strip_whitespace])
+    if (flags & strip_non_ascii) > 0
+        push!(rpatterms, REGEX_CACHE[strip_non_ascii])
+    else
+        ((flags & strip_numbers) > 0) && push!(rpatterns, REGEX_CACHE[strip_numbers])
+        ((flags & strip_single_chars) > 0) && push!(rpatterns, REGEX_CACHE[strip_single_chars])
+    end
+    # known word-based stripping
+    if (flags & strip_articles) > 0
+        union!(skip_words, articles(lang))
+    else
+        ((flags & strip_indefinite_articles) > 0) && union!(skip_words, indefinite_articles(lang))
+        ((flags & strip_definite_articles) > 0) && union!(skip_words, definite_articles(lang))
+    end
+    ((flags & strip_prepositions) > 0) && union!(skip_words, prepositions(lang))
+    ((flags & strip_pronouns) > 0) && union!(skip_words, pronouns(lang))
+    ((flags & strip_stopwords) > 0) && union!(skip_words, stopwords(lang))
+    if !isempty(skip_words)
+        push!(rpatterns, _build_words_pattern(skip_words))
+    end
+    # custom regex-ping
+    if !isempty(skip_patterns)
+        push!(rpatterns, _build_regex_pattern(skip_patterns))
+    end
+    # Do filterning
+    r = _build_regex_pattern(rpatterns)
+    os = remove_patterns(os, r)
+    # Stemming
+    ((flags & stem_words) > 0) && (os = stem(os))
+    return os
+end
