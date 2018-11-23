@@ -54,10 +54,10 @@ tokenize_fast(doc::StringDocument; splitter::Regex=DEFAULT_TOKENIZATION_REGEX) =
 Tokenizes based on either the `tokenize_slow` or `tokenize_fast`
 functions.
 """
-function tokenize(doc; method::String="slow")
-    if method == "fast"
-        return tokenize_fast(doc)
-    else
+function tokenize(doc; method::Symbol=:slow)
+    if method == :slow
         return tokenize_slow(doc)
+    else
+        return tokenize_fast(doc)
     end
 end

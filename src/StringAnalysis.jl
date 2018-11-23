@@ -19,7 +19,7 @@ module StringAnalysis
     export lexicon, update_lexicon!, lexical_frequency, lexicon_size
     export inverse_index, update_inverse_index!, index_size
     export stemmer_types, Stemmer, stem!, stem
-    export tokenize, tokenize_fast, sentence_tokenize
+    export tokenize, tokenize_fast, tokenize_slow, sentence_tokenize
     export TextHashFunction, index_hash, cardinality,
            hash_function, hash_function!
     export hash_dtv, each_hash_dtv, hash_dtm, hash_tdm

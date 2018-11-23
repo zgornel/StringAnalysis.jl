@@ -78,7 +78,7 @@ mutable struct TokenDocument{T<:AbstractString} <: AbstractDocument
     metadata::DocumentMetadata
 end
 function TokenDocument(txt::AbstractString, dm::DocumentMetadata)
-    TokenDocument(tokenize(dm.language, String(txt)), dm)
+    TokenDocument(tokenize(String(txt)), dm)
 end
 function TokenDocument(tkns::Vector{T}) where T <: AbstractString
     TokenDocument(tkns, DocumentMetadata())
@@ -97,7 +97,7 @@ mutable struct NGramDocument{T<:AbstractString} <: AbstractDocument
     metadata::DocumentMetadata
 end
 function NGramDocument(txt::AbstractString, dm::DocumentMetadata, n::Integer=1)
-    NGramDocument(ngramize(dm.language, tokenize(dm.language, String(txt)), n),
+    NGramDocument(ngramize(dm.language, tokenize(String(txt)), n),
         n, dm)
 end
 function NGramDocument(txt::AbstractString, n::Integer=1)
@@ -138,7 +138,7 @@ end
 #
 ##############################################################################
 
-tokens(d::(Union{FileDocument, StringDocument})) = tokenize(language(d), text(d))
+tokens(d::(Union{FileDocument, StringDocument})) = tokenize(text(d))
 tokens(d::TokenDocument) = d.tokens
 function tokens(d::NGramDocument)
     error("The tokens of an NGramDocument cannot be reconstructed")
