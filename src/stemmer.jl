@@ -101,14 +101,15 @@ end
 
 # Stemming methods with implicit stemmer generated from language
 function stem(sentence::AbstractString;
-              language::Language=Languages.English())
+              language::Language=DEFAULT_LANGUAGE)
     stemmer = Stemmer(lowercase(name(language)))
     ret = stem_all(stemmer, language, sentence)
     release(stemmer)
     return ret
 end
 
-function stem!(words::Vector{S}; language::Language=Languages.English()
+function stem!(words::Vector{S};
+               language::Language=DEFAULT_LANGUAGE
               ) where S<:AbstractString
     stemmer = Stemmer(lowercase(name(language)))
     l::Int = length(words)
@@ -119,7 +120,8 @@ function stem!(words::Vector{S}; language::Language=Languages.English()
     return nothing
 end
 
-function stem(words::Vector{S}; language::Language=Languages.English()
+function stem(words::Vector{S};
+              language::Language=DEFAULT_LANGUAGE
               ) where S<:AbstractString
     l::Int = length(words)
     ret = [words[i] for i in 1:l]

@@ -8,3 +8,4 @@
 # Regular expression on which to split text into tokens;
 # It used by the tokenize_fast function
 const DEFAULT_TOKENIZATION_REGEX = r"(,|\n|\r|\:|\\|\/|;|\.|\[|\]|\{|\}|\'|\`|\"|\"|\?|\!|\=|\~|\&|\s+)"
+const DEFAULT_LANGUAGE = Languages.English()
