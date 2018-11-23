@@ -29,8 +29,9 @@ const REGEX_CACHE = Dict{UInt32,Regex}(
     strip_whitespace => r"\s+",
     strip_numbers => r"\d+",
     strip_non_ascii => r"[^a-zA-Z\s]",
-    strip_single_chars => r"[\s]+[A-Za-z]{1}[\s]+",
-    strip_html_tags => r"(<script\b[^>]*>([\s\S]*?)</script>|<[^>]*>)"
+    strip_single_chars => r"\b\w{1}\b",
+    strip_html_tags => r"(<script\b[^>]*>([\s\S]*?)</script>|<[^>]*>)",
+    strip_punctuation =>r"[,;:.!?()-\\\{\}\[\]#`\'\"\n]+"
 )
 
 
@@ -47,19 +48,11 @@ remove_case(s::T) where T<:AbstractString = lowercase(s)
 remove_accents(s::T) where T<:AbstractString =
     Unicode.normalize(s, stripmark=true)
 
-# Remove punctuation
-remove_punctuation(s::T) where T<:AbstractString =
-    filter(x->!ispunct(x), s)
-
 # Generate automatically functions for various Document types and Corpus
 # Note: One has to add a simple method for `AbstractString` and the name
 #       of the function in the `for` container to generate all needed
 #       methods
-# Note2: There is no distinction made for TokenDocument, NGramDocument
-#        in the case of `remove_punctuation` because, depending on the
-#        tokenization function, punctuation may creep up into the document
-#        i.e. ngrams/tokens containing tags, punctuation.
-for fname in [:remove_corrupt_utf8, :remove_case, :remove_accents, :remove_punctuation]
+for fname in [:remove_corrupt_utf8, :remove_case, :remove_accents]
     # File document
     # TODO(Corneliu): Make these work on file documents
     #                 i.e. load file, process, re-write
@@ -155,7 +148,7 @@ const alpha_sparse = 0.05
 const alpha_frequent = 0.95
 # TODO(Corneliu) get sparse terms for Document types, AbstractString
 
-# Drop terms based on frequency
+# Returns a vector with rare terms among all documents
 function sparse_terms(crps::Corpus, alpha = alpha_sparse)
     res = Vector{String}(undef, 0)
     ndocs = length(crps.documents)
@@ -168,6 +161,7 @@ function sparse_terms(crps::Corpus, alpha = alpha_sparse)
     return res
 end
 
+# Returns a vector with frequent terms among all documents
 function frequent_terms(crps::Corpus, alpha = alpha_frequent)
     res = Vector{String}(undef, 0)
     ndocs = length(crps.documents)
@@ -180,9 +174,11 @@ function frequent_terms(crps::Corpus, alpha = alpha_frequent)
     return res
 end
 
+# Function that builds a regex out of a set of strings
 _build_words_pattern(words::Set{T}) where T<:AbstractString =
     Regex(ifelse(isempty(words), "", "\\b("* join(words,"|","|") *")\\b"))
 
+# Function that builds a big regex out of a set of regexes
 _build_regex_pattern(regexes::Set{T}) where T<:Regex = begin
     l = length(regexes)
     if l == 0
@@ -199,61 +195,30 @@ _build_regex_pattern(regexes::Set{T}) where T<:Regex = begin
     end
 end
 
+# Get the language
+_language(doc::AbstractDocument) = doc.metadata.language
+_language(crps::Corpus) = begin
+    length(crps) < 1 && return DEFAULT_LANGUAGE
+    return _language(crps[1])
+end
 
-
-### # Remove parts from document based on flags or regular expressions
-### function prepare!(crps::Corpus, flags::UInt32; skip_patterns = Set{AbstractString}(), skip_words = Set{AbstractString}())
-###     ((flags & strip_sparse_terms) > 0) && union!(skip_words, sparse_terms(crps))
-###     ((flags & strip_frequent_terms) > 0) && union!(skip_words, frequent_terms(crps))
-### 
-###     ((flags & strip_corrupt_utf8) > 0) && remove_corrupt_utf8!(crps)
-###     ((flags & strip_case) > 0) && remove_case!(crps)
-###     ((flags & strip_accents) > 0) && remove_accents!(crps)
-###     ((flags & strip_punctuation) > 0) && remove_punctuation!(d)
-### 
-###     lang = language(crps.documents[1])   # assuming all documents are of the same language - practically true
-###     r = _build_regex(lang, flags, skip_patterns, skip_words)
-###     !isempty(r.pattern) && remove_patterns!(crps, r)
-### 
-###     ((flags & stem_words) > 0) && stem!(crps)
-###     nothing
-### end
-
-function prepare!(entity, flags::UInt32; skip_patterns = Set{AbstractString}(), skip_words = Set{AbstractString}())
-    ((flags & strip_sparse_terms) > 0) && union!(skip_words, sparse_terms(entity))
-    ((flags & strip_frequent_terms) > 0) && union!(skip_words, frequent_terms(entity))
-
+function prepare!(entity, flags::UInt32; skip_patterns = Set{Regex}(), skip_words = Set{AbstractString}())
+    # Do function-based stripping
     ((flags & strip_corrupt_utf8) > 0) && remove_corrupt_utf8!(entity)
     ((flags & strip_case) > 0) && remove_case!(entity)
     ((flags & strip_accents) > 0) && remove_accents!(entity)
-    ((flags & strip_punctuation) > 0) && remove_punctuation!(entity)
-    ###r = _build_regex(language(d), flags, skip_patterns, skip_words)
-    ###!isempty(r.pattern) && remove_patterns!(d, r)
-    ((flags & stem_words) > 0) && stem!(d)
-    nothing
-end
-
-function prepare(s::AbstractString,
-                 flags::UInt32;
-                 lang::Language = DEFAULT_LANGUAGE,
-                 skip_patterns = Set{Regex}(),
-                 skip_words = Set{AbstractString}())
-    os = s  # Initialize output string
-    # function-based stripping
-    ((flags & strip_corrupt_utf8) > 0) && (os = remove_corrupt_utf8(os))
-    ((flags & strip_case) > 0)         && (os = remove_case(os))
-    ((flags & strip_accents) > 0)      && (os = remove_accents(os))
-    ((flags & strip_punctuation) > 0)  && (os = remove_punctuation(os))
-    # regex-based stripping
+    # regex
     rpatterns = Set{Regex}()  # patterns to remove
     ((flags & strip_whitespace) > 0) && push!(rpatterns, REGEX_CACHE[strip_whitespace])
     if (flags & strip_non_ascii) > 0
         push!(rpatterms, REGEX_CACHE[strip_non_ascii])
     else
         ((flags & strip_numbers) > 0) && push!(rpatterns, REGEX_CACHE[strip_numbers])
+        ((flags & strip_punctuation) > 0) && push!(rpatterns, REGEX_CACHE[strip_punctuation])
         ((flags & strip_single_chars) > 0) && push!(rpatterns, REGEX_CACHE[strip_single_chars])
     end
-    # known word-based stripping
+    # known words
+    lang = _language(entity)
     if (flags & strip_articles) > 0
         union!(skip_words, articles(lang))
     else
@@ -266,11 +231,62 @@ function prepare(s::AbstractString,
     if !isempty(skip_words)
         push!(rpatterns, _build_words_pattern(skip_words))
     end
-    # custom regex-ping
+    # sparse, frequent terms
+    ((flags & strip_sparse_terms) > 0) && union!(skip_words, sparse_terms(entity))
+    ((flags & strip_frequent_terms) > 0) && union!(skip_words, frequent_terms(entity))
+    # custom regex
     if !isempty(skip_patterns)
         push!(rpatterns, _build_regex_pattern(skip_patterns))
     end
-    # Do filterning
+    # Do regex-based stripping
+    r = _build_regex_pattern(rpatterns)
+    remove_patterns!(entity, r)
+    # Stemming
+    ((flags & stem_words) > 0) && stem!(entity)
+    nothing
+end
+
+function prepare(s::AbstractString,
+                 flags::UInt32;
+                 lang::Language = DEFAULT_LANGUAGE,
+                 skip_patterns = Set{Regex}(),
+                 skip_words = Set{AbstractString}())
+    os = s  # Initialize output string
+    # Do function-based stripping
+    ((flags & strip_corrupt_utf8) > 0) && (os = remove_corrupt_utf8(os))
+    ((flags & strip_case) > 0)         && (os = remove_case(os))
+    ((flags & strip_accents) > 0)      && (os = remove_accents(os))
+    # regex
+    rpatterns = Set{Regex}()  # patterns to remove
+    ((flags & strip_whitespace) > 0) && push!(rpatterns, REGEX_CACHE[strip_whitespace])
+    if (flags & strip_non_ascii) > 0
+        push!(rpatterms, REGEX_CACHE[strip_non_ascii])
+    else
+        ((flags & strip_numbers) > 0) && push!(rpatterns, REGEX_CACHE[strip_numbers])
+        ((flags & strip_punctuation) > 0) && push!(rpatterns, REGEX_CACHE[strip_punctuation])
+        ((flags & strip_single_chars) > 0) && push!(rpatterns, REGEX_CACHE[strip_single_chars])
+    end
+    # known words
+    if (flags & strip_articles) > 0
+        union!(skip_words, articles(lang))
+    else
+        ((flags & strip_indefinite_articles) > 0) && union!(skip_words, indefinite_articles(lang))
+        ((flags & strip_definite_articles) > 0) && union!(skip_words, definite_articles(lang))
+    end
+    ((flags & strip_prepositions) > 0) && union!(skip_words, prepositions(lang))
+    ((flags & strip_pronouns) > 0) && union!(skip_words, pronouns(lang))
+    ((flags & strip_stopwords) > 0) && union!(skip_words, stopwords(lang))
+    if !isempty(skip_words)
+        push!(rpatterns, _build_words_pattern(skip_words))
+    end
+    # sparse, frequent terms
+    #((flags & strip_sparse_terms) > 0) && union!(skip_words, sparse_terms(os))
+    #((flags & strip_frequent_terms) > 0) && union!(skip_words, frequent_terms(os))
+    # custom regex
+    if !isempty(skip_patterns)
+        push!(rpatterns, _build_regex_pattern(skip_patterns))
+    end
+    # Do regex-based stripping
     r = _build_regex_pattern(rpatterns)
     os = remove_patterns(os, r)
     # Stemming

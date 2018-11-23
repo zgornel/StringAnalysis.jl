@@ -29,8 +29,8 @@ module StringAnalysis
     export tf_idf!, tf_idf
     export lsa!, lsa
     export lda!, lda
-    export frequent_terms, sparse_terms,
-    export prepare!, prepare
+    export frequent_terms, sparse_terms
+    export prepare!, prepare,
            strip_patterns, strip_corrupt_utf8, strip_case,
            strip_accents, strip_punctuation, stem_words,
            strip_whitespace, strip_numbers, strip_non_ascii,

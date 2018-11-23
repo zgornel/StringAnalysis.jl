@@ -17,7 +17,7 @@ mutable struct DocumentMetadata
     note::String
 end
 DocumentMetadata() = DocumentMetadata(
-    Languages.English(),
+    DEFAULT_LANGUAGE,
     "Unnamed Document",
     "Unknown Author",
     "Unknown Time",
