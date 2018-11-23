@@ -26,12 +26,12 @@ const strip_frequent_terms      = UInt32(0x1) << 26
 # RegEx Expressions for various stripping flags
 # Format: flag => (match=>replacement)
 const REGEX_CACHE = Dict{UInt32,Regex}(
-    strip_whitespace => r"\s+",
+    strip_whitespace => r"[\s]+",
     strip_numbers => r"\d+",
     strip_non_ascii => r"[^a-zA-Z\s]",
     strip_single_chars => r"\b\w{1}\b",
     strip_html_tags => r"(<script\b[^>]*>([\s\S]*?)</script>|<[^>]*>)",
-    strip_punctuation =>r"[,;:.!?()-\\\{\}\[\]#`\'\"\n]+"
+    strip_punctuation =>r"[^\d\w\s\b]+"
 )
 
 
@@ -101,43 +101,88 @@ for fname in [:remove_corrupt_utf8, :remove_case, :remove_accents]
     eval(Meta.parse(definition))
 end
 
-# The `remove_patterns` methods cannot be generated in the loop, different signature
-remove_patterns(s::AbstractString, rex::Regex, rep="") =
-    replace(s, rex => rep)
 
-remove_patterns!(d::FileDocument, rex::Regex, rep="") = error("FileDocument cannot be modified.")
 
-remove_patterns!(d::StringDocument, rex::Regex, rep="") = begin
-    d.text = remove_patterns(d.text, rex, rep)
+"""
+    remove_patterns(s, rex)
+
+Removes from the string `s` the text matching the pattern described
+by the regular expression `rex`.
+"""
+function remove_patterns(s::AbstractString, rex::Regex)
+    iob = IOBuffer()
+    ibegin = 1
+    v=codeunits(s)
+    for m in eachmatch(rex, s)
+        len = m.match.offset-ibegin+1
+        if len > 0
+            Base.write_sub(iob, v, ibegin, len)
+            write(iob, ' ')
+        end
+        ibegin = nextind(s, lastindex(m.match)+m.match.offset)
+    end
+    len = length(v) - ibegin + 1
+    (len > 0) && Base.write_sub(iob, v, ibegin, len)
+    String(take!(iob))
+end
+
+function remove_patterns(s::SubString{T}, rex::Regex) where T <: String
+    iob = IOBuffer()
+    ioffset = s.offset
+    data = codeunits(s.string)
+    ibegin = 1
+    for m in eachmatch(rex, s)
+        len = m.match.offset-ibegin+1
+        if len > 0
+            Base.write_sub(iob, data, ibegin+ioffset, len)
+            write(iob, ' ')
+        end
+        ibegin = nextind(s, lastindex(m.match)+m.match.offset)
+    end
+    len = lastindex(s) - ibegin + 1
+    (len > 0) && Base.write_sub(iob, data, ibegin+ioffset, len)
+    String(take!(iob))
+end
+
+"""
+    remove_patterns!(d, rex)
+
+Removes from the document or corpus `d` the text matching the pattern described
+by the regular expression `rex`.
+"""
+remove_patterns!(d::FileDocument, rex::Regex) = error("FileDocument cannot be modified.")
+
+remove_patterns!(d::StringDocument, rex::Regex) = begin
+    d.text = remove_patterns(d.text, rex)
     nothing
 end
 
-remove_patterns!(d::TokenDocument, rex::Regex, rep="") = begin
+remove_patterns!(d::TokenDocument, rex::Regex) = begin
     for i in 1:length(d.tokens)
-        d.tokens[i] = remove_patterns(d.tokens[i], rex, rep)
+        d.tokens[i] = remove_patterns(d.tokens[i], rex)
     end
 end
 
-remove_patterns!(d::NGramDocument{S}, rex::Regex, rep="") where S = begin
+remove_patterns!(d::NGramDocument{S}, rex::Regex) where S = begin
     _ngrams = Dict{S, Int}()
     for token in keys(d.ngrams)
-        _token = remove_patterns(token, rex, rep)
+        _token = remove_patterns(token, rex)
         _ngrams[_token] = get(_ngrams, _token, 0) + 1
     end
     d.ngrams = _ngrams
     return nothing
 end
 
-function remove_patterns!(crps::Corpus, rex::Regex, rep="")
+function remove_patterns!(crps::Corpus, rex::Regex)
     for doc in crps
-        remove_patterns!(doc, rex, rep)
+        remove_patterns!(doc, rex)
     end
 end
 
 
 # Remove specified words
 function remove_words!(entity, words::Vector{T}) where T<: AbstractString
-    skipwords = Set{T}()
+    skipwords = Vector{T}()
     union!(skipwords, words)
     prepare!(entity, strip_patterns, skip_words = skipwords)
 end
@@ -146,7 +191,6 @@ end
 
 const alpha_sparse = 0.05
 const alpha_frequent = 0.95
-# TODO(Corneliu) get sparse terms for Document types, AbstractString
 
 # Returns a vector with rare terms among all documents
 function sparse_terms(crps::Corpus, alpha = alpha_sparse)
@@ -175,11 +219,11 @@ function frequent_terms(crps::Corpus, alpha = alpha_frequent)
 end
 
 # Function that builds a regex out of a set of strings
-_build_words_pattern(words::Set{T}) where T<:AbstractString =
+_build_words_pattern(words::Vector{T}) where T<:AbstractString =
     Regex(ifelse(isempty(words), "", "\\b("* join(words,"|","|") *")\\b"))
 
 # Function that builds a big regex out of a set of regexes
-_build_regex_pattern(regexes::Set{T}) where T<:Regex = begin
+_build_regex_pattern(regexes::Vector{T}) where T<:Regex = begin
     l = length(regexes)
     if l == 0
         return r""
@@ -202,21 +246,25 @@ _language(crps::Corpus) = begin
     return _language(crps[1])
 end
 
-function prepare!(entity, flags::UInt32; skip_patterns = Set{Regex}(), skip_words = Set{AbstractString}())
+function prepare!(entity,  # can be an AbstractDocument or Corpus
+                  flags::UInt32;
+                  skip_patterns = Vector{Regex}(),
+                  skip_words = Vector{AbstractString}())
     # Do function-based stripping
     ((flags & strip_corrupt_utf8) > 0) && remove_corrupt_utf8!(entity)
     ((flags & strip_case) > 0) && remove_case!(entity)
     ((flags & strip_accents) > 0) && remove_accents!(entity)
     # regex
-    rpatterns = Set{Regex}()  # patterns to remove
+    rpatterns = Vector{Regex}(undef, 0)  # patterns to remove
     ((flags & strip_whitespace) > 0) && push!(rpatterns, REGEX_CACHE[strip_whitespace])
     if (flags & strip_non_ascii) > 0
-        push!(rpatterms, REGEX_CACHE[strip_non_ascii])
+        push!(rpatterns, REGEX_CACHE[strip_non_ascii])
     else
         ((flags & strip_numbers) > 0) && push!(rpatterns, REGEX_CACHE[strip_numbers])
         ((flags & strip_punctuation) > 0) && push!(rpatterns, REGEX_CACHE[strip_punctuation])
         ((flags & strip_single_chars) > 0) && push!(rpatterns, REGEX_CACHE[strip_single_chars])
     end
+    ((flags & strip_html_tags) > 0) && push!(rpatterns, REGEX_CACHE[strip_html_tags])
     # known words
     lang = _language(entity)
     if (flags & strip_articles) > 0
@@ -249,23 +297,24 @@ end
 function prepare(s::AbstractString,
                  flags::UInt32;
                  lang::Language = DEFAULT_LANGUAGE,
-                 skip_patterns = Set{Regex}(),
-                 skip_words = Set{AbstractString}())
+                 skip_patterns = Vector{Regex}(),
+                 skip_words = Vector{AbstractString}())
     os = s  # Initialize output string
     # Do function-based stripping
     ((flags & strip_corrupt_utf8) > 0) && (os = remove_corrupt_utf8(os))
     ((flags & strip_case) > 0)         && (os = remove_case(os))
     ((flags & strip_accents) > 0)      && (os = remove_accents(os))
     # regex
-    rpatterns = Set{Regex}()  # patterns to remove
+    rpatterns = Vector{Regex}(undef, 0)  # patterns to remove
     ((flags & strip_whitespace) > 0) && push!(rpatterns, REGEX_CACHE[strip_whitespace])
     if (flags & strip_non_ascii) > 0
-        push!(rpatterms, REGEX_CACHE[strip_non_ascii])
+        push!(rpatterns, REGEX_CACHE[strip_non_ascii])
     else
         ((flags & strip_numbers) > 0) && push!(rpatterns, REGEX_CACHE[strip_numbers])
         ((flags & strip_punctuation) > 0) && push!(rpatterns, REGEX_CACHE[strip_punctuation])
         ((flags & strip_single_chars) > 0) && push!(rpatterns, REGEX_CACHE[strip_single_chars])
     end
+    ((flags & strip_html_tags) > 0) && push!(rpatterns, REGEX_CACHE[strip_html_tags])
     # known words
     if (flags & strip_articles) > 0
         union!(skip_words, articles(lang))

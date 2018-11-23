@@ -2,6 +2,7 @@
 @testset "Preprocessing" begin
 
     sample_text1 = "This is, 1 MESSED υπ string!..."
+    sample_text1_accents = "Thîs îs meşsed string"
     sample_text1_wo_punctuation = "This is 1 MESSED υπ string"
     sample_text1_wo_punctuation_numbers = "This is  MESSED υπ string"
     sample_text1_wo_punctuation_numbers_case = "this is  messed υπ string"
@@ -20,7 +21,9 @@
         sd = StringDocument(str)
         prepare!(
             sd,
-            strip_punctuation | strip_numbers | strip_case | strip_whitespace | strip_non_ascii
+            strip_punctuation | strip_numbers |
+            strip_case | strip_whitespace | strip_non_ascii |
+            strip_accents
         )
         @test isequal(strip(sd.text), "this is messed string")
     end
@@ -83,7 +86,7 @@
         </html>
         """
     )
-    StringAnalysis.remove_html_tags!(d)
+    StringAnalysis.prepare!(d, strip_html_tags)
     @test "Hello world" == strip(d.text)
 
     #Test #62
