@@ -31,7 +31,8 @@ const REGEX_CACHE = Dict{UInt32,Regex}(
     strip_non_ascii => r"[^a-zA-Z\s]",
     strip_single_chars => r"\b\w{1}\b",
     strip_html_tags => r"(<script\b[^>]*>([\s\S]*?)</script>|<[^>]*>)",
-    strip_punctuation =>r"[^\d\w\s\b]+"
+    #strip_punctuation =>r"[^\d\w\s\b]+"
+    strip_punctuation => r"[!\"#$%&\'()*+,-./:;<=>?@\[\\\]^_`\{\|\}~]+"
 )
 
 
@@ -71,16 +72,10 @@ for fname in [:remove_corrupt_utf8, :remove_case, :remove_accents]
     # Token Document
     definition = """
         function $(fname)!(d::TokenDocument)
-            to_delete = Int[]
             @inbounds for i in 1:length(d.tokens)
-                _token = $(fname)(d.tokens[i])
-                if !isempty(_token)
-                    d.tokens[i] = _token
-                else
-                    push!(to_delete, i)
-                end
+                d.tokens[i] = $(fname)(d.tokens[i])
             end
-            deleteat!(d.tokens, to_delete)
+            filter!(t->(!isempty(t) && isvalid(t[1])), d.tokens)
         end
         """
     eval(Meta.parse(definition))
@@ -94,6 +89,7 @@ for fname in [:remove_corrupt_utf8, :remove_case, :remove_accents]
                     _ngrams[_token] = get(_ngrams, _token, 0) + 1
                 end
             end
+            filter!(p->isvalid(p.first[1]), _ngrams)
             d.ngrams = _ngrams
             return nothing
         end
@@ -167,16 +163,10 @@ remove_patterns!(d::StringDocument, rex::Regex) = begin
 end
 
 remove_patterns!(d::TokenDocument, rex::Regex) = begin
-    to_delete = Int[]
     @inbounds for i in 1:length(d.tokens)
-        _token = remove_patterns(d.tokens[i], rex)
-        if !isempty(_token)
-            d.tokens[i] = _token
-        else
-            push!(to_delete, i)
-        end
+        d.tokens[i] = remove_patterns(d.tokens[i], rex)
     end
-    deleteat!(d.tokens, to_delete)
+    filter!(t->(!isempty(t) && isvalid(t[1])), d.tokens)
 end
 
 remove_patterns!(d::NGramDocument{S}, rex::Regex) where S = begin
@@ -187,6 +177,7 @@ remove_patterns!(d::NGramDocument{S}, rex::Regex) where S = begin
             _ngrams[_token] = get(_ngrams, _token, 0) + 1
         end
     end
+    filter!(p->isvalid(p.first[1]), _ngrams)
     d.ngrams = _ngrams
     return nothing
 end
@@ -305,8 +296,10 @@ function prepare!(entity,  # can be an AbstractDocument or Corpus
         push!(rpatterns, _build_regex_pattern(skip_patterns))
     end
     # Do regex-based stripping
-    r = _build_regex_pattern(rpatterns)
-    remove_patterns!(entity, r)
+    if !isempty(rpatterns)
+        r = _build_regex_pattern(rpatterns)
+        remove_patterns!(entity, r)
+    end
     # Stemming
     ((flags & stem_words) > 0) && stem!(entity)
     nothing
@@ -354,8 +347,10 @@ function prepare(s::AbstractString,
         push!(rpatterns, _build_regex_pattern(skip_patterns))
     end
     # Do regex-based stripping
-    r = _build_regex_pattern(rpatterns)
-    os = remove_patterns(os, r)
+    if !isempty(rpatterns)
+        r = _build_regex_pattern(rpatterns)
+        os = remove_patterns(os, r)
+    end
     # Stemming
     ((flags & stem_words) > 0) && (os = stem(os))
     return os
