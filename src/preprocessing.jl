@@ -3,10 +3,10 @@ const strip_patterns            = UInt32(0)
 const strip_corrupt_utf8        = UInt32(0x1) << 0
 const strip_case                = UInt32(0x1) << 1
 const strip_accents             = UInt32(0x1) << 2
-const strip_punctuation         = UInt32(0x1) << 3
 # Flags that activate function-based processors (external to this file)
 const stem_words                = UInt32(0x1) << 7
 # Flags that activate Regex based processors
+const strip_punctuation         = UInt32(0x1) << 9
 const strip_whitespace          = UInt32(0x1) << 10
 const strip_numbers             = UInt32(0x1) << 11
 const strip_non_ascii           = UInt32(0x1) << 12
