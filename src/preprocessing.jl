@@ -71,9 +71,16 @@ for fname in [:remove_corrupt_utf8, :remove_case, :remove_accents]
     # Token Document
     definition = """
         function $(fname)!(d::TokenDocument)
+            to_delete = Int[]
             @inbounds for i in 1:length(d.tokens)
-                d.tokens[i] = $(fname)(d.tokens[i])
+                _token = $(fname)(d.tokens[i])
+                if !isempty(_token)
+                    d.tokens[i] = _token
+                else
+                    push!(to_delete, i)
+                end
             end
+            deleteat!(d.tokens, to_delete)
         end
         """
     eval(Meta.parse(definition))
@@ -83,7 +90,9 @@ for fname in [:remove_corrupt_utf8, :remove_case, :remove_accents]
             _ngrams = Dict{S, Int}()
             for token in keys(d.ngrams)
                 _token = $(fname)(token)
-                _ngrams[_token] = get(_ngrams, _token, 0) + 1
+                if !isempty(_token)
+                    _ngrams[_token] = get(_ngrams, _token, 0) + 1
+                end
             end
             d.ngrams = _ngrams
             return nothing
@@ -158,16 +167,25 @@ remove_patterns!(d::StringDocument, rex::Regex) = begin
 end
 
 remove_patterns!(d::TokenDocument, rex::Regex) = begin
-    for i in 1:length(d.tokens)
-        d.tokens[i] = remove_patterns(d.tokens[i], rex)
+    to_delete = Int[]
+    @inbounds for i in 1:length(d.tokens)
+        _token = remove_patterns(d.tokens[i], rex)
+        if !isempty(_token)
+            d.tokens[i] = _token
+        else
+            push!(to_delete, i)
+        end
     end
+    deleteat!(d.tokens, to_delete)
 end
 
 remove_patterns!(d::NGramDocument{S}, rex::Regex) where S = begin
     _ngrams = Dict{S, Int}()
     for token in keys(d.ngrams)
         _token = remove_patterns(token, rex)
-        _ngrams[_token] = get(_ngrams, _token, 0) + 1
+        if !isempty(_token)
+            _ngrams[_token] = get(_ngrams, _token, 0) + 1
+        end
     end
     d.ngrams = _ngrams
     return nothing
