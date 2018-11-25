@@ -35,12 +35,8 @@ tokenize_fast(doc::Vector{S}; splitter::Regex=DEFAULT_TOKENIZATION_REGEX
     return vcat((tokenize_fast(words) for words in doc)...)
 
 tokenize_fast(doc::S; splitter::Regex=DEFAULT_TOKENIZATION_REGEX
-             ) where S<:AbstractString = begin
-    # First, split
-    tokens = strip.(split(doc, splitter))
-    # Filter out empty strings
-    return filter!(!isempty, tokens)
-end
+             ) where S<:AbstractString =
+    strip.(split(doc, splitter, keepempty=false))
 
 tokenize_fast(doc::NGramDocument; splitter::Regex=DEFAULT_TOKENIZATION_REGEX) =
     tokenize_fast(collect(keys(doc.ngrams)))
