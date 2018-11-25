@@ -7,6 +7,7 @@ mutable struct Corpus{T<:AbstractDocument}
     h::TextHashFunction
 end
 
+#TODO(corneliu): Make cardinality configurable
 Corpus(docs::Vector{T}) where T<:AbstractDocument =
     Corpus(
         docs,

@@ -6,7 +6,7 @@ module StringAnalysis
     using Languages
     using WordTokenizers
 
-    import Base: depwarn, show, summary, names
+    import Base: show, summary, names
     import Languages: name
 
     export AbstractDocument,
@@ -23,8 +23,7 @@ module StringAnalysis
     export TextHashFunction, index_hash, cardinality,
            hash_function, hash_function!
     export hash_dtv, each_hash_dtv, hash_dtm, hash_tdm
-    export DocumentTermMatrix
-    export dtv, each_dtv, dtm, tdm
+    export DocumentTermMatrix, dtv, each_dtv, dtm, tdm
     export tf!, tf
     export tf_idf!, tf_idf
     export lsa!, lsa

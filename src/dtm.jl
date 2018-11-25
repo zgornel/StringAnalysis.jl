@@ -123,6 +123,16 @@ function dtv(d::AbstractDocument, lex::Dict{String, Int})
     return row
 end
 
+function dtv(crps::Corpus, idx::Int)
+    if isempty(crps.lexicon)
+        error("Cannot construct a DTV without a pre-existing lexicon")
+    elseif idx >= length(crps.documents) || idx < 1
+        error("DTV requires the document index in [1,$(length(crps.documents))]")
+    else
+        return dtv(crps.documents[idx], crps.lexicon)
+    end
+end
+
 function dtv(d::AbstractDocument)
     error("Cannot construct a DTV without a pre-existing lexicon")
 end
@@ -160,44 +170,57 @@ hash_dtm(crps::Corpus) = hash_dtm(crps, hash_function(crps))
 
 hash_tdm(crps::Corpus) = hash_dtm(crps)' #'
 
-##############################################################################
-#
+
+
 # Produce entries for on-line analysis when DTM would not fit in memory
-#
-##############################################################################
-
-mutable struct EachDTV
-    crps::Corpus
+mutable struct EachDTV{T<:AbstractDocument}
+    corpus::Corpus{T}
 end
-
-start(edt::EachDTV) = 1
 
 function next(edt::EachDTV, state::Int)
-    return (dtv(edt.crps.documents[state], lexicon(edt.crps)), state + 1)
+    return (dtv(edt.corpus.documents[state], lexicon(edt.corpus)), state + 1)
 end
 
-done(edt::EachDTV, state::Int) = state > length(edt.crps.documents)
-
-mutable struct EachHashDTV
-    crps::Corpus
+Base.iterate(edt::EachDTV, state=1) = begin
+    if state > length(edt.corpus)
+        return nothing
+    else
+        return next(edt, state)
+    end
 end
-
-start(edt::EachHashDTV) = 1
-
-function next(edt::EachHashDTV, state::Int)
-    (hash_dtv(edt.crps.documents[state]), state + 1)
-end
-
-done(edt::EachHashDTV, state::Int) = state > length(edt.crps.documents)
 
 each_dtv(crps::Corpus) = EachDTV(crps)
 
-each_hash_dtv(crps::Corpus) = EachHashDTV(crps)
+
+
+mutable struct EachHashDTV{T<:AbstractDocument}
+    corpus::Corpus{T}
+end
+
+
+function next(edt::EachHashDTV, state::Int)
+    (hash_dtv(edt.corpus.documents[state]), state + 1)
+end
+
+Base.iterate(edt::EachHashDTV, state=1) = begin
+    if state > length(edt.corpus)
+        return nothing
+    else
+        return next(edt, state)
+    end
+end
+
+each_hash_dtv(crps::Corpus) =
+    EachHashDTV(crps)
+
+
+
+
 
 ##
 ## getindex() methods
 ##
 
 Base.getindex(dtm::DocumentTermMatrix, k::AbstractString) = dtm.dtm[:, dtm.column_indices[k]]
-Base.getindex(dtm::DocumentTermMatrix, i::Any) = dtm.dtm[i]
-Base.getindex(dtm::DocumentTermMatrix, i::Any, j::Any) = dtm.dtm[i, j]
+Base.getindex(dtm::DocumentTermMatrix, i) = dtm.dtm[i]
+Base.getindex(dtm::DocumentTermMatrix, i, j) = dtm.dtm[i, j]

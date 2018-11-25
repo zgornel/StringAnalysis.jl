@@ -25,7 +25,7 @@ end
 
 TextHashFunction(cardinality::Int) = TextHashFunction(hash, cardinality)
 
-TextHashFunction() = TextHashFunction(hash, 100)
+TextHashFunction() = TextHashFunction(hash, DEFAULT_CARDINALITY)
 
 cardinality(h::TextHashFunction) = h.cardinality
 
