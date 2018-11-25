@@ -1,4 +1,3 @@
-
 @testset "LDA" begin
 
     doc1 = "a a a sample text text"

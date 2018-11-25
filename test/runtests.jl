@@ -1,7 +1,8 @@
 module TestStringAnalysis
 
-using SparseArrays
 using Test
+using SparseArrays
+using LinearAlgebra
 using Languages
 using StringAnalysis
 
@@ -16,5 +17,6 @@ include("dtm.jl")
 include("stemmer.jl")
 include("stats.jl")
 include("lda.jl")
+include("lsa.jl")
 
 end
