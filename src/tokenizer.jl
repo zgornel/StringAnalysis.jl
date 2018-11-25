@@ -39,7 +39,7 @@ tokenize_fast(doc::S; splitter::Regex=DEFAULT_TOKENIZATION_REGEX
     strip.(split(doc, splitter, keepempty=false))
 
 tokenize_fast(doc::NGramDocument; splitter::Regex=DEFAULT_TOKENIZATION_REGEX) =
-    tokenize_fast(collect(keys(doc.ngrams)))
+    unique!(tokenize_fast(collect(keys(doc.ngrams))))
 
 tokenize_fast(doc::StringDocument; splitter::Regex=DEFAULT_TOKENIZATION_REGEX) =
     tokenize_fast(doc.text, splitter=splitter)
