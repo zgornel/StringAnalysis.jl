@@ -18,5 +18,6 @@ include("stemmer.jl")
 include("stats.jl")
 include("lda.jl")
 include("lsa.jl")
+include("show.jl")
 
 end
