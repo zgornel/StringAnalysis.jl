@@ -6,6 +6,8 @@
         doc = dt(txt)
         Test.@test try show(buf, doc); true
                    catch; false end
+        Test.@test try print(buf, summary(doc)); true
+                   catch; false end
     end
     # Metadata
     doc = StringDocument(txt)
@@ -14,6 +16,8 @@
     # Corpus
     crps = Corpus([doc])
     Test.@test try show(buf, crps); true
+               catch; false end
+    Test.@test try print(buf, summary(crps)); true
                catch; false end
     #Document Term Matrix
     update_lexicon!(crps)
