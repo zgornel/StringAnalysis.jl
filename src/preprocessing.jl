@@ -216,6 +216,8 @@ const alpha_frequent = 0.95
 
 # Returns a vector with rare terms among all documents
 function sparse_terms(crps::Corpus, alpha = alpha_sparse)
+    isempty(crps.inverse_index) && @warn "Inverse index is empty."
+    isempty(crps.lexicon) && @warn "Lexicon is empty."
     res = Vector{String}(undef, 0)
     ndocs = length(crps.documents)
     for term in keys(crps.lexicon)
@@ -229,6 +231,8 @@ end
 
 # Returns a vector with frequent terms among all documents
 function frequent_terms(crps::Corpus, alpha = alpha_frequent)
+    isempty(crps.inverse_index) && @warn "Inverse index is empty."
+    isempty(crps.lexicon) && @warn "Lexicon is empty."
     res = Vector{String}(undef, 0)
     ndocs = length(crps.documents)
     for term in keys(crps.lexicon)
