@@ -8,18 +8,11 @@ This is a hard fork of the [TextAnalysis](https://github.com/JuliaText/TextAnaly
 
 
 ## Differences with **TextAnalysis**
-The aim is to make the code more [elegant](https://nakamotoinstitute.org/static/docs/taoup.pdf) (i.e. more powerful & simple). The main work focuses on:
-- Cleaner API i.e. remove all `remove_<stuff>!` methods, employ only `prepare` or `prepare!`
-- Remove non-core functionality (sentiment analysis, summarization) and weak dependencies i.e. `Printf.jl`, `DataFrames.jl`, `Flux.jl`, `BSON.jl`, `JSON.jl` etc.
-- Remove compatibility with Julia 0.6 and below
-- Increase test coverage
-- Fix Bugs
-
-This is work in progress and bugs may still be present...¯\\_(ツ)_/¯
+The aim is to make the code more more powerful & simple. To keep track with the latest features or changes, please consult [NEWS.md](https://github.com/zgornel/StringAnalysis.jl/blob/master/NEWS.md). This is work in progress and bugs may still be present...¯\\_(ツ)_/¯
 
 
 ## Introduction
-At this point in development, [1] should provide a rough guide on the library's capabilities. While not a design aim in itself, the package tries to keep a similar API to **TextAnalysis** and bring gradual improvements.
+At this point in development, [1] should provide a rough guide on the library's capabilities. While not a design aim in itself, the package tries to keep a similar API to **TextAnalysis**.
 
 
 ## License
