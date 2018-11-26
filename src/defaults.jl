@@ -9,4 +9,5 @@
 # It used by the tokenize_fast function
 const DEFAULT_TOKENIZATION_REGEX = r"(,|\n|\r|\:|\\|\/|;|\.|\[|\]|\{|\}|\'|\`|\"|\"|\?|\!|\=|\~|\&|\s+)"
 const DEFAULT_LANGUAGE = Languages.English()
+const DEFAULT_HASH_FUNCTION = hash
 const DEFAULT_CARDINALITY = 100

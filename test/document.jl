@@ -1,4 +1,3 @@
-
 @testset "Document" begin
 
     sample_text1 = "This is a string"

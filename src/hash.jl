@@ -23,11 +23,12 @@ mutable struct TextHashFunction
     cardinality::Int
 end
 
-TextHashFunction(cardinality::Int) = TextHashFunction(hash, cardinality)
+TextHashFunction(cardinality::Int) = TextHashFunction(DEFAULT_HASH_FUNCTION, cardinality)
 
-TextHashFunction() = TextHashFunction(hash, DEFAULT_CARDINALITY)
+TextHashFunction() = TextHashFunction(DEFAULT_HASH_FUNCTION, DEFAULT_CARDINALITY)
 
 cardinality(h::TextHashFunction) = h.cardinality
+hash_function(h::TextHashFunction) = h.hash_function
 
 function index_hash(s::AbstractString, h::TextHashFunction)
     return Int(rem(h.hash_function(s), h.cardinality)) + 1
