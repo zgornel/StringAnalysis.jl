@@ -4,9 +4,8 @@
     doc2 = "another example example text text"
     crps = Corpus([StringDocument(doc1), StringDocument(doc2)])
     update_lexicon!(crps)
-    
-    @test lsa(crps) == lsa(DocumentTermMatrix(crps))
-    
+    m = DocumentTermMatrix(crps);
+    @test lsa(crps) == lsa(m)
     s, v, d = lsa(crps)
     T = typeof(1.0)
     @test s isa Matrix{T}
