@@ -3,6 +3,7 @@ const strip_patterns            = UInt32(0)
 const strip_corrupt_utf8        = UInt32(0x1) << 0
 const strip_case                = UInt32(0x1) << 1
 const strip_accents             = UInt32(0x1) << 2
+const strip_html_tags           = UInt32(0x1) << 3
 # Flags that activate function-based processors (external to this file)
 const stem_words                = UInt32(0x1) << 7
 # Flags that activate Regex based processors
@@ -11,26 +12,34 @@ const strip_whitespace          = UInt32(0x1) << 10
 const strip_numbers             = UInt32(0x1) << 11
 const strip_non_ascii           = UInt32(0x1) << 12
 const strip_single_chars        = UInt32(0x1) << 13
-const strip_html_tags           = UInt32(0x1) << 14
 # Word list based
 const strip_indefinite_articles = UInt32(0x1) << 20
 const strip_definite_articles   = UInt32(0x1) << 21
 const strip_prepositions        = UInt32(0x1) << 22
 const strip_pronouns            = UInt32(0x1) << 23
 const strip_stopwords           = UInt32(0x1) << 24
-const strip_articles            = (strip_indefinite_articles |
-                                   strip_definite_articles)
+const strip_articles            = (strip_indefinite_articles|strip_definite_articles)
 const strip_sparse_terms        = UInt32(0x1) << 25
 const strip_frequent_terms      = UInt32(0x1) << 26
+# Strip everything
+function generate_es()
+    n = UInt32(0x1)
+    for bs in [0,1,2,7,9,10,11,12,14,14,20,21,22,23,24,25,26]
+        n = n | (n << bs)
+    end
+    n
+end
+const strip_everything  = generate_es()
+
 
 # RegEx Expressions for various stripping flags
 # Format: flag => (match=>replacement)
-const REGEX_CACHE = Dict{UInt32,Regex}(
+const strip2regex = Dict{UInt32,Regex}(
     strip_whitespace => r"[\s]+",
     strip_numbers => r"\d+",
     strip_non_ascii => r"[^a-zA-Z\s]",
     strip_single_chars => r"\b\w{1}\b",
-    strip_html_tags => r"(<script\b[^>]*>([\s\S]*?)</script>|<[^>]*>)",
+    #strip_html_tags => r"(<script\b[^>]*>([\s\S]*?)</script>|<[^>]*>)",
     #strip_punctuation =>r"[^\d\w\s\b]+"
     strip_punctuation => r"[!\"#$%&\'()*+,-./:;<=>?@\[\\\]^_`\{\|\}~]+"
 )
@@ -49,11 +58,15 @@ remove_case(s::T) where T<:AbstractString = lowercase(s)
 remove_accents(s::T) where T<:AbstractString =
     Unicode.normalize(s, stripmark=true)
 
+# Remove HTML tags
+remove_html_tags(s::T) where T<:AbstractString =
+    replace(s, r"(<script\b[^>]*>([\s\S]*?)</script>|<[^>]*>)" => ' ')
+
 # Generate automatically functions for various Document types and Corpus
 # Note: One has to add a simple method for `AbstractString` and the name
 #       of the function in the `for` container to generate all needed
 #       methods
-for fname in [:remove_corrupt_utf8, :remove_case, :remove_accents]
+for fname in [:remove_corrupt_utf8, :remove_case, :remove_accents, :remove_html_tags]
     # File document
     # TODO(Corneliu): Make these work on file documents
     #                 i.e. load file, process, re-write
@@ -227,6 +240,16 @@ function frequent_terms(crps::Corpus, alpha = alpha_frequent)
     return res
 end
 
+# TODO(Corneliu): Implement for Documents
+function sparse_terms(doc::AbstractDocument, alpha = alpha_sparse)
+    String[]
+end
+
+function frequent_terms(doc::AbstractDocument, alpha = alpha_frequent)
+    String[]
+end
+
+
 # Function that builds a regex out of a set of strings
 _build_words_pattern(words::Vector{T}) where T<:AbstractString =
     Regex(ifelse(isempty(words), "", "\\b("* join(words,"|","|") *")\\b"))
@@ -261,19 +284,19 @@ function prepare!(entity,  # can be an AbstractDocument or Corpus
                   skip_words = Vector{AbstractString}())
     # Do function-based stripping
     ((flags & strip_corrupt_utf8) > 0) && remove_corrupt_utf8!(entity)
+    ((flags & strip_html_tags) > 0) && remove_html_tags!(entity)
     ((flags & strip_case) > 0) && remove_case!(entity)
     ((flags & strip_accents) > 0) && remove_accents!(entity)
     # regex
     rpatterns = Vector{Regex}(undef, 0)  # patterns to remove
-    ((flags & strip_whitespace) > 0) && push!(rpatterns, REGEX_CACHE[strip_whitespace])
+    ((flags & strip_whitespace) > 0) && push!(rpatterns, strip2regex[strip_whitespace])
     if (flags & strip_non_ascii) > 0
-        push!(rpatterns, REGEX_CACHE[strip_non_ascii])
+        push!(rpatterns, strip2regex[strip_non_ascii])
     else
-        ((flags & strip_numbers) > 0) && push!(rpatterns, REGEX_CACHE[strip_numbers])
-        ((flags & strip_punctuation) > 0) && push!(rpatterns, REGEX_CACHE[strip_punctuation])
-        ((flags & strip_single_chars) > 0) && push!(rpatterns, REGEX_CACHE[strip_single_chars])
+        ((flags & strip_numbers) > 0) && push!(rpatterns, strip2regex[strip_numbers])
+        ((flags & strip_punctuation) > 0) && push!(rpatterns, strip2regex[strip_punctuation])
+        ((flags & strip_single_chars) > 0) && push!(rpatterns, strip2regex[strip_single_chars])
     end
-    ((flags & strip_html_tags) > 0) && push!(rpatterns, REGEX_CACHE[strip_html_tags])
     # known words
     lang = _language(entity)
     if (flags & strip_articles) > 0
@@ -313,19 +336,19 @@ function prepare(s::AbstractString,
     os = s  # Initialize output string
     # Do function-based stripping
     ((flags & strip_corrupt_utf8) > 0) && (os = remove_corrupt_utf8(os))
+    ((flags & strip_html_tags) > 0)    && (os = remove_html_tags(os))
     ((flags & strip_case) > 0)         && (os = remove_case(os))
     ((flags & strip_accents) > 0)      && (os = remove_accents(os))
     # regex
     rpatterns = Vector{Regex}(undef, 0)  # patterns to remove
-    ((flags & strip_whitespace) > 0) && push!(rpatterns, REGEX_CACHE[strip_whitespace])
+    ((flags & strip_whitespace) > 0) && push!(rpatterns, strip2regex[strip_whitespace])
     if (flags & strip_non_ascii) > 0
-        push!(rpatterns, REGEX_CACHE[strip_non_ascii])
+        push!(rpatterns, strip2regex[strip_non_ascii])
     else
-        ((flags & strip_numbers) > 0) && push!(rpatterns, REGEX_CACHE[strip_numbers])
-        ((flags & strip_punctuation) > 0) && push!(rpatterns, REGEX_CACHE[strip_punctuation])
-        ((flags & strip_single_chars) > 0) && push!(rpatterns, REGEX_CACHE[strip_single_chars])
+        ((flags & strip_numbers) > 0) && push!(rpatterns, strip2regex[strip_numbers])
+        ((flags & strip_punctuation) > 0) && push!(rpatterns, strip2regex[strip_punctuation])
+        ((flags & strip_single_chars) > 0) && push!(rpatterns, strip2regex[strip_single_chars])
     end
-    ((flags & strip_html_tags) > 0) && push!(rpatterns, REGEX_CACHE[strip_html_tags])
     # known words
     if (flags & strip_articles) > 0
         union!(skip_words, articles(lang))

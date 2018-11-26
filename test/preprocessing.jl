@@ -1,5 +1,33 @@
-@testset "Preprocessing" begin
+@testset "Preprocessing (newer)" begin
+	poem_no_1 = """
+                \t ...
+                \t this is it      !            \n
+                \t 1,2,3,y,2,z                  \n
+                \t  GET some h/a\\y             \n
+                \t         v`v`v`v`v            \n
+                \t  FIND a >>>pÎn<<<            \n
+                \t         ^^^^^^^^^            \n
+                \t  p-a-t-t-e-r-n-s'n f.i.n     \n
+                \t  get a <tag, hold it still>  \n
+                \t          ~ 0_0' ~            \n
+                \t        </tag a thrill>       \n
+                \t          b.y. ~z.g.o.r.n.e.l \n
+                                               """
 
+    sdoc = StringDocument(poem_no_1); prepare!(sdoc, strip_everything)
+    ndoc = NGramDocument(poem_no_1); prepare!(ndoc, strip_everything)
+    tdoc = TokenDocument(poem_no_1); prepare!(tdoc, strip_everything);
+    crps = Corpus([sdoc])
+    @test prepare(poem_no_1, strip_everything) == "pin"
+    @test text(sdoc) == "pin"
+    @test ngrams(ndoc) == Dict("tag"=>2,"pin"=>1,"hold"=>1,"thrill"=>1)
+    @test string.(tokens(tdoc)) == ["pin", "tag", "hold", "tag", "thrill"]
+    @test text(crps[1]) == "pin"
+end
+
+
+# Text Analysis older tests
+@testset "Preprocessing (older)" begin
     sample_text1 = "This is, 1 MESSED υπ string!..."
     sample_text1_accents = "Thîs îs meşsed string"
     sample_text1_wo_punctuation = "This is 1 MESSED υπ string"
@@ -86,7 +114,7 @@
         """
     )
     StringAnalysis.prepare!(d, strip_html_tags)
-    @test "Hello world" == strip(d.text)
+    @test "Hello  world" == strip(d.text)
 
     #Test #62
     StringAnalysis.remove_corrupt_utf8("abc") == "abc"
