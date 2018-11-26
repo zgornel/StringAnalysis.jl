@@ -12,5 +12,5 @@ v0.1.0
 
 v0.0.0
 ------
- - Inital version, identical with TextAnalysis, commit: `8517fe2`
+ - Inital version, identical with TextAnalysis, [commit:8517fe2](https://github.com/JuliaText/TextAnalysis.jl/tree/8517fe2141317a209fe17e53b231038cc19c420b)
  - Not released
