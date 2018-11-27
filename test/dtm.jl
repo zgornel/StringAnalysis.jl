@@ -23,15 +23,13 @@ end
     m = DocumentTermMatrix(crps)
     @test m isa DocumentTermMatrix
     @test dtm(m) isa SparseMatrixCSC
-    @test dtm(m, :dense) == Matrix(dtm(m))
 
     update_lexicon!(crps)
 
     m = DocumentTermMatrix(crps)
     dtm(m)
-    dtm(m, :dense)
 
-    tf_idf(dtm(m, :dense))
+    tf_idf(dtm(m))
 
     doc_idx = 1
     dtv(crps[doc_idx], lexicon(crps)) == dtv(crps, doc_idx)
@@ -48,9 +46,7 @@ end
     dtm1sp = sparse(dtm(crps))
     hash_dtm(crps)
 
-    @test tdm(crps) == tdm(m) == tdm(m, :sparse) == dtm(m)'
-    @test Matrix(tdm(crps)) == Matrix(tdm(m)) ==
-        tdm(m, :dense) == dtm(m, :dense)'
+    @test tdm(crps) == tdm(m) == tdm(m) == dtm(m)'
 
     hash_tdm(crps)
 
@@ -89,7 +85,7 @@ end
     # Iteration iterface tests
     i = 1
     for v in each_dtv(crps)
-        @test v == m.dtm[i:i, 1:end]
+        @test v == m.dtm[i, 1:end]
         i+= 1
     end
     i = 1

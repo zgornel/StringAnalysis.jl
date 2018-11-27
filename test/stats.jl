@@ -1,5 +1,4 @@
-
-@testset "Stats (TF,TF-IDF etc.)" begin
+@testset "Stats (TF,TF-IDF,BM25)" begin
 
     doc1 = "a a a sample text text"
     doc2 = "another example example text text"
@@ -9,7 +8,10 @@
     # TODO: this should work!
     # crps = Corpus(map(StringDocument, [doc1 doc2 doc3 doc4]))
 
-    crps = Corpus(Any[StringDocument(doc1), StringDocument(doc2), StringDocument(doc3), StringDocument(doc4)])
+    crps = Corpus([StringDocument(doc1),
+                   StringDocument(doc2),
+                   StringDocument(doc3),
+                   StringDocument(doc4)])
 
     update_lexicon!(crps)
     m = DocumentTermMatrix(crps)
@@ -27,7 +29,7 @@
     @test myweights ≈ sparse(correctweights)
     @test typeof(myweights) <: SparseMatrixCSC
 
-    myweights = tf(dtm(m, :dense))
+    myweights = tf(Matrix(dtm(m)))
     @test isnan(sum(myweights)) == 0
     @test myweights ≈ correctweights
     @test typeof(myweights) <: Matrix
@@ -37,7 +39,7 @@
     @test myweights ≈ correctweights
     @test typeof(myweights) <: SparseMatrixCSC
 
-    myweights = float(dtm(m, :dense));
+    myweights = float(Matrix(dtm(m)));
     tf!(myweights)
     @test myweights ≈ correctweights
     @test typeof(myweights) <: Matrix
@@ -55,7 +57,7 @@
     @test myweights ≈ correctweights
     @test typeof(myweights) <: SparseMatrixCSC
 
-    myweights = tf_idf(dtm(m, :dense))
+    myweights = tf_idf(Matrix(dtm(m)))
     @test isnan(sum(myweights)) == 0
     @test myweights ≈ correctweights
     @test typeof(myweights) <: Matrix
@@ -65,7 +67,7 @@
     @test myweights ≈ correctweights
     @test typeof(myweights) <: SparseMatrixCSC
 
-    myweights = float(dtm(m, :dense));
+    myweights = float(Matrix(dtm(m)));
     tf_idf!(myweights)
     @test myweights ≈ correctweights
     @test typeof(myweights) <: Matrix

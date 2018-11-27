@@ -28,6 +28,7 @@ TextHashFunction(cardinality::Int) = TextHashFunction(DEFAULT_HASH_FUNCTION, car
 TextHashFunction() = TextHashFunction(DEFAULT_HASH_FUNCTION, DEFAULT_CARDINALITY)
 
 cardinality(h::TextHashFunction) = h.cardinality
+
 hash_function(h::TextHashFunction) = h.hash_function
 
 function index_hash(s::AbstractString, h::TextHashFunction)

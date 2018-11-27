@@ -3,9 +3,9 @@ show(io::IO, d::AbstractDocument) = print(io, "A $(typeof(d))")
 
 show(io::IO, crps::Corpus) = print(io, "A Corpus with $(length(crps.documents)) documents")
 
-show(io::IO, dtm::DocumentTermMatrix) = begin
+show(io::IO, dtm::DocumentTermMatrix{T}) where T = begin
     n, p = size(dtm.dtm)
-    println("A $(n)x$(p) DocumentTermMatrix")
+    println("A $(n)x$(p) DocumentTermMatrix{$T}")
 end
 
 titleize(str::AbstractString) = begin
