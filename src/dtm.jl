@@ -49,7 +49,10 @@ DocumentTermMatrix(crps::Corpus, terms::Vector{String}) =
 DocumentTermMatrix(crps::Corpus, lex::AbstractDict) =
     DocumentTermMatrix(crps, sort(collect(keys(lex))))
 
-DocumentTermMatrix(crps::Corpus) = DocumentTermMatrix(crps, lexicon(crps))
+DocumentTermMatrix(crps::Corpus) = begin
+    isempty(lexicon(crps)) && update_lexicon!(crps)
+    DocumentTermMatrix(crps, lexicon(crps))
+end
 
 DocumentTermMatrix(dtm::SparseMatrixCSC{T, Int},
                    terms::Vector{String}) where T<:Real =

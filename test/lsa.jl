@@ -1,5 +1,4 @@
 @testset "LSA" begin
-
     doc1 = "a a a sample text text"
     doc2 = "another example example text text"
     crps = Corpus([StringDocument(doc1), StringDocument(doc2)])
@@ -7,7 +6,7 @@
     m = DocumentTermMatrix(crps);
     @test lsa(crps) == lsa(m)
     s, v, d = lsa(crps)
-    T = typeof(1.0)
+    T = StringAnalysis.DEFAULT_FLOAT_TYPE
     @test s isa Matrix{T}
     @test size(s) == (2,2)
     @test v isa Vector{T}

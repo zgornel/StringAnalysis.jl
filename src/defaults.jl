@@ -12,5 +12,5 @@ const DEFAULT_TOKENIZER = :slow  # :fast or :slow (slow is stable, uses WordToke
 const DEFAULT_LANGUAGE = Languages.English()
 const DEFAULT_HASH_FUNCTION = hash
 const DEFAULT_CARDINALITY = 100
-const DEFAULT_FLOAT_TYPE = Float32
+const DEFAULT_FLOAT_TYPE = eltype(1.0)
 const DEFAULT_DTM_TYPE = Int  # can be anything <:Real

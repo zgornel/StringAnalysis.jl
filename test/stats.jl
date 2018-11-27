@@ -5,70 +5,107 @@
     doc3 = ""
     doc4 = "another another text text text text"
 
-    # TODO: this should work!
-    # crps = Corpus(map(StringDocument, [doc1 doc2 doc3 doc4]))
-
-    crps = Corpus([StringDocument(doc1),
-                   StringDocument(doc2),
-                   StringDocument(doc3),
-                   StringDocument(doc4)])
+    crps = Corpus(map(StringDocument, [doc1, doc2, doc3, doc4]))
 
     update_lexicon!(crps)
     m = DocumentTermMatrix(crps)
 
+    T = StringAnalysis.DEFAULT_FLOAT_TYPE
+
+    approx_eq(m1::AbstractMatrix{T},
+              m2::AbstractMatrix{T};
+              tol=1e-6) = all(m1-m1 .<= tol)
+
+    max_tol = 1e-7
+    # TF
     # Terms are in alphabetical ordering
-    correctweights =[0.5  0.0  0.0  1/6  1/3
-                     0.0  0.2  0.4  0.0  0.4
-                     0.0  0.0  0.0  0.0  0.0
-                     0.0  1/3  0.0  0.0  2/3]
+    correctweights = sqrt.(T.(
+                        [0.5  0.0  0.0  1/6  1/3
+                         0.0  0.2  0.4  0.0  0.4
+                         0.0  0.0  0.0  0.0  0.0
+                         0.0  1/3  0.0  0.0  2/3]))
 
     myweights = tf(m)
-    @test myweights == correctweights
+    @test approx_eq(myweights, correctweights, tol=max_tol)
 
     myweights = tf(dtm(m))
-    @test myweights ≈ sparse(correctweights)
+    @test approx_eq(myweights, correctweights, tol=max_tol)
     @test typeof(myweights) <: SparseMatrixCSC
 
     myweights = tf(Matrix(dtm(m)))
     @test isnan(sum(myweights)) == 0
-    @test myweights ≈ correctweights
+    @test approx_eq(myweights, correctweights, tol=max_tol)
     @test typeof(myweights) <: Matrix
 
     myweights = float(dtm(m));
     tf!(myweights)
-    @test myweights ≈ correctweights
+    @test approx_eq(T.(myweights), correctweights, tol=max_tol)
     @test typeof(myweights) <: SparseMatrixCSC
+    @test eltype(myweights) == typeof(1.0)
 
     myweights = float(Matrix(dtm(m)));
     tf!(myweights)
-    @test myweights ≈ correctweights
+    @test approx_eq(T.(myweights), correctweights, tol=max_tol)
     @test typeof(myweights) <: Matrix
+    @test eltype(myweights) == typeof(1.0)
 
+    # TF-IDF
     # Terms are in alphabetical ordering
-    correctweights = [0.6931471805599453 0.0 0.0 0.23104906018664842 0.09589402415059362
-	              0.0 0.13862943611198905 0.5545177444479562 0.0 0.11507282898071235
-	              0.0 0.0 0.0 0.0 0.0
-	              0.0 0.23104906018664842  0.0 0.0 0.19178804830118723]
+    correctweights = T.([1.19724  0.0       0.0      0.691224  0.57735
+                         0.0      0.575869  1.07084  0.0       0.632456
+                         0.0      0.0       0.0      0.0       0.0
+                         0.0      0.743444  0.0      0.0       0.816497])
 
     myweights = tf_idf(m)
-    @test myweights ≈ correctweights
+    @test approx_eq(myweights, correctweights, tol=max_tol)
 
     myweights = tf_idf(dtm(m))
-    @test myweights ≈ correctweights
+    @test approx_eq(myweights, correctweights, tol=max_tol)
     @test typeof(myweights) <: SparseMatrixCSC
 
     myweights = tf_idf(Matrix(dtm(m)))
     @test isnan(sum(myweights)) == 0
-    @test myweights ≈ correctweights
+    @test approx_eq(myweights, correctweights, tol=max_tol)
     @test typeof(myweights) <: Matrix
 
     myweights = float(dtm(m));
     tf_idf!(myweights)
-    @test myweights ≈ correctweights
+    @test approx_eq(T.(myweights), correctweights, tol=max_tol)
     @test typeof(myweights) <: SparseMatrixCSC
+    @test eltype(myweights) == typeof(1.0)
 
     myweights = float(Matrix(dtm(m)));
     tf_idf!(myweights)
-    @test myweights ≈ correctweights
+    @test approx_eq(T.(myweights), correctweights, tol=max_tol)
     @test typeof(myweights) <: Matrix
+    @test eltype(myweights) == typeof(1.0)
+
+    # Terms are in alphabetical ordering
+    correctweights = T.([1.08029  0.0       0.0      0.685309  0.542113
+                         0.0      0.637042  1.10885  0.0       0.654905
+                         0.0      0.0       0.0      0.0       0.0
+                         0.0      0.69807   0.0      0.0       0.713275])
+    myweights = bm_25(m)
+    @test approx_eq(myweights, correctweights, tol=max_tol)
+
+    myweights = bm_25(dtm(m))
+    @test approx_eq(myweights, correctweights, tol=max_tol)
+    @test typeof(myweights) <: SparseMatrixCSC
+
+    myweights = bm_25(Matrix(dtm(m)))
+    @test isnan(sum(myweights)) == 0
+    @test approx_eq(myweights, correctweights, tol=max_tol)
+    @test typeof(myweights) <: Matrix
+
+    myweights = float(dtm(m));
+    bm_25!(myweights)
+    @test approx_eq(T.(myweights), correctweights, tol=max_tol)
+    @test typeof(myweights) <: SparseMatrixCSC
+    @test eltype(myweights) == typeof(1.0)
+
+    myweights = float(Matrix(dtm(m)));
+    bm_25!(myweights)
+    @test approx_eq(T.(myweights), correctweights, tol=max_tol)
+    @test typeof(myweights) <: Matrix
+    @test eltype(myweights) == typeof(1.0)
 end

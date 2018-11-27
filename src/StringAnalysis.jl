@@ -3,6 +3,7 @@ module StringAnalysis
     using Unicode
     using SparseArrays
     using LinearAlgebra
+    using Statistics
     using Languages
     using WordTokenizers
 
@@ -25,7 +26,7 @@ module StringAnalysis
            hash_function, hash_function!
     export Stemmer, stem!, stem, stemmer_types
     export tokenize, tokenize_fast, tokenize_slow, sentence_tokenize
-    export tf!, tf, tf_idf!, tf_idf
+    export tf!, tf, tf_idf!, tf_idf, bm_25!, bm_25
     export lsa!, lsa
     export lda!, lda
     export frequent_terms, sparse_terms,
