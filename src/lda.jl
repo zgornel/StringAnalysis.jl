@@ -1,9 +1,4 @@
-##############################################################################
-#
 # LDA
-#
-##############################################################################
-
 module Lda
 
 mutable struct TopicBasedDocument
@@ -11,15 +6,20 @@ mutable struct TopicBasedDocument
     text::Vector{Int}
     topicidcount::Vector{Int}
 end
+
 TopicBasedDocument(ntopics) = TopicBasedDocument(Vector{Int}(), Vector{Int}(), zeros(Int, ntopics))
+
 
 mutable struct Topic
     count::Int
     wordcount::Dict{Int, Int}
 end
+
 Topic() = Topic(0, Dict{Int, Int}())
 
 end
+
+
 
 """
     ϕ, θ = lda(dtm::DocumentTermMatrix, ntopics::Int, iterations::Int, α::Float64, β::Float64)
