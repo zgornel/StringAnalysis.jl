@@ -72,7 +72,6 @@ tdm(crps::Corpus) = dtm(crps)' #'
 
 
 # Produce the signature of a DTM entry for a document
-# TOddDO: Make this more efficieny by reusing column_indices
 function dtm_entries(d::AbstractDocument,
                      lex::Dict{String, Int};
                      eltype::Type{T}=DEFAULT_DTM_TYPE) where T<:Real
