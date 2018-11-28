@@ -97,9 +97,12 @@ tf_idf(dtm::DocumentTermMatrix) = tf_idf(dtm.dtm)
 # Details at: https://en.wikipedia.org/wiki/Okapi_BM25
 function bm_25!(dtm::AbstractMatrix{T},
                bm25::AbstractMatrix{F};
-               k::F=F(2),
-               b::F=F(0.75)
+               κ::Int=2,
+               β::Float64=0.75
               ) where {T<:Real, F<:AbstractFloat}
+    # Initializations
+    k = F(κ)
+    b = F(β)
     n, p = size(dtm)
     oneval = one(F)
     # TF tells us what proportion of a document is defined by a term
@@ -122,9 +125,12 @@ end
 
 function bm_25!(dtm::SparseMatrixCSC{T},
                 bm25::SparseMatrixCSC{F};
-                k::F=F(2),
-                b::F=F(0.75)
+                κ::Int=2,
+                β::Float64=0.75
                ) where {T<:Real, F<:AbstractFloat}
+    # Initializations
+    k = F(κ)
+    b = F(β)
     rows = rowvals(dtm)
     dtmvals = nonzeros(dtm)
     bm25vals = nonzeros(bm25)

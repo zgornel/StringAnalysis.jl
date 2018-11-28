@@ -92,7 +92,7 @@ function dtm_entries(d::AbstractDocument,
 end
 
 function dtv(d::AbstractDocument,
-             lex::Dict{String, Int},
+             lex::Dict{String, Int};
              eltype::Type{T}=DEFAULT_DTM_TYPE) where T<:Real
     p = length(keys(lex))
     row = zeros(T, p)
@@ -118,9 +118,11 @@ end
 
 # The hash trick: use a hash function instead of a lexicon to determine the
 # columns of a DocumentTermMatrix-like encoding of the data
-function hash_dtv(d::AbstractDocument, h::TextHashFunction)
+function hash_dtv(d::AbstractDocument,
+                  h::TextHashFunction;
+                  eltype::Type{T}=DEFAULT_DTM_TYPE) where T<:Real
     p = cardinality(h)
-    res = zeros(Int, p)
+    res = zeros(T, p)
     ngs = ngrams(d)
     for ng in keys(ngs)
         res[index_hash(ng, h)] += ngs[ng]
@@ -128,32 +130,36 @@ function hash_dtv(d::AbstractDocument, h::TextHashFunction)
     return res
 end
 
-hash_dtv(d::AbstractDocument; cardinality::Int=DEFAULT_CARDINALITY) =
-    hash_dtv(d, TextHashFunction(cardinality))
+hash_dtv(d::AbstractDocument;
+         cardinality::Int=DEFAULT_CARDINALITY,
+         eltype::Type{T}=DEFAULT_DTM_TYPE) where T<:Real =
+    hash_dtv(d, TextHashFunction(cardinality), eltype=eltype)
 
-function hash_dtm(crps::Corpus, h::TextHashFunction)
+function hash_dtm(crps::Corpus,
+                  h::TextHashFunction;
+                  eltype::Type{T}=DEFAULT_DTM_TYPE) where T<:Real
     n, p = length(crps), cardinality(h)
-    res = zeros(Int, n, p)
+    res = zeros(T, n, p)
     for (i, doc) in enumerate(crps)
-        res[i, :] = hash_dtv(doc, h)
+        res[i, :] = hash_dtv(doc, h, eltype=eltype)
     end
     return res
 end
 
 
-hash_dtm(crps::Corpus) = hash_dtm(crps, hash_function(crps))
+hash_dtm(crps::Corpus; eltype::Type{T}=DEFAULT_DTM_TYPE) where T<:Real =
+    hash_dtm(crps, hash_function(crps), eltype=eltype)
 
-hash_tdm(crps::Corpus) = hash_dtm(crps)' #'
+hash_tdm(crps::Corpus, eltype::Type{T}=DEFAULT_DTM_TYPE) where T<:Real =
+    hash_dtm(crps, eltype=eltype)' #'
 
 
 # Produce entries for on-line analysis when DTM would not fit in memory
-mutable struct EachDTV{T<:AbstractDocument}
+mutable struct EachDTV{S, T<:AbstractDocument}
     corpus::Corpus{T}
 end
 
-function next(edt::EachDTV, state::Int)
-    return (dtv(edt.corpus.documents[state], lexicon(edt.corpus)), state + 1)
-end
+EachDTV{S}(crps::Corpus{T}) where {S,T} = EachDTV{S,T}(crps)
 
 Base.iterate(edt::EachDTV, state=1) = begin
     if state > length(edt.corpus)
@@ -163,16 +169,27 @@ Base.iterate(edt::EachDTV, state=1) = begin
     end
 end
 
-each_dtv(crps::Corpus) = EachDTV(crps)
+next(edt::EachDTV{S, T}, state::Int) where {S,T} =
+    (dtv(edt.corpus.documents[state], lexicon(edt.corpus), eltype=S), state + 1)
+
+each_dtv(crps::Corpus; eltype::Type{S}=DEFAULT_DTM_TYPE) where S<:Real =
+    EachDTV{S}(crps)
+
+Base.eltype(::Type{EachDTV{S,T}}) where {S,T} = Vector{S}
+
+Base.length(edt::EachDTV) = length(edt.corpus)
+
+Base.size(edt::EachDTV) = (length(edt.corpus), edt.corpus.h.cardinality)
+
+Base.show(io::IO, edt::EachDTV{S,T}) where {S,T} =
+    print(io, "DTV iterator, $(length(edt)) elements of type $(eltype(edt)).")
 
 
-mutable struct EachHashDTV{T<:AbstractDocument}
+mutable struct EachHashDTV{S, T<:AbstractDocument}
     corpus::Corpus{T}
 end
 
-function next(edt::EachHashDTV, state::Int)
-    (hash_dtv(edt.corpus.documents[state], edt.corpus.h), state + 1)
-end
+EachHashDTV{S}(crps::Corpus{T}) where {S,T} = EachHashDTV{S,T}(crps)
 
 Base.iterate(edt::EachHashDTV, state=1) = begin
     if state > length(edt.corpus)
@@ -182,7 +199,20 @@ Base.iterate(edt::EachHashDTV, state=1) = begin
     end
 end
 
-each_hash_dtv(crps::Corpus) = EachHashDTV(crps)
+next(edt::EachHashDTV{S,T}, state::Int) where {S,T} =
+    (hash_dtv(edt.corpus.documents[state], edt.corpus.h, eltype=S), state + 1)
+
+each_hash_dtv(crps::Corpus; eltype::Type{S}=DEFAULT_DTM_TYPE) where S<:Real =
+    EachHashDTV{S}(crps)
+
+Base.eltype(::Type{EachHashDTV{S,T}}) where {S,T} = Vector{S}
+
+Base.length(edt::EachHashDTV) = length(edt.corpus)
+
+Base.size(edt::EachHashDTV) = (length(edt.corpus), edt.corpus.h.cardinality)
+
+Base.show(io::IO, edt::EachHashDTV{S,T}) where {S,T} =
+    print(io, "Hash-DTV iterator, $(length(edt)) elements of type $(eltype(edt)).")
 
 
 ## getindex() methods

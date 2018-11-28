@@ -10,7 +10,7 @@
     ngd = NGramDocument(sample_text1)
 
     crps = Corpus([sd, fd, td, ngd])
-    @test typeof(crps) <: Corpus{<:GenericDocument}
+    @test typeof(crps) <: Corpus{<:AbstractDocument}
 
     crps2 = Corpus([ngd, ngd])
     update_inverse_index!(crps2)
@@ -40,6 +40,44 @@
     @test text(crps[1]) == "This is a string"
     @test crps["string"] == [1, 3, 4]
     @test crps2["string"] == [1, 2]
+
+    # Directory corpus
+    function generate_dir_corpus()
+        # Make directories
+        tmp_path = tempdir()
+        data_path = abspath(joinpath(tmp_path, "StringAnalysis"))
+        mkpath(data_path)
+        directories = ["XXX","XXX/YYY","ZZZ"]
+        for (i, dir) in enumerate(directories)
+            file_path = joinpath(data_path, dir)
+            mkpath(file_path)
+            filename = joinpath(file_path, "file_$i.txt")
+            open(filename, "w") do fid
+                text = """
+                       This is what
+                       And this is who
+                       One makes cat
+                       The other boo.
+                       ---
+                       Filename: $(filename)
+                       """
+                write(fid, text)
+            end
+        end
+        return data_path, directories
+    end
+
+    path, dirs = generate_dir_corpus()
+    crps = DirectoryCorpus(path)
+    standardize!(crps, StringDocument{String})
+    for doc in crps
+        # The file path should be in the metadata
+        # and the text data.
+        @test occursin(StringAnalysis.name(doc),
+                       text(doc))
+    end
+
+    rm(path, recursive=true, force=true)
 
     # Cotainer treatment
     doc = StringDocument("~pushed~")

@@ -18,19 +18,36 @@ const strip_definite_articles   = UInt32(0x1) << 21
 const strip_prepositions        = UInt32(0x1) << 22
 const strip_pronouns            = UInt32(0x1) << 23
 const strip_stopwords           = UInt32(0x1) << 24
-const strip_articles            = (strip_indefinite_articles|strip_definite_articles)
 const strip_sparse_terms        = UInt32(0x1) << 25
 const strip_frequent_terms      = UInt32(0x1) << 26
-# Strip everything
-function generate_es()
-    n = UInt32(0x1)
-    for bs in [0,1,2,7,9,10,11,12,14,14,20,21,22,23,24,25,26]
-        n = n | (n << bs)
-    end
-    n
-end
-const strip_everything  = generate_es()
 
+# Generate custom flag combinations (bit-shift)
+function flag_generate(bs::Vector{<:Integer})
+    b = UInt32(1)
+    n = UInt32(0)
+    for s in bs
+        n|= (b << s)
+    end
+    return n
+end
+
+# Generate custom flag combinations (bit-toogle)
+flag_generate(flags::UInt32...) = reduce(|, flags)
+
+# Compound stripping flags
+const strip_articles = flag_generate(
+                        strip_indefinite_articles,
+                        strip_definite_articles)
+
+const strip_everything = flag_generate(
+                            [0,1,2,3,
+                            9,10,11,12,13,
+                            20,21,22,23,24,25,26])
+const strip_everything_stem = flag_generate(
+                                [0,1,2,3,
+                                 7,
+                                 9,10,11,12,13,
+                                 20,21,22,23,24,25,26])
 
 # RegEx Expressions for various stripping flags
 # Format: flag => (match=>replacement)
@@ -38,7 +55,7 @@ const strip2regex = Dict{UInt32,Regex}(
     strip_whitespace => r"[\s]+",
     strip_numbers => r"\d+",
     strip_non_ascii => r"[^a-zA-Z\s]",
-    strip_single_chars => r"\b\w{1}\b",
+    strip_single_chars => r"(\s|\b)[\w]{1}(\b|\s)",
     #strip_html_tags => r"(<script\b[^>]*>([\s\S]*?)</script>|<[^>]*>)",
     #strip_punctuation =>r"[^\d\w\s\b]+"
     strip_punctuation => r"[!\"#$%&\'()*+,-./:;<=>?@\[\\\]^_`\{\|\}~]+"
