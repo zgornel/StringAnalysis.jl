@@ -60,7 +60,7 @@ module StringAnalysis
            strip_articles, strip_prepositions,
            strip_pronouns, strip_stopwords,
            strip_sparse_terms, strip_frequent_terms,
-           strip_everything
+           strip_everything, strip_everything_stem
 
     # Include section
     include("defaults.jl")

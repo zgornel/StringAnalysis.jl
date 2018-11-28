@@ -14,11 +14,11 @@
                 \t          b.y. ~z.g.o.r.n.e.l \n
                                                """
 
-    sdoc = StringDocument(poem_no_1); prepare!(sdoc, strip_everything)
-    ndoc = NGramDocument(poem_no_1); prepare!(ndoc, strip_everything)
-    tdoc = TokenDocument(poem_no_1); prepare!(tdoc, strip_everything);
+    sdoc = StringDocument(poem_no_1); prepare!(sdoc, strip_everything_stem)
+    ndoc = NGramDocument(poem_no_1); prepare!(ndoc, strip_everything_stem)
+    tdoc = TokenDocument(poem_no_1); prepare!(tdoc, strip_everything_stem);
     crps = Corpus([sdoc])
-    @test prepare(poem_no_1, strip_everything) == "pin"
+    @test prepare(poem_no_1, strip_everything_stem) == "pin"
     @test text(sdoc) == "pin"
     @test ngrams(ndoc) == Dict("tag"=>2,"pin"=>1,"hold"=>1,"thrill"=>1)
     @test string.(tokens(tdoc)) == ["pin", "tag", "hold", "tag", "thrill"]
