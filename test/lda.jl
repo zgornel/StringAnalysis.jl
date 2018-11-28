@@ -3,7 +3,7 @@
     doc1 = "a a a sample text text"
     doc2 = "another example example text text"
 
-    crps = Corpus(Any[StringDocument(doc1), StringDocument(doc2)])
+    crps = Corpus([StringDocument(doc1), StringDocument(doc2)])
 
     update_lexicon!(crps)
 

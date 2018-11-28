@@ -20,17 +20,10 @@ Corpus(docs::Vector{T};
         TextHashFunction(hash_function, cardinality)
     )
 
-Corpus(docs::Vector{AbstractDocument};
+Corpus(docs::Vector{AbstractDocument{T}};
        hash_function::Function = DEFAULT_HASH_FUNCTION,
-       cardinality::Int=DEFAULT_CARDINALITY) =
-    Corpus(Vector{GenericDocument}(docs),
-           hash_function=hash_function,
-           cardinality=cardinality)
-
-Corpus(docs::Vector{Any};
-       hash_function::Function = DEFAULT_HASH_FUNCTION,
-       cardinality::Int=DEFAULT_CARDINALITY) =
-    Corpus(Vector{GenericDocument}(docs),
+       cardinality::Int=DEFAULT_CARDINALITY) where T<:AbstractString =
+    Corpus(Vector{GenericDocument{T}}(docs),
            hash_function=hash_function,
            cardinality=cardinality)
 
@@ -41,13 +34,12 @@ function DirectoryCorpus(dirname::AbstractString;
                          cardinality::Int=DEFAULT_CARDINALITY)
     # Recursive descent of directory
     # Add all non-hidden files to Corpus
-    docs = GenericDocument[]
+    docs = GenericDocument{String}[]
 
     function add_files(dirname::AbstractString)
         if !isdir(dirname)
             error("DirectoryCorpus() can only be called on directories")
         end
-
         starting_dir = pwd()
         cd(dirname)
         for filename in readdir(".")
@@ -69,13 +61,19 @@ end
 # Basic Corpus properties
 documents(c::Corpus) = c.documents
 
-Base.length(crps::Corpus) = length(crps.documents)
 
 # Treat a Corpus as an iterable
 function Base.iterate(crps::Corpus, ind=1)
     ind > length(crps.documents) && return nothing
     crps.documents[ind], ind+1
 end
+
+Base.eltype(::Type{Corpus{T}}) where T = T
+
+Base.length(crps::Corpus) = length(crps.documents)
+
+Base.size(crps, i) = size(crps.documents, i)
+
 
 
 # Treat a Corpus as a container
@@ -175,7 +173,7 @@ hash_function!(crps::Corpus, f::TextHashFunction) = (crps.h = f; nothing)
 
 
 # Standardize the documents in a Corpus to a common type
-function standardize!(crps::Corpus, ::Type{T}) where T <: AbstractDocument
+function standardize!(crps::Corpus, ::Type{T}) where T<:AbstractDocument
     for i in 1:length(crps)
         crps.documents[i] = convert(T, crps.documents[i])
     end

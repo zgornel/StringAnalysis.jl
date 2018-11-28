@@ -28,11 +28,11 @@ DocumentMetadata() = DocumentMetadata(
 
 
 # The abstract Document type
-abstract type AbstractDocument; end
+abstract type AbstractDocument{T<:AbstractString}; end
 
 # FileDocument type and constructors
-mutable struct FileDocument <: AbstractDocument
-    filename::String
+mutable struct FileDocument{T} <: AbstractDocument{T}
+    filename::T
     metadata::DocumentMetadata
 end
 
@@ -44,7 +44,7 @@ end
 
 
 # StringDocument type and constructors
-mutable struct StringDocument{T<:AbstractString} <: AbstractDocument
+mutable struct StringDocument{T<:AbstractString} <: AbstractDocument{T}
     text::T
     metadata::DocumentMetadata
 end
@@ -53,7 +53,7 @@ StringDocument(txt::AbstractString) = StringDocument(txt, DocumentMetadata())
 
 
 # TokenDocument type and constructors
-mutable struct TokenDocument{T<:AbstractString} <: AbstractDocument
+mutable struct TokenDocument{T<:AbstractString} <: AbstractDocument{T}
     tokens::Vector{T}
     metadata::DocumentMetadata
 end
@@ -68,7 +68,7 @@ TokenDocument(txt::AbstractString) = TokenDocument(String(txt), DocumentMetadata
 
 
 # NGramDocument type and constructors
-mutable struct NGramDocument{T<:AbstractString} <: AbstractDocument
+mutable struct NGramDocument{T<:AbstractString} <: AbstractDocument{T}
     ngrams::Dict{T,Int}
     n::Int
     metadata::DocumentMetadata
@@ -81,7 +81,24 @@ NGramDocument(txt::AbstractString, n::Integer=1) =
     NGramDocument(txt, DocumentMetadata(), n)
 
 NGramDocument(ng::Dict{T, Int}, n::Integer=1) where T <: AbstractString =
-    NGramDocument(merge(Dict{AbstractString,Int}(), ng), n, DocumentMetadata())
+    NGramDocument(ng, n, DocumentMetadata())
+
+
+# Union type that refers to a generic, non-abstract document type
+const GenericDocument{T} = Union{
+                                 FileDocument{T},
+                                 StringDocument{T},
+                                 TokenDocument{T},
+                                 NGramDocument{T}
+                                } where T<:AbstractString
+
+# Easier Document() constructor that decides types based on inputs
+Document(str::AbstractString) = isfile(str) ? FileDocument(str) : StringDocument(str)
+
+Document(tkns::Vector{T}) where {T <: AbstractString} = TokenDocument(tkns)
+
+Document(ng::Dict{String, Int}) = NGramDocument(ng)
+
 
 
 # text() / text!(): Access to document text as a string
@@ -150,36 +167,19 @@ ngram_complexity(d::AbstractDocument) =
     error("$(typeof(d))'s have no n-gram complexity")
 
 
-# Union type that refers to a generic, non-abstract document type
-const GenericDocument = Union{
-    FileDocument,
-    StringDocument,
-    TokenDocument,
-    NGramDocument
-}
-
-
-# Easier Document() constructor that decides types based on inputs
-Document(str::AbstractString) = isfile(str) ? FileDocument(str) : StringDocument(str)
-
-Document(tkns::Vector{T}) where {T <: AbstractString} = TokenDocument(tkns)
-
-Document(ng::Dict{String, Int}) = NGramDocument(ng)
-
-
 # Conversion rules
-Base.convert(::Type{StringDocument}, d::FileDocument) =
+Base.convert(::Type{StringDocument{T}}, d::FileDocument{T}
+            ) where T<:AbstractString =
     StringDocument(text(d), d.metadata)
 
-Base.convert(::Type{TokenDocument}, d::(Union{FileDocument, StringDocument})) =
-    TokenDocument(tokens(d), d.metadata)
+Base.convert(::Type{TokenDocument{T}}, d::(Union{FileDocument{T}, StringDocument{T}})
+            ) where T<:AbstractString =
+    TokenDocument(T.(tokens(d)), d.metadata)
 
-Base.convert(::Type{NGramDocument}, d::(Union{FileDocument, StringDocument, TokenDocument})) =
-    NGramDocument(ngrams(d), 1, d.metadata)
-
-Base.convert(::Type{TokenDocument}, d::TokenDocument) = d
-
-Base.convert(::Type{NGramDocument}, d::NGramDocument) = d
+Base.convert(::Type{NGramDocument{T}},
+             d::(Union{FileDocument{T}, StringDocument{T}, TokenDocument{T}})
+            ) where T<:AbstractString=
+    NGramDocument(T.(ngrams(d)), 1, d.metadata)
 
 
 # getindex() methods: StringDocument("This is text and that is not")["is"]
