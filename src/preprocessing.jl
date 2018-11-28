@@ -22,33 +22,28 @@ const strip_sparse_terms        = UInt32(0x1) << 25
 const strip_frequent_terms      = UInt32(0x1) << 26
 
 # Generate custom flag combinations (bit-shift)
-function generate_combination(flags::Vector{Int})
-    n = UInt32(0x1)
-    for bs in flags
-        n = n | (n << bs)
+function flag_generate(bs::Vector{<:Integer})
+    b = UInt32(1)
+    n = UInt32(0)
+    for s in bs
+        n|= (b << s)
     end
     return n
 end
 
 # Generate custom flag combinations (bit-toogle)
-function generate_combination(flags::UInt32...)
-    n = UInt32(0x0)
-    for flag in flags
-        n |= flag
-    end
-    return n
-end
+flag_generate(flags::UInt32...) = reduce(|, flags)
 
 # Compound stripping flags
-const strip_articles = generate_combination(
+const strip_articles = flag_generate(
                         strip_indefinite_articles,
                         strip_definite_articles)
 
-const strip_everything = generate_combination(
+const strip_everything = flag_generate(
                             [0,1,2,3,
                             9,10,11,12,13,
                             20,21,22,23,24,25,26])
-const strip_everything_stem = generate_combination(
+const strip_everything_stem = flag_generate(
                                 [0,1,2,3,
                                  7,
                                  9,10,11,12,13,

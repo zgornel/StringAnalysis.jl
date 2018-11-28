@@ -13,16 +13,34 @@
                 \t        </tag a thrill>       \n
                 \t          b.y. ~z.g.o.r.n.e.l \n
                                                """
-
-    sdoc = StringDocument(poem_no_1); prepare!(sdoc, strip_everything_stem)
-    ndoc = NGramDocument(poem_no_1); prepare!(ndoc, strip_everything_stem)
-    tdoc = TokenDocument(poem_no_1); prepare!(tdoc, strip_everything_stem);
+    # All flags, except stemming
+    sdoc = StringDocument(poem_no_1)
+    ndoc = NGramDocument(poem_no_1)
+    tdoc = TokenDocument(poem_no_1)
     crps = Corpus([sdoc])
+    map(x->prepare!(x, strip_everything_stem), [sdoc, ndoc, tdoc, crps])
     @test prepare(poem_no_1, strip_everything_stem) == "pin"
     @test text(sdoc) == "pin"
     @test ngrams(ndoc) == Dict("tag"=>2,"pin"=>1,"hold"=>1,"thrill"=>1)
     @test string.(tokens(tdoc)) == ["pin", "tag", "hold", "tag", "thrill"]
     @test text(crps[1]) == "pin"
+    # Flag generation
+    v = [2, 5, 7]
+    vs = UInt32(0)
+    b = UInt32(1)
+    for i in v
+        vs |= b<<i
+    end
+    c_flags = StringAnalysis.flag_generate(v)
+    @test c_flags isa UInt32
+    @test c_flags == vs
+    v = UInt32[strip_accents, strip_prepositions, strip_html_tags]
+    c_flags = StringAnalysis.flag_generate(v...)
+    @test c_flags isa UInt32
+    @test c_flags == reduce(|, v)
+    # Minimal test of sparse/frequent terms
+    @test sparse_terms(crps) isa Vector{String}
+    @test frequent_terms(crps) isa Vector{String}
 end
 
 
