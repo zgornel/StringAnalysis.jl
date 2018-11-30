@@ -36,11 +36,13 @@ mutable struct FileDocument{T} <: AbstractDocument{T}
     metadata::DocumentMetadata
 end
 
-FileDocument(f::AbstractString) = begin
-    d = FileDocument(String(f), DocumentMetadata())
+FileDocument{T}(f::AbstractString) where T<:AbstractString = begin
+    d = FileDocument(T(f), DocumentMetadata())
     d.metadata.name = f
     return d
 end
+
+FileDocument(f::AbstractString) = FileDocument{String}(f)
 
 
 # StringDocument type and constructors
@@ -49,7 +51,9 @@ mutable struct StringDocument{T<:AbstractString} <: AbstractDocument{T}
     metadata::DocumentMetadata
 end
 
-StringDocument(txt::AbstractString) = StringDocument(txt, DocumentMetadata())
+StringDocument{T}(txt::AbstractString) where T<:AbstractString = StringDocument(T(txt), DocumentMetadata())
+
+StringDocument(txt::T) where T<:AbstractString = StringDocument{T}(txt, DocumentMetadata())
 
 
 # TokenDocument type and constructors
@@ -58,13 +62,15 @@ mutable struct TokenDocument{T<:AbstractString} <: AbstractDocument{T}
     metadata::DocumentMetadata
 end
 
-TokenDocument(txt::AbstractString, dm::DocumentMetadata) =
-    TokenDocument(tokenize(String(txt)), dm)
-
 TokenDocument(tkns::Vector{T}) where T <: AbstractString =
-    TokenDocument(tkns, DocumentMetadata())
+    TokenDocument{T}(tkns, DocumentMetadata())
 
-TokenDocument(txt::AbstractString) = TokenDocument(String(txt), DocumentMetadata())
+TokenDocument{T}(txt::AbstractString, dm::DocumentMetadata=DocumentMetadata()
+                ) where T<:AbstractString =
+    TokenDocument{T}(T.(tokenize(txt)), dm)
+
+TokenDocument(txt::AbstractString, dm::DocumentMetadata=DocumentMetadata()) =
+    TokenDocument(tokenize(txt), dm)
 
 
 # NGramDocument type and constructors
@@ -74,16 +80,20 @@ mutable struct NGramDocument{T<:AbstractString} <: AbstractDocument{T}
     metadata::DocumentMetadata
 end
 
-NGramDocument(txt::AbstractString, dm::DocumentMetadata,
-              n::Int=DEFAULT_NGRAM_COMPLEXITY) =
-    NGramDocument(ngramize(dm.language, tokenize(String(txt)), n), n, dm)
-
-NGramDocument(txt::AbstractString, n::Int=DEFAULT_NGRAM_COMPLEXITY) =
-    NGramDocument(txt, DocumentMetadata(), n)
-
 NGramDocument(ng::Dict{T, Int}, n::Int=DEFAULT_NGRAM_COMPLEXITY
              ) where T <: AbstractString =
-    NGramDocument(ng, n, DocumentMetadata())
+    NGramDocument{T}(ng, n, DocumentMetadata())
+
+NGramDocument{T}(txt::AbstractString,
+                 dm::DocumentMetadata=DocumentMetadata(),
+                 n::Int=DEFAULT_NGRAM_COMPLEXITY) where T<:AbstractString =
+    NGramDocument(ngramize(dm.language, T.(tokenize(txt)), n), n, dm)
+
+NGramDocument(txt::AbstractString,
+              dm::DocumentMetadata=DocumentMetadata(),
+              n::Int=DEFAULT_NGRAM_COMPLEXITY) =
+    NGramDocument(ngramize(dm.language, tokenize(txt), n), n, dm)
+
 
 
 # Union type that refers to a generic, non-abstract document type
@@ -184,4 +194,4 @@ Base.convert(::Type{NGramDocument{T}},
 
 
 # getindex() methods: StringDocument("This is text and that is not")["is"]
-Base.getindex(d::AbstractDocument, term::AbstractString) = ngrams(d)[term]
+Base.getindex(d::AbstractDocument, term::AbstractString) = get(ngrams(d), term, 0)
