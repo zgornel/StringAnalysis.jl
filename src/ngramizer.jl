@@ -1,5 +1,6 @@
 # Construct n-grams using single space concatenation
-function ngramize(lang::S, words::Vector{T}, n::Int) where {S<:Language, T<:AbstractString}
+function ngramize(lang::S, words::Vector{T}, n::Int=DEFAULT_NGRAM_COMPLEXITY
+                 ) where {S<:Language, T<:AbstractString}
     if n == 1
         return onegramize(lang, words)
     end

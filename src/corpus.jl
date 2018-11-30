@@ -1,9 +1,9 @@
 # Basic Corpus type
-mutable struct Corpus{T<:AbstractDocument}
+mutable struct Corpus{S, T<:AbstractDocument{S}}
     documents::Vector{T}
     total_terms::Int
-    lexicon::Dict{String, Int}
-    inverse_index::Dict{String, Vector{Int}}
+    lexicon::Dict{S, Int}
+    inverse_index::Dict{S, Vector{Int}}
     h::TextHashFunction
 end
 
@@ -11,21 +11,38 @@ end
 Corpus(docs::Vector{T};
        hash_function::Function = DEFAULT_HASH_FUNCTION,
        cardinality::Int=DEFAULT_CARDINALITY
-      ) where T<:AbstractDocument =
+      ) where T<:AbstractDocument{S} where S<:AbstractString =
     Corpus(
         docs,
         0,
-        Dict{String, Int}(),
-        Dict{String, Vector{Int}}(),
+        Dict{S, Int}(),
+        Dict{S, Vector{Int}}(),
         TextHashFunction(hash_function, cardinality)
     )
 
-Corpus(docs::Vector{AbstractDocument{T}};
+Corpus(docs::Vector{AbstractDocument{S}};
        hash_function::Function = DEFAULT_HASH_FUNCTION,
-       cardinality::Int=DEFAULT_CARDINALITY) where T<:AbstractString =
-    Corpus(Vector{GenericDocument{T}}(docs),
+       cardinality::Int=DEFAULT_CARDINALITY) where S<:AbstractString =
+    Corpus(Vector{GenericDocument{S}}(docs),
            hash_function=hash_function,
            cardinality=cardinality)
+
+Corpus(docs::Vector{AbstractDocument};
+       hash_function::Function = DEFAULT_HASH_FUNCTION,
+       cardinality::Int=DEFAULT_CARDINALITY) where S<:AbstractString = begin
+    # Force-convert to String ;)
+    n = length(docs)
+    T = String
+    new_docs = Vector{GenericDocument{T}}(undef, n)
+    for i in 1:n
+        docs[i] isa FileDocument && (new_docs[i] = convert(FileDocument{T}, docs[i]))
+        docs[i] isa StringDocument && (new_docs[i] = convert(StringDocument{T}, docs[i]))
+        docs[i] isa TokenDocument && (new_docs[i] = convert(TokenDocument{T}, docs[i]))
+        docs[i] isa NGramDocument && (new_docs[i] = convert(NGramDocument{T}, docs[i]))
+    end
+    return Corpus(new_docs; hash_function=hash_function, cardinality=cardinality)
+end
+
 
 
 # Construct a Corpus from a directory of text files
