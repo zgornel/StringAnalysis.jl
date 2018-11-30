@@ -1,7 +1,8 @@
 ## StringAnalysis Release Notes
 
-Master (upcoming v0.1.1)
+v0.1.1
 ------
+ - typing improvements
  - Added support for Vector element type in DTV iteration
  - Made `AbstractDocument` a parametric type
  - Extended test coverage
