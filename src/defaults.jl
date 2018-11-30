@@ -14,3 +14,4 @@ const DEFAULT_HASH_FUNCTION = hash
 const DEFAULT_CARDINALITY = 100
 const DEFAULT_FLOAT_TYPE = eltype(1.0)
 const DEFAULT_DTM_TYPE = Int  # can be anything <:Real
+const DEFAULT_NGRAM_COMPLEXITY = 1  # default ngram complexity

@@ -74,13 +74,15 @@ mutable struct NGramDocument{T<:AbstractString} <: AbstractDocument{T}
     metadata::DocumentMetadata
 end
 
-NGramDocument(txt::AbstractString, dm::DocumentMetadata, n::Integer=1) =
+NGramDocument(txt::AbstractString, dm::DocumentMetadata,
+              n::Int=DEFAULT_NGRAM_COMPLEXITY) =
     NGramDocument(ngramize(dm.language, tokenize(String(txt)), n), n, dm)
 
-NGramDocument(txt::AbstractString, n::Integer=1) =
+NGramDocument(txt::AbstractString, n::Int=DEFAULT_NGRAM_COMPLEXITY) =
     NGramDocument(txt, DocumentMetadata(), n)
 
-NGramDocument(ng::Dict{T, Int}, n::Integer=1) where T <: AbstractString =
+NGramDocument(ng::Dict{T, Int}, n::Int=DEFAULT_NGRAM_COMPLEXITY
+             ) where T <: AbstractString =
     NGramDocument(ng, n, DocumentMetadata())
 
 
@@ -117,7 +119,8 @@ end
 text(ngd::NGramDocument) =
     error("The text of an NGramDocument cannot be reconstructed")
 
-text!(sd::StringDocument, new_text::AbstractString) = (sd.text = new_text)
+text!(sd::StringDocument{T}, new_text::T) where T<:AbstractString =
+    (sd.text = new_text)
 
 text!(d::AbstractDocument, new_text::AbstractString) =
     error("The text of a $(typeof(d)) cannot be edited")
@@ -131,23 +134,21 @@ tokens(d::TokenDocument) = d.tokens
 tokens(d::NGramDocument) =
     error("The tokens of an NGramDocument cannot be reconstructed")
 
-tokens!(d::TokenDocument, new_tokens::Vector{T}) where {T <: AbstractString} = (d.tokens = new_tokens)
+tokens!(d::TokenDocument{T}, new_tokens::Vector{T}) where T<:AbstractString =
+    (d.tokens = new_tokens)
 
-tokens!(d::AbstractDocument, new_tokens::Vector{T}) where T <: AbstractString =
+tokens!(d::AbstractDocument, new_tokens::Vector{T}) where T<:AbstractString =
     error("The tokens of a $(typeof(d)) cannot be directly edited")
 
 
 # ngrams() / ngrams!(): Access to document text as n-gram counts
-ngrams(d::NGramDocument, n::Integer) =
-    error("The n-gram complexity of an NGramDocument cannot be increased")
-
-ngrams(d::AbstractDocument, n::Integer) = ngramize(language(d), tokens(d), n)
-
 ngrams(d::NGramDocument) = d.ngrams
 
-ngrams(d::AbstractDocument) = ngrams(d, 1)
+ngrams(d::AbstractDocument, n::Int=DEFAULT_NGRAM_COMPLEXITY) =
+    ngramize(language(d), tokens(d), n)
 
-ngrams!(d::NGramDocument, new_ngrams::Dict{AbstractString, Int}) = (d.ngrams = new_ngrams)
+ngrams!(d::NGramDocument{T}, new_ngrams::Dict{T, Int}) where T<:AbstractString =
+    (d.ngrams = new_ngrams)
 
 ngrams!(d::AbstractDocument, new_ngrams::Dict) =
     error("The n-grams of $(typeof(d)) cannot be directly edited")
@@ -168,9 +169,9 @@ ngram_complexity(d::AbstractDocument) =
 
 
 # Conversion rules
-Base.convert(::Type{StringDocument{T}}, d::FileDocument{T}
+Base.convert(::Type{StringDocument{T}}, d::FileDocument
             ) where T<:AbstractString =
-    StringDocument(text(d), d.metadata)
+    StringDocument(T.(text(d)), d.metadata)
 
 Base.convert(::Type{TokenDocument{T}}, d::(Union{FileDocument{T}, StringDocument{T}})
             ) where T<:AbstractString =
@@ -179,7 +180,7 @@ Base.convert(::Type{TokenDocument{T}}, d::(Union{FileDocument{T}, StringDocument
 Base.convert(::Type{NGramDocument{T}},
              d::(Union{FileDocument{T}, StringDocument{T}, TokenDocument{T}})
             ) where T<:AbstractString=
-    NGramDocument(T.(ngrams(d)), 1, d.metadata)
+    NGramDocument(ngramize(language(d), T.(tokens(d))))
 
 
 # getindex() methods: StringDocument("This is text and that is not")["is"]
