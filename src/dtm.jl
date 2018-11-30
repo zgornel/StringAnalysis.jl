@@ -119,7 +119,7 @@ end
 # The hash trick: use a hash function instead of a lexicon to determine the
 # columns of a DocumentTermMatrix-like encoding of the data
 function hash_dtv(d::AbstractDocument,
-                  h::TextHashFunction;
+                  h::TextHashFunction,
                   eltype::Type{T}=DEFAULT_DTM_TYPE) where T<:Real
     p = cardinality(h)
     res = zeros(T, p)
@@ -133,25 +133,25 @@ end
 hash_dtv(d::AbstractDocument;
          cardinality::Int=DEFAULT_CARDINALITY,
          eltype::Type{T}=DEFAULT_DTM_TYPE) where T<:Real =
-    hash_dtv(d, TextHashFunction(cardinality), eltype=eltype)
+    hash_dtv(d, TextHashFunction(cardinality), eltype)
 
 function hash_dtm(crps::Corpus,
-                  h::TextHashFunction;
+                  h::TextHashFunction,
                   eltype::Type{T}=DEFAULT_DTM_TYPE) where T<:Real
     n, p = length(crps), cardinality(h)
     res = zeros(T, n, p)
     for (i, doc) in enumerate(crps)
-        res[i, :] = hash_dtv(doc, h, eltype=eltype)
+        res[i, :] = hash_dtv(doc, h, eltype)
     end
     return res
 end
 
 
-hash_dtm(crps::Corpus; eltype::Type{T}=DEFAULT_DTM_TYPE) where T<:Real =
-    hash_dtm(crps, hash_function(crps), eltype=eltype)
+hash_dtm(crps::Corpus, eltype::Type{T}=DEFAULT_DTM_TYPE) where T<:Real =
+    hash_dtm(crps, hash_function(crps), eltype)
 
 hash_tdm(crps::Corpus, eltype::Type{T}=DEFAULT_DTM_TYPE) where T<:Real =
-    hash_dtm(crps, eltype=eltype)' #'
+    hash_dtm(crps, eltype)' #'
 
 
 # Produce entries for on-line analysis when DTM would not fit in memory
@@ -170,7 +170,7 @@ Base.iterate(edt::EachDTV, state=1) = begin
 end
 
 next(edt::EachDTV{S, T}, state::Int) where {S,T} =
-    (dtv(edt.corpus.documents[state], lexicon(edt.corpus), eltype=S), state + 1)
+    (dtv(edt.corpus.documents[state], lexicon(edt.corpus), S), state + 1)
 
 each_dtv(crps::Corpus; eltype::Type{S}=DEFAULT_DTM_TYPE) where S<:Real =
     EachDTV{S}(crps)
@@ -200,7 +200,7 @@ Base.iterate(edt::EachHashDTV, state=1) = begin
 end
 
 next(edt::EachHashDTV{S,T}, state::Int) where {S,T} =
-    (hash_dtv(edt.corpus.documents[state], edt.corpus.h, eltype=S), state + 1)
+    (hash_dtv(edt.corpus.documents[state], edt.corpus.h, S), state + 1)
 
 each_hash_dtv(crps::Corpus; eltype::Type{S}=DEFAULT_DTM_TYPE) where S<:Real =
     EachHashDTV{S}(crps)
