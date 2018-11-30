@@ -104,6 +104,7 @@ const GenericDocument{T} = Union{
                                  NGramDocument{T}
                                 } where T<:AbstractString
 
+
 # Easier Document() constructor that decides types based on inputs
 Document(str::AbstractString) = isfile(str) ? FileDocument(str) : StringDocument(str)
 
@@ -179,19 +180,25 @@ ngram_complexity(d::AbstractDocument) =
 
 
 # Conversion rules
-Base.convert(::Type{StringDocument{T}}, d::FileDocument
+Base.convert(::Type{FileDocument{T}}, d::FileDocument
+            ) where T<:AbstractString =
+    FileDocument(T.(d.filename), d.metadata)
+
+Base.convert(::Type{StringDocument{T}}, d::Union{FileDocument, StringDocument}
             ) where T<:AbstractString =
     StringDocument(T.(text(d)), d.metadata)
 
-Base.convert(::Type{TokenDocument{T}}, d::(Union{FileDocument{T}, StringDocument{T}})
+Base.convert(::Type{TokenDocument{T}}, d::Union{TokenDocument, FileDocument, StringDocument}
             ) where T<:AbstractString =
     TokenDocument(T.(tokens(d)), d.metadata)
 
-Base.convert(::Type{NGramDocument{T}},
-             d::(Union{FileDocument{T}, StringDocument{T}, TokenDocument{T}})
-            ) where T<:AbstractString=
-    NGramDocument(ngramize(language(d), T.(tokens(d))))
+Base.convert(::Type{NGramDocument{T}}, d::Union{TokenDocument, FileDocument, StringDocument}
+            ) where T<:AbstractString =
+    NGramDocument(ngramize(language(d), T.(tokens(d))), DEFAULT_NGRAM_COMPLEXITY, d.metadata)
 
+Base.convert(::Type{NGramDocument{T}}, d::NGramDocument{T2}
+            ) where {T<:AbstractString, T2<:AbstractString} =
+    NGramDocument(Dict{T, Int}(ngrams(d)), d.n, d.metadata)
 
 # getindex() methods: StringDocument("This is text and that is not")["is"]
 Base.getindex(d::AbstractDocument, term::AbstractString) = get(ngrams(d), term, 0)
