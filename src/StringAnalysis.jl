@@ -48,8 +48,8 @@ module StringAnalysis
     export Stemmer, stem!, stem, stemmer_types
     export tokenize, tokenize_fast, tokenize_slow, sentence_tokenize
     export tf!, tf, tf_idf!, tf_idf, bm_25!, bm_25
-    export lsa!, lsa
-    export lda!, lda
+    export lsa
+    export lda
     export frequent_terms, sparse_terms,
            prepare!, prepare,
            strip_patterns, strip_corrupt_utf8, strip_case,
