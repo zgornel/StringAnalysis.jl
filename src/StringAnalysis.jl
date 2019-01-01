@@ -29,7 +29,7 @@ module StringAnalysis
     using WordTokenizers
 
     # Imports
-    import Base: show, summary, names
+    import Base: size, show, summary, names
     import Languages: name
 
     # Exports
