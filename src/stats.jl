@@ -82,7 +82,7 @@ function tf_idf!(dtm::SparseMatrixCSC{T}, tfidf::SparseMatrixCSC{F}
           tfidfvals[j] = sqrt.(dtmvals[j] / max(words_in_documents[row], oneval)) * idf[i]
        end
     end
-     return tfidf
+    return tfidf
 end
 
 tf_idf!(dtm::AbstractMatrix{T}) where T<:Real = tf_idf!(dtm, dtm)
@@ -96,10 +96,10 @@ tf_idf(dtm::DocumentTermMatrix) = tf_idf(dtm.dtm)
 # BM25: Okapi Best Match 25
 # Details at: https://en.wikipedia.org/wiki/Okapi_BM25
 function bm_25!(dtm::AbstractMatrix{T},
-               bm25::AbstractMatrix{F};
-               κ::Int=2,
-               β::Float64=0.75
-              ) where {T<:Real, F<:AbstractFloat}
+                bm25::AbstractMatrix{F};
+                κ::Int=2,
+                β::Float64=0.75
+               ) where {T<:Real, F<:AbstractFloat}
     # Initializations
     k = F(κ)
     b = F(β)
