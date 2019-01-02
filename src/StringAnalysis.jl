@@ -48,7 +48,8 @@ module StringAnalysis
     export Stemmer, stem!, stem, stemmer_types
     export tokenize, tokenize_fast, tokenize_slow, sentence_tokenize
     export tf!, tf, tf_idf!, tf_idf, bm_25!, bm_25
-    export LSAModel, lsa, embed_document, embed_word, cosine, similarity
+    export LSAModel, lsa, embed_document, embed_word, get_vector, index,
+           cosine, similarity
     export lda
     export frequent_terms, sparse_terms,
            prepare!, prepare,
