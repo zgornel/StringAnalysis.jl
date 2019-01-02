@@ -20,7 +20,7 @@ function LSAModel(vocab::AbstractArray{S,1},
         vocab_hash[word] = i
     end
     U, σ, V = svd(X)
-    Σ = diagm(0 => T.(σ))
+    Σ = diagm(0 => T.(σ[1:k]))
     LSAModel(vocab, vocab_hash, T.(U[:,1:k]), Σ, T.(V[:,1:k]))
 end
 
@@ -32,7 +32,7 @@ function LSAModel(dtm::DocumentTermMatrix{T};
     k > size(dtm.dtm, 1) &&
         @warn "k can be at most $(size(dtm.dtm, 1)); using k=$(size(dtm.dtm, 1))"
     U, σ, V = svd(Matrix(dtm.dtm))
-    Σ = diagm(0 => T.(σ))
+    Σ = diagm(0 => T.(σ[1:k]))
     LSAModel(dtm.terms, dtm.column_indices, T.(U[:,1:k]), Σ, T.(V[:,1:k]))
 end
 
@@ -52,6 +52,7 @@ Perform [Latent Semantic Analysis](https://en.wikipedia.org/wiki/Latent_semantic
 The input `X` can be a `Corpus`, `DocumentTermMatrix` or `AbstractArray`.
 """
 lsa(X::DocumentTermMatrix; k::Int=3) = LSAModel(X, k=k)
+
 lsa(crps::Corpus; k::Int=3) = lsa(DocumentTermMatrix{Float32}(crps), k=k)
 
 
@@ -90,24 +91,63 @@ index(lm::LSAModel, word) = lm.vocab_hash[word]
 
 
 """
-    get_vector(lm, word [; vector_type=:document])
+    get_vector(lm, word)
 
-Returns the vector representation of `word` from the LSA model `lm`
-using .
+Returns the vector representation of `word` from the LSA model `lm`.
 """
-get_vector(lm::LSAModel, word;) = begin
-    # TODO(Corneliu) Implement this
+function get_vector(lm::LSAModel{S,T,A,H}, word) where {S,T,A,H}
+    default = zeros(T, size(lm.Σ,1))
+    idx = get(lm.vocab_hash, word, 0)
+    if idx == 0
+        return default
+    else
+        return lm.V[idx,:]
+    end
 end
 
 
 """
-    cosine(lm, word, n=10)
+    embed_document(lm, doc)
 
-Return the position of `n` (by default `n = 10`) neighbors of `word` and their
-cosine similarities.
+Return the vector representation of a document `doc` using the LSA model `lm`.
 """
-function cosine(lm::LSAModel, word, n=10)
-    metrics = lm.vectors'*get_vector(lm, word)
+embed_document(lm::LSAModel{S,T,A,H}, doc::AbstractDocument) where {S,T,A,H} =
+    # Hijack vocabulary hash to use as lexicon (only the keys needed)
+    embed_document(lm, dtv(doc, lm.vocab_hash, T))
+
+embed_document(lm::LSAModel{S,T,A,H}, doc::AbstractString) where {S,T,A,H} =
+    embed_document(lm, NGramDocument{S}(doc))
+
+# Actual embedding function: takes as input the LSA model `lm` and a document
+# term vector `dtv`. Returns the representation of `dtv` in the embedding space.
+function embed_document(lm::LSAModel{S,T,A,H}, dtv::Vector{T}) where {S,T,A,H}
+    # d̂ⱼ= Σ⁻¹⋅Vᵀ⋅dⱼ
+    d̂ = inv(lm.Σ) * lm.V' * dtv
+    return d̂
+end
+
+
+"""
+    embed_word(lm, word)
+
+Return the vector representation of `word` using the LSA model `lm`.
+"""
+function embed_word(lm::LSAModel, word)
+    @error """Word embedding is not supported as it would require storing
+              all documents in the model in order to determine the counts
+              of `word` across the corpus."""
+end
+
+
+"""
+    cosine(lm, doc, n=10)
+
+Return the position of `n` (by default `n = 10`) neighbors of document `doc`
+and their cosine similarities.
+"""
+function cosine(lm::LSAModel, doc, n=10)
+    metrics = lm.U * embed_document(lm, doc)
+    n = min(n, length(metrics))
     topn_positions = sortperm(metrics[:], rev = true)[1:n]
     topn_metrics = metrics[topn_positions]
     return topn_positions, topn_metrics
@@ -115,22 +155,10 @@ end
 
 
 """
-    similarity(lm, word1, word2)
+    similarity(lm, doc1, doc2)
 
-Return the cosine similarity value between two words `word1` and `word2`.
+Return the cosine similarity value between two documents `doc1` and `doc2`.
 """
-function similarity(lm::LSAModel, word1, word2)
-    return get_vector(lm, word1)'*get_vector(lm, word2)
-end
-
-
-"""
-    cosine_similar_words(lm, word, n=10)
-
-Return the top `n` (by default `n = 10`) most similar words to `word`
-from the LSAModel `lm`.
-"""
-function cosine_similar_words(lm::LSAModel, word, n=10)
-    indx, metr = cosine(lm, word, n)
-    return vocabulary(lm)[indx]
+function similarity(lm::LSAModel, doc1, doc2)
+    return embed_document(lm, doc1)' * embed_document(lm, doc2)
 end
