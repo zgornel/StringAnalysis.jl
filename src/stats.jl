@@ -6,12 +6,9 @@ function tf!(dtm::AbstractMatrix{T}, tf::AbstractMatrix{F}
             ) where {T<:Real, F<:AbstractFloat}
     n, p = size(dtm)
     # TF tells us what proportion of a document is defined by a term
-    for i in 1:n
-        words_in_document = zero(T)
-        for j in 1:p
-            words_in_document += dtm[i, j]
-        end
-        tf[i, :] = sqrt.(dtm[i, :] ./ max(words_in_document, one(T)))
+    words_in_documents = sum(dtm, dims=2)
+    @inbounds for i in 1:n
+        tf[i, :] = sqrt.(dtm[i, :] ./ max(words_in_documents[i], one(T)))
     end
     return tf
 end
@@ -55,8 +52,8 @@ function tf_idf!(dtm::AbstractMatrix{T}, tfidf::AbstractMatrix{F}
     documents_containing_term = vec(sum(dtm .> 0, dims=1)) .+ one(T)
     idf = log.(n ./ documents_containing_term) .+ one(F)
     # TF-IDF is the product of TF and IDF
-    for i in 1:n
-        for j in 1:p
+    @inbounds @simd for j in 1:p
+        for i in 1:n
            tfidf[i, j] = tfidf[i, j] * idf[j]
         end
     end
@@ -82,7 +79,7 @@ function tf_idf!(dtm::SparseMatrixCSC{T}, tfidf::SparseMatrixCSC{F}
           tfidfvals[j] = sqrt.(dtmvals[j] / max(words_in_documents[row], oneval)) * idf[i]
        end
     end
-     return tfidf
+    return tfidf
 end
 
 tf_idf!(dtm::AbstractMatrix{T}) where T<:Real = tf_idf!(dtm, dtm)
@@ -96,10 +93,10 @@ tf_idf(dtm::DocumentTermMatrix) = tf_idf(dtm.dtm)
 # BM25: Okapi Best Match 25
 # Details at: https://en.wikipedia.org/wiki/Okapi_BM25
 function bm_25!(dtm::AbstractMatrix{T},
-               bm25::AbstractMatrix{F};
-               κ::Int=2,
-               β::Float64=0.75
-              ) where {T<:Real, F<:AbstractFloat}
+                bm25::AbstractMatrix{F};
+                κ::Int=2,
+                β::Float64=0.75
+               ) where {T<:Real, F<:AbstractFloat}
     # Initializations
     k = F(κ)
     b = F(β)
@@ -113,8 +110,8 @@ function bm_25!(dtm::AbstractMatrix{T},
     documents_containing_term = vec(sum(dtm .> 0, dims=1)) .+ one(T)
     idf = log.(n ./ documents_containing_term) .+ oneval
     # BM25 is the product of IDF and a fudged TF
-    @inbounds for i in 1:n
-        for j in 1:p
+    @inbounds @simd for j in 1:p
+        for i in 1:n
             bm25[i, j] = idf[j] *
                 ((k + 1) * bm25[i, j]) /
                 (k * (oneval - b + b * ln[i]) + bm25[i, j])
@@ -154,8 +151,11 @@ function bm_25!(dtm::SparseMatrixCSC{T},
     return bm25
 end
 
-bm_25!(dtm::AbstractMatrix{T}) where T<:Real = bm_25!(dtm, dtm)
+bm_25!(dtm::AbstractMatrix{T}; κ::Int=2, β::Float64=0.75) where T<:Real =
+    bm_25!(dtm, dtm, κ=κ, β=β)
 
-bm_25(dtm::AbstractMatrix{T}) where T<:Real = bm_25!(dtm, similar(dtm, DEFAULT_FLOAT_TYPE))
+bm_25(dtm::AbstractMatrix{T}; κ::Int=2, β::Float64=0.75) where T<:Real =
+    bm_25!(dtm, similar(dtm, DEFAULT_FLOAT_TYPE), κ=κ, β=β)
 
-bm_25(dtm::DocumentTermMatrix) = bm_25(dtm.dtm)
+bm_25(dtm::DocumentTermMatrix; κ::Int=2, β::Float64=0.75) =
+    bm_25(dtm.dtm, κ=κ, β=β)
