@@ -1,47 +1,72 @@
-# LSA
-mutable struct LSAModel{S<:AbstractString, T<:Real, A<:AbstractMatrix{T}, H<:Integer}
-    vocab::Vector{S}
-    vocab_hash::Dict{S,H}
-    U::A
-    Σ::A
-    V::A
+"""
+LSA (latent semantic analysis) model, where:
+  • X is a m×n document-term-matrix with m documents, n terms so that
+    X[i,j] represents a statistical indicator of the importance of term j in document i
+  • U,Σ,V = svd(X)
+"""
+mutable struct LSAModel{S<:AbstractString, T<:AbstractFloat, A<:AbstractMatrix{T}, H<:Integer}
+    vocab::Vector{S}        # vocabulary
+    vocab_hash::Dict{S,H}   # term to column index in V
+    U::A                    # document vectors
+    Σinv::A                 # inverse of Σ
+    Vᵀ::A                   # word vectors (transpose of V)
+    stats::Symbol           # term/document importance
+    idf::Vector{T}          # inverse document frequencies
+    nwords::T               # average words/document in corpus
+    κ::Int                  # κ parameter for Okapi BM25 (used if stats==:bm25)
+    β::Float64              # β parameter for Okapi BM25 (used if stats==:bm25)
 end
 
-function LSAModel(vocab::AbstractArray{S,1},
-                  X::AbstractArray{T,2};
-                  k::Int=size(X, 1)
-                 ) where {S<:AbstractString, T<:Real}
-    length(vocab) == size(X, 2) ||
-        throw(DimensionMismatch("Dimension of vocab and dtm are inconsistent."))
-    k > size(X, 1) &&
-        @warn "k can be at most $(size(X, 1)); using k=$(size(X, 1))"
-    vocab_hash = Dict{S, Int}()
-    for (i, word) in enumerate(vocab)
-        vocab_hash[word] = i
-    end
-    U, σ, V = svd(X)
-    Σ = diagm(0 => T.(σ[1:k]))
-    LSAModel(vocab, vocab_hash, T.(U[:,1:k]), Σ, T.(V[:,1:k]))
+function LSAModel(dtm::DocumentTermMatrix{T}; kwargs...) where T<:Integer
+    @error """A LSA model requires a that the document term matrix
+              be a DocumentTermMatrix{<:AbstractFloat}!"""
 end
 
 function LSAModel(dtm::DocumentTermMatrix{T};
-                  k::Int=size(dtm.dtm, 1)
-                 ) where T<:Real
-    length(dtm.terms) == size(dtm.dtm, 2) ||
+                  k::Int=size(dtm.dtm, 1),
+                  stats::Symbol=:tfidf,
+                  κ::Int=2,
+                  β::Float64=0.75
+                 ) where T<:AbstractFloat
+    n, p = size(dtm.dtm)
+    # Checks
+    length(dtm.terms) == p ||
         throw(DimensionMismatch("Dimensions inside dtm are inconsistent."))
-    k > size(dtm.dtm, 1) &&
-        @warn "k can be at most $(size(dtm.dtm, 1)); using k=$(size(dtm.dtm, 1))"
-    U, σ, V = svd(Matrix(dtm.dtm))
-    Σ = diagm(0 => T.(σ[1:k]))
-    LSAModel(dtm.terms, dtm.column_indices, T.(U[:,1:k]), Σ, T.(V[:,1:k]))
+    k > n &&
+        @warn "k can be at most $n; using k=$n"
+    if !(stats in [:count, :tf, :tfidf, :bm25])
+        @warn "stats has to be either :tf, :tfidf or :bm25; defaulting to :tfidf"
+        stats = :tfidf
+    end
+    # Calculate inverse document frequency, mean document size
+    documents_containing_term = vec(sum(dtm.dtm .> 0, dims=1)) .+ one(T)
+    idf = log.(n ./ documents_containing_term) .+ one(T)
+    nwords = mean(sum(dtm.dtm, dims=2))
+    # Get X
+    if stats == :count
+        X = dtm.dtm
+    elseif stats == :tf
+        X = tf(dtm.dtm)
+    elseif stats == :tfidf
+        X = tf_idf(dtm.dtm)
+    elseif stats == :bm25
+        X = bm_25(dtm.dtm, κ=κ, β=β)
+    end
+    # Get the model
+    U, σ, V = svd(Matrix(X))
+    Σinv = diagm(0 => T.(1 ./ σ[1:k]))
+    # Return the model
+    return LSAModel(dtm.terms, dtm.column_indices,
+                    T.(U[:,1:k]), Σinv, T.(V[:,1:k]'),
+                    stats, idf, nwords, κ, β)
 end
 
 
 function Base.show(io::IO, lm::LSAModel{S,T,A,H}) where {S,T,A,H}
     num_docs, len_vecs = size(lm.U)
     num_terms = length(lm.vocab)
-    print(io, "LSA Model $(num_docs) documents, $(num_terms) terms, " *
-          "$(len_vecs)-element $(T) vectors")
+    print(io, "LSA Model ($(lm.stats)) $(num_docs) documents, " *
+          "$(num_terms) terms, $(len_vecs)-element $(T) vectors")
 end
 
 
@@ -51,9 +76,21 @@ end
 Perform [Latent Semantic Analysis](https://en.wikipedia.org/wiki/Latent_semantic_analysis).
 The input `X` can be a `Corpus`, `DocumentTermMatrix` or `AbstractArray`.
 """
-lsa(X::DocumentTermMatrix; k::Int=3) = LSAModel(X, k=k)
+function lsa(dtm::DocumentTermMatrix{T};
+             k::Int=size(dtm.dtm, 1),
+             stats::Symbol=:tfidf,
+             κ::Int=2,
+             β::Float64=0.75) where T<:AbstractFloat
+    LSAModel(dtm, k=k, stats=stats, κ=κ, β=β)
+end
 
-lsa(crps::Corpus; k::Int=3) = lsa(DocumentTermMatrix{Float32}(crps), k=k)
+function lsa(crps::Corpus;
+             k::Int=size(dtm.dtm, 1),
+             stats::Symbol=:tfidf,
+             κ::Int=2,
+             β::Float64=0.75) where T<:AbstractFloat
+    lsa(DocumentTermMatrix{Float32}(crps), k=k, stats=stats, κ=κ, β=β)
+end
 
 
 """
@@ -101,7 +138,7 @@ function get_vector(lm::LSAModel{S,T,A,H}, word) where {S,T,A,H}
     if idx == 0
         return default
     else
-        return lm.V[idx,:]
+        return lm.Vᵀ[:, idx]
     end
 end
 
@@ -121,8 +158,26 @@ embed_document(lm::LSAModel{S,T,A,H}, doc::AbstractString) where {S,T,A,H} =
 # Actual embedding function: takes as input the LSA model `lm` and a document
 # term vector `dtv`. Returns the representation of `dtv` in the embedding space.
 function embed_document(lm::LSAModel{S,T,A,H}, dtv::Vector{T}) where {S,T,A,H}
+    words_in_document = sum(dtv)
+    # Calculate document vector
+    if lm.stats == :count
+        v = dtv
+    elseif lm.stats == :tf
+        tf = sqrt.(dtv ./ max(words_in_document, one(T)))
+        v = tf
+    elseif lm.stats == :tfidf
+        tf = sqrt.(dtv ./ max(words_in_document, one(T)))
+        v = tf .* lm.idf
+    elseif lm.stats == :bm25
+        k = T(lm.κ)
+        b = T(lm.β)
+        oneval = one(T)
+        tf = sqrt.(dtv ./ max(words_in_document, one(T)))
+        v = lm.idf .* ((k + 1) .* tf) ./
+                       (k * (oneval - b + b * sum(dtv)/lm.nwords) .+ tf)
+    end
     # d̂ⱼ= Σ⁻¹⋅Vᵀ⋅dⱼ
-    d̂ = inv(lm.Σ) * lm.V' * dtv
+    d̂ = lm.Σinv * lm.Vᵀ * v
     return d̂
 end
 
