@@ -121,8 +121,10 @@ function LSAModel(dtm::DocumentTermMatrix{T};
         X = bm_25(dtm.dtm, κ=κ, β=β)
     end
     # Get the model
-    U, σ, V = svd(Matrix(X))
-    Σinv = diagm(0 => T.(1 ./ σ[1:k]))
+    U, Σ, V = svd(Matrix(X))
+    Σinv = diagm(0 => T.(1 ./ Σ[1:k]))
+    U = U[:,1:k]  # trim components
+    U = T.(U ./ sqrt.(sum(U.^2, dims=2)))  # Normalize + type convert
     # Return the model
     return LSAModel(dtm.terms, dtm.column_indices,
                     T.(U[:,1:k]), Σinv, T.(V[:,1:k]'),
@@ -249,7 +251,7 @@ function embed_document(lm::LSAModel{S,T,A,H}, dtv::Vector{T}) where {S,T,A,H}
     end
     # Embed
     d̂ = lm.Σinv * lm.Vᵀ * v  # d̂ⱼ= Σ⁻¹⋅Vᵀ⋅dⱼ
-    return d̂
+    return d̂ ./ norm(d̂,2)
 end
 
 
