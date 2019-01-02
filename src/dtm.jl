@@ -15,8 +15,7 @@ function columnindices(terms::Vector{String})
     return column_indices
 end
 
-function DocumentTermMatrix{T}(crps::Corpus,
-                               terms::Vector{String}) where T<:Real
+function DocumentTermMatrix{T}(crps::Corpus, terms::Vector{String}) where T<:Real
     column_indices = columnindices(terms)
     m = length(crps)
     n = length(terms)
@@ -46,12 +45,20 @@ end
 DocumentTermMatrix(crps::Corpus, terms::Vector{String}) =
     DocumentTermMatrix{DEFAULT_DTM_TYPE}(crps, terms)
 
+DocumentTermMatrix{T}(crps::Corpus, lex::AbstractDict) where T<:Real =
+    DocumentTermMatrix{T}(crps, sort(collect(keys(lex))))
+
 DocumentTermMatrix(crps::Corpus, lex::AbstractDict) =
-    DocumentTermMatrix(crps, sort(collect(keys(lex))))
+    DocumentTermMatrix{DEFAULT_DTM_TYPE}(crps, sort(collect(keys(lex))))
+
+DocumentTermMatrix{T}(crps::Corpus) where T<:Real = begin
+    isempty(lexicon(crps)) && update_lexicon!(crps)
+    DocumentTermMatrix{T}(crps, lexicon(crps))
+end
 
 DocumentTermMatrix(crps::Corpus) = begin
     isempty(lexicon(crps)) && update_lexicon!(crps)
-    DocumentTermMatrix(crps, lexicon(crps))
+    DocumentTermMatrix{DEFAULT_DTM_TYPE}(crps, lexicon(crps))
 end
 
 DocumentTermMatrix(dtm::SparseMatrixCSC{T, Int},
