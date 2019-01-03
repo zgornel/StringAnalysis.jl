@@ -18,5 +18,8 @@ matrix:
   - julia: nightly
 
 after_success:
+  # generate documentation
+  - julia -e 'using Pkg; ps=Pkg.PackageSpec(name="Documenter", version="0.20"); Pkg.add(ps); Pkg.pin(ps); Pkg.add("StringAnalysis")'
+  - julia -e 'using Pkg; cd(Pkg.dir("StringAnalysis")); include(joinpath("docs", "make.jl"))'
   # push coverage results to Coveralls
   - julia -e '(VERSION >= v"0.7" && using Pkg); Pkg.add("Coverage"); cd(Pkg.dir("StringAnalysis")); using Coverage; Coveralls.submit(process_folder()); Codecov.submit(process_folder())'

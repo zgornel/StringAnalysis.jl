@@ -3,7 +3,7 @@
     doc1 = StringDocument("This is a text about an apple. There are many texts about apples.")
     doc2 = StringDocument("Pears and apples are good but not exotic. An apple a day keeps the doctor away.")
     doc3 = StringDocument("Fruits are good for you.")
-    doc4 = StringDocument("This phrase has nothing to do with the others..")
+    doc4 = StringDocument("This phrase has nothing to do with the others...")
     doc5 = StringDocument("Simple text, little fruit inside")
     # Corpus
     crps = Corpus(AbstractDocument[doc1, doc2, doc3, doc4, doc5])
@@ -15,7 +15,7 @@
     query = StringDocument("Apples and an exotic fruit.")
     for k in [1, 3]
         for stats in [:count, :tf, :tfidf, :bm25]
-            for T in [Float16, Float32, Float64]
+            for T in [Float32, Float64]
                 dtm = DocumentTermMatrix{T}(crps, lex)
                 model = lsa(dtm, k=k, stats=stats)
                 @test model isa LSAModel{String, T, Matrix{T}, Int}

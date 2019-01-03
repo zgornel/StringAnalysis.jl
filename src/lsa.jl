@@ -39,7 +39,7 @@ julia> using StringAnalysis
        doc1 = StringDocument("This is a text about an apple. There are many texts about apples.")
        doc2 = StringDocument("Pears and apples are good but not exotic. An apple a day keeps the doctor away.")
        doc3 = StringDocument("Fruits are good for you.")
-       doc4 = StringDocument("This phrase has nothing to do with the others..")
+       doc4 = StringDocument("This phrase has nothing to do with the others...")
        doc5 = StringDocument("Simple text, little fruit inside")
 
        crps = Corpus(AbstractDocument[doc1, doc2, doc3, doc4, doc5])
@@ -48,7 +48,7 @@ julia> using StringAnalysis
        dtm = DocumentTermMatrix{Float32}(crps, sort(collect(keys(crps.lexicon))))
 
        ### Build LSA Model ###
-       lsa_model = LSAModel(dtm, k=3, stats=:count)
+       lsa_model = LSAModel(dtm, k=3, stats=:tf)
 
        query = StringDocument("Apples and an exotic fruit.")
        idxs, corrs = cosine(lsa_model, query)
@@ -59,11 +59,11 @@ julia> using StringAnalysis
        end
 
 Query: "Apples and an exotic fruit."
-0.10621497 -> "Pears and apples are good but not exotic  An apple a day keeps the doctor away "
-0.044571217 -> "This is a text about an apple  There are many texts about apples "
-0.020167388 -> "Fruits are good for you "
-0.001160352 -> "Simple text  little fruit inside"
--0.016810883 -> "This phrase has nothing to do with the others "
+0.91117114 -> "This is a text about an apple  There are many texts about apples "
+0.8093636 -> "Simple text  little fruit inside "
+0.4731887 -> "Pears and apples are good but not exotic  An apple a day keeps the doctor away "
+0.23154664 -> "Fruits are good for you "
+0.012299925 -> "This phrase has nothing to do with the others "
 ```
 
 # References:
@@ -121,12 +121,12 @@ function LSAModel(dtm::DocumentTermMatrix{T};
         X = bm_25(dtm.dtm, κ=κ, β=β)
     end
     # Get the model
-    U, σ, V = svd(Matrix(X))
-    Σinv = diagm(0 => T.(1 ./ σ[1:k]))
+    U, Σ, V = tsvd(X, k)
+    Σinv::Matrix{T} = diagm(0 => T.(1 ./ Σ))
+    U = T.(U ./ sqrt.(sum(U.^2, dims=2)))  # Normalize + type convert
+    V = T.(V')
     # Return the model
-    return LSAModel(dtm.terms, dtm.column_indices,
-                    T.(U[:,1:k]), Σinv, T.(V[:,1:k]'),
-                    stats, idf, nwords, κ, β)
+    return LSAModel(dtm.terms, dtm.column_indices, U, Σinv, V, stats, idf, nwords, κ, β)
 end
 
 
@@ -249,7 +249,7 @@ function embed_document(lm::LSAModel{S,T,A,H}, dtv::Vector{T}) where {S,T,A,H}
     end
     # Embed
     d̂ = lm.Σinv * lm.Vᵀ * v  # d̂ⱼ= Σ⁻¹⋅Vᵀ⋅dⱼ
-    return d̂
+    return d̂ ./ norm(d̂,2)
 end
 
 
