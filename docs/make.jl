@@ -6,7 +6,7 @@ push!(LOAD_PATH,"../src/")
 # Make documentation
 makedocs(
     modules = [StringAnalysis],
-    format = :html,
+    format = Documenter.HTML(),
     sitename = "  ",
     authors = "Corneliu Cofaru, 0x0α Research",
     clean = true,
