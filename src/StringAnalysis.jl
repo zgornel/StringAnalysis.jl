@@ -24,6 +24,7 @@ module StringAnalysis
     using SparseArrays
     using LinearAlgebra
     using Statistics
+    using TSVD
     using Languages
     using WordTokenizers
 
