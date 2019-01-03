@@ -1,23 +1,22 @@
-#####################################################################################
-#                 :                           : :                                   #
-# .....          .o...          . ...         ..           .....            .....   #
-# '....           :             c'             c           c.  :          .;   c.   #
-# :...,           ;...          l.             o.          l.  l'          ,...l.   #
-#                                                                              ;.   #
-#       .......        .......        .......     ........        ........  ....    #
-#                                                                                   #
-#                                              .:d                  ;'              #
-#                                               cX                  ,.              #
-#                       .l''k, .xo';dx  .l''x,  cX  ,0c  .x. o;';, .dl  cc',c       #
-#                        ...0k  kd  'M.  ...Ox  cX   lN. c,  0d:.   dx  dOc'        #
-#                       Xc  kk  kd  'M. 0c  xx  cX    lK;:     .d0  dx    .cN.      #
-#                       od;'od  dl  ,O' ld;'lo .ck.    xo   .l'':: .oo. l,';o  dx   #
-#                                                   . .c                            #
-#                                                   0Oo                             #
-#####################################################################################
+####################################################################################
+#  .dolokc          '                        :O                                    #
+#  kl    c         :N..        ..  '.        .'         .. .'.           .'. ..    #
+#  'xddc,          :X..        .kO..c.       ;N         .Xl..ko         dx..'Xc    #
+#  .   .:N.        'X           dd           'N          X'  cO        .M,   0;    #
+#  xl'..ck         .X.;,       .Ok'         .cW,        'Nl .xK.        ck'.,X;    #
+#    ...    ......   .  ......        ......     ......          ...... .....K.    #
+#          .......      .......      .......     ......         .......  ,'''      #
+#                               .                   ',.              ..            #
+#                              kMx       .    ...   ,Mc         ..   do   ...      #
+#                             o.dMl  ,MO.xW' ,;,kN. ,Mc dMc o,cWl,c..XN .Wx;:'     #
+#                            c,.'kM; .Mx cM: KX.oM: ,Mc  dWo' .:cOW: KN .::dMo ,,  #
+#                           .,   .:;..:;.,:, 'c,':, ':,   k,  .,.,, .;:. ,.';. ,;  #
+#                                                       dlc                        #
+#                                                                                  #
+####################################################################################
 
-# StringAnalysis.jl - Library for analyzing text, hard-forked from TextAnalysis.jl,
-#                     at 0x0α Research by Corneliu Cofaru, 2018
+# StringAnalysis.jl - Library for analyzing text written at 0x0α Research
+#                     by Corneliu Cofaru, 2018
 
 module StringAnalysis
     # Using
