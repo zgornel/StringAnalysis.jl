@@ -1,3 +1,5 @@
+using Pkg
+Pkg.add("Documenter")
 using Documenter, StringAnalysis
 
 # Make src directory available
@@ -6,7 +8,7 @@ push!(LOAD_PATH,"../src/")
 # Make documentation
 makedocs(
     modules = [StringAnalysis],
-    format = Documenter.HTML(),
+    format = :html,
     sitename = "  ",
     authors = "Corneliu Cofaru, 0x0α Research",
     clean = true,
