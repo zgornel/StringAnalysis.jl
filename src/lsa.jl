@@ -15,7 +15,6 @@ will be forced to contain elements of type `T`.
   * `Vᵀ::A` transpose of the word embedding matrix
   * `stats::Symbol` the statistical measure to use for word importances in documents
                     available values are:
-                    `:count` (term counts)
                     `:tf` (term frequency)
                     `:tfidf` (default, term frequency - inverse document frequency)
                     `:bm25` (Okapi BM25)
@@ -23,6 +22,7 @@ will be forced to contain elements of type `T`.
   * `nwords::T` averge number of words in a document
   * `κ::Int` the `κ` parameter of the BM25 statistic
   * `β::Float64` the `β` parameter of the BM25 statistic
+  * `tol::T` minimum size of the vector components (default `T(1e-15)`)
 
 # `U`, `Σinv` and `Vᵀ`:
   If `X` is a `m`×`n` document-term-matrix with `m` documents and `n` words so that
@@ -31,6 +31,7 @@ then:
   * `U, Σ, V = svd(X)`
   * `Σinv = inv(Σ)`
   * `Vᵀ = V'`
+  The version of `U` actually stored in the model has its columns normalized to their norm.
 
 # Examples
 ```
@@ -40,7 +41,7 @@ julia> using StringAnalysis
        doc2 = StringDocument("Pears and apples are good but not exotic. An apple a day keeps the doctor away.")
        doc3 = StringDocument("Fruits are good for you.")
        doc4 = StringDocument("This phrase has nothing to do with the others...")
-       doc5 = StringDocument("Simple text, little fruit inside")
+       doc5 = StringDocument("Simple text, little info inside")
 
        crps = Corpus(AbstractDocument[doc1, doc2, doc3, doc4, doc5])
        prepare!(crps, strip_punctuation)
@@ -57,13 +58,12 @@ julia> using StringAnalysis
        for (idx, corr) in zip(idxs, corrs)
            println("\$corr -> \"\$(crps[idx].text)\"")
        end
-
 Query: "Apples and an exotic fruit."
-0.91117114 -> "This is a text about an apple  There are many texts about apples "
-0.8093636 -> "Simple text  little fruit inside "
-0.4731887 -> "Pears and apples are good but not exotic  An apple a day keeps the doctor away "
-0.23154664 -> "Fruits are good for you "
-0.012299925 -> "This phrase has nothing to do with the others "
+0.9746108 -> "Pears and apples are good but not exotic  An apple a day keeps the doctor away "
+0.870703 -> "This is a text about an apple  There are many texts about apples "
+0.7122063 -> "Fruits are good for you "
+0.22725986 -> "This phrase has nothing to do with the others "
+0.076901935 -> "Simple text  little info inside "
 ```
 
 # References:
@@ -71,7 +71,7 @@ Query: "Apples and an exotic fruit."
   * [Deerwester et al. 1990](http://lsa.colorado.edu/papers/JASIS.lsi.90.pdf)
 
 """
-mutable struct LSAModel{S<:AbstractString, T<:AbstractFloat, A<:AbstractMatrix{T}, H<:Integer}
+struct LSAModel{S<:AbstractString, T<:AbstractFloat, A<:AbstractMatrix{T}, H<:Integer}
     vocab::Vector{S}        # vocabulary
     vocab_hash::Dict{S,H}   # term to column index in V
     U::A                    # document vectors
@@ -82,6 +82,7 @@ mutable struct LSAModel{S<:AbstractString, T<:AbstractFloat, A<:AbstractMatrix{T
     nwords::T               # average words/document in corpus
     κ::Int                  # κ parameter for Okapi BM25 (used if stats==:bm25)
     β::Float64              # β parameter for Okapi BM25 (used if stats==:bm25)
+    tol::T                  # Minimum size of vector elements
 end
 
 function LSAModel(dtm::DocumentTermMatrix{T}; kwargs...) where T<:Integer
@@ -93,10 +94,13 @@ end
 function LSAModel(dtm::DocumentTermMatrix{T};
                   k::Int=size(dtm.dtm, 1),
                   stats::Symbol=:tfidf,
+                  tol::T=T(1e-15),
                   κ::Int=2,
                   β::Float64=0.75
                  ) where T<:AbstractFloat
     n, p = size(dtm.dtm)
+    zeroval = zero(T)
+    minval = T(tol)
     # Checks
     length(dtm.terms) == p ||
         throw(DimensionMismatch("Dimensions inside dtm are inconsistent."))
@@ -120,13 +124,23 @@ function LSAModel(dtm::DocumentTermMatrix{T};
     elseif stats == :bm25
         X = bm_25(dtm.dtm, κ=κ, β=β)
     end
-    # Get the model
+    # Decompose document-word statistic
     U, Σ, V = tsvd(X, k)
-    Σinv::Matrix{T} = diagm(0 => T.(1 ./ Σ))
-    U = T.(U ./ sqrt.(sum(U.^2, dims=2)))  # Normalize + type convert
-    V = T.(V')
+    # Build model components
+    Σinv = diagm(0 => 1 ./ Σ)
+    Σinv[abs.(Σinv) .< minval] .= zeroval
+    U = U ./ (sqrt.(sum(U.^2, dims=2)) .+ eps(T))
+    U[abs.(U) .< minval] .= zeroval
+    V = V'
+    V[abs.(V).< minval] .= zeroval
+    # Note: explicit type annotation ensures type stability
+    Σinv::SparseMatrixCSC{T,Int} = SparseMatrixCSC{T, Int}(Σinv)
+    U = SparseMatrixCSC{T, Int}(U)
+    V = SparseMatrixCSC{T, Int}(V)
     # Return the model
-    return LSAModel(dtm.terms, dtm.column_indices, U, Σinv, V, stats, idf, nwords, κ, β)
+    return LSAModel(dtm.terms, dtm.column_indices,
+                    U, Σinv, V,
+                    stats, idf, nwords, κ, β, minval)
 end
 
 
@@ -139,28 +153,32 @@ end
 
 
 """
-    lsa(X [;k=3, stats=:tfidf, κ=2, β=0.75])
+    lsa(X [;k=3, stats=:tfidf, κ=2, β=0.75, tol=1e-15])
 
 Constructs an LSA model. The input `X` can be a `Corpus` or a `DocumentTermMatrix`.
-Use `?LSAModel` for more details.
+Use `?LSAModel` for more details. Vector components smaller than `tol` will be
+zeroed out.
 """
 function lsa(dtm::DocumentTermMatrix{T};
              k::Int=size(dtm.dtm, 1),
              stats::Symbol=:tfidf,
+             tol::T=T(1e-15),
              κ::Int=2,
              β::Float64=0.75) where T<:AbstractFloat
-    LSAModel(dtm, k=k, stats=stats, κ=κ, β=β)
+    LSAModel(dtm, k=k, stats=stats, κ=κ, β=β, tol=tol)
 end
 
-function lsa(crps::Corpus;
+function lsa(crps::Corpus,
+             ::Type{T} = Float32;
              k::Int=length(crps),
              stats::Symbol=:tfidf,
+             tol::T=T(1e-15),
              κ::Int=2,
              β::Float64=0.75) where T<:AbstractFloat
     if isempty(crps.lexicon)
         update_lexicon!(crps)
     end
-    lsa(DocumentTermMatrix{Float32}(crps, lexicon(crps)), k=k, stats=stats, κ=κ, β=β)
+    lsa(DocumentTermMatrix{T}(crps, lexicon(crps)), k=k, stats=stats, κ=κ, β=β, tol=tol)
 end
 
 
@@ -231,25 +249,22 @@ embed_document(lm::LSAModel{S,T,A,H}, doc::AbstractString) where {S,T,A,H} =
 function embed_document(lm::LSAModel{S,T,A,H}, dtv::Vector{T}) where {S,T,A,H}
     words_in_document = sum(dtv)
     # Calculate document vector
-    if lm.stats == :count
-        v = dtv
-    elseif lm.stats == :tf
-        tf = sqrt.(dtv ./ max(words_in_document, one(T)))
+    tf = sqrt.(dtv ./ max(words_in_document, one(T)))
+    if lm.stats == :tf
         v = tf
     elseif lm.stats == :tfidf
-        tf = sqrt.(dtv ./ max(words_in_document, one(T)))
         v = tf .* lm.idf
     elseif lm.stats == :bm25
         k = T(lm.κ)
         b = T(lm.β)
-        oneval = one(T)
-        tf = sqrt.(dtv ./ max(words_in_document, oneval))
         v = lm.idf .* ((k + 1) .* tf) ./
-                       (k * (oneval - b + b * sum(dtv)/lm.nwords) .+ tf)
+                       (k * (one(T) - b + b * words_in_document/lm.nwords) .+ tf)
     end
     # Embed
-    d̂ = lm.Σinv * lm.Vᵀ * v  # d̂ⱼ= Σ⁻¹⋅Vᵀ⋅dⱼ
-    return d̂ ./ norm(d̂,2)
+    d̂ = lm.Σinv * lm.Vᵀ * v         # embed
+    d̂ = d̂ ./ (norm(d̂,2) .+ eps(T))  # normalize
+    d̂[abs.(d̂) .< lm.tol] .= zero(T) # zero small elements
+    return d̂
 end
 
 
