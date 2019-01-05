@@ -32,12 +32,10 @@ $ git clone https://github.com/zgornel/StringAnalysis.jl
 ```
 
 ### Julia REPL
-The package can be installed from inside Julia. Entering the Pkg mode with `]` and writing:
+The package can be installed from inside Julia with:
 ```
-add StringAnalysis
+using Pkg
+Pkg.add(StringAnalysis)
 ```
 will download the latest registered build of the package and add it to the current active development environment.
 
-## Examples
-
-Coming soon ;)
