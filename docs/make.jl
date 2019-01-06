@@ -15,6 +15,7 @@ makedocs(
     debug = true,
     pages = [
         "Introduction" => "index.md",
+        "Usage examples" => "examples.md",
         "API Reference" => "api.md",
     ]
 )

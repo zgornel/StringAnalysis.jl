@@ -4,6 +4,7 @@
 #   https://opensourceconnections.com/blog/2015/10/16/bm25-the-next-generation-of-lucene-relevation/
 function tf!(dtm::AbstractMatrix{T}, tf::AbstractMatrix{F}
             ) where {T<:Real, F<:AbstractFloat}
+    @assert size(dtm) == size(tf)
     n, p = size(dtm)
     # TF tells us what proportion of a document is defined by a term
     words_in_documents = sum(dtm, dims=2)
@@ -16,6 +17,7 @@ end
 # assumes second matrix has same nonzeros as first one
 function tf!(dtm::SparseMatrixCSC{T}, tf::SparseMatrixCSC{F}
             ) where {T<:Real, F<:AbstractFloat}
+    @assert size(dtm) == size(tf)
     rows = rowvals(dtm)
     dtmvals = nonzeros(dtm)
     tfvals = nonzeros(tf)
@@ -45,6 +47,7 @@ tf(dtm::DocumentTermMatrix) = tf(dtm.dtm)
 #   https://opensourceconnections.com/blog/2015/10/16/bm25-the-next-generation-of-lucene-relevation/
 function tf_idf!(dtm::AbstractMatrix{T}, tfidf::AbstractMatrix{F}
                 ) where {T<:Real, F<:AbstractFloat}
+    @assert size(dtm) == size(tfidf)
     n, p = size(dtm)
     # TF tells us what proportion of a document is defined by a term
     tf!(dtm, tfidf)
@@ -62,6 +65,7 @@ end
 
 function tf_idf!(dtm::SparseMatrixCSC{T}, tfidf::SparseMatrixCSC{F}
                 ) where {T<:Real, F<:AbstractFloat}
+    @assert size(dtm) == size(tfidf)
     rows = rowvals(dtm)
     dtmvals = nonzeros(dtm)
     tfidfvals = nonzeros(tfidf)
@@ -97,6 +101,7 @@ function bm_25!(dtm::AbstractMatrix{T},
                 κ::Int=2,
                 β::Float64=0.75
                ) where {T<:Real, F<:AbstractFloat}
+    @assert size(dtm) == size(bm25)
     # Initializations
     k = F(κ)
     b = F(β)
@@ -125,6 +130,7 @@ function bm_25!(dtm::SparseMatrixCSC{T},
                 κ::Int=2,
                 β::Float64=0.75
                ) where {T<:Real, F<:AbstractFloat}
+    @assert size(dtm) == size(bm25)
     # Initializations
     k = F(κ)
     b = F(β)

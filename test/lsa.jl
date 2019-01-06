@@ -4,7 +4,7 @@
     doc2 = StringDocument("Pears and apples are good but not exotic. An apple a day keeps the doctor away.")
     doc3 = StringDocument("Fruits are good for you.")
     doc4 = StringDocument("This phrase has nothing to do with the others...")
-    doc5 = StringDocument("Simple text, little fruit inside")
+    doc5 = StringDocument("Simple text, little info inside")
     # Corpus
     crps = Corpus(AbstractDocument[doc1, doc2, doc3, doc4, doc5])
     prepare!(crps, strip_punctuation)
@@ -14,11 +14,11 @@
     # Retrieval
     query = StringDocument("Apples and an exotic fruit.")
     for k in [1, 3]
-        for stats in [:count, :tf, :tfidf, :bm25]
+        for stats in [:tf, :tfidf, :bm25]
             for T in [Float32, Float64]
                 dtm = DocumentTermMatrix{T}(crps, lex)
                 model = lsa(dtm, k=k, stats=stats)
-                @test model isa LSAModel{String, T, Matrix{T}, Int}
+                @test model isa LSAModel{String, T, SparseMatrixCSC{T,Int}, Int}
                 idxs, corrs = cosine(model, query)
                 @test length(idxs) == length(corrs) == length(crps)
                 @test size(model.Σinv, 1) == k
@@ -29,7 +29,7 @@
     K = 2
     T = Float32
     model = lsa(crps, k=K)
-    @test model isa LSAModel{String, T, Matrix{T}, Int}
+    @test model isa LSAModel{String, T, SparseMatrixCSC{T, Int}, Int}
     @test all(StringAnalysis.in_vocabulary(model, word) for word in keys(crps.lexicon))
     @test StringAnalysis.vocabulary(model) == sort(collect(keys(crps.lexicon)))
     @test size(model) == (length(crps.lexicon), length(crps), K)

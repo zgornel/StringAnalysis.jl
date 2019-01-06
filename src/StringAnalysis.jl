@@ -18,6 +18,9 @@
 # StringAnalysis.jl - Library for analyzing text written at 0x0α Research
 #                     by Corneliu Cofaru, 2018
 
+"""
+A Julia library for working with text hard-forked from TextAnalysis.jl.
+"""
 module StringAnalysis
     # Using
     using Unicode
