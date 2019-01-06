@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Usage examples ·   </title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><a href="../index.html"><img class="logo" src="../assets/logo.png" alt="   logo"/></a><h1>  </h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../">Introduction</a></li><li class="current"><a class="toctext" href>Usage examples</a><ul class="internal"><li><a class="toctext" href="#Documents-1">Documents</a></li><li><a class="toctext" href="#Documents-and-types-1">Documents and types</a></li><li><a class="toctext" href="#Metadata-1">Metadata</a></li><li><a class="toctext" href="#Corpus-1">Corpus</a></li><li><a class="toctext" href="#The-lexicon-and-inverse-index-1">The lexicon and inverse index</a></li><li><a class="toctext" href="#Features-1">Features</a></li><li><a class="toctext" href="#More-features-1">More features</a></li><li><a class="toctext" href="#Pre-processing-1">Pre-processing</a></li><li><a class="toctext" href="#Semantic-Analysis-1">Semantic Analysis</a></li></ul></li><li><a class="toctext" href="../api/">API Reference</a></li></ul></nav><article id="docs"><header><nav><ul><li><a href>Usage examples</a></li></ul><a class="edit-page" href="https://github.com/zgornel/StringAnalysis.jl/blob/master/docs/src/examples.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Usage examples</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Usage-examples-1" href="#Usage-examples-1">Usage examples</a></h1><h2><a class="nav-anchor" id="Documents-1" href="#Documents-1">Documents</a></h2><p>Documents are simple wrappers around basic structures that contain text. The underlying data representation can be simple strings, dictionaries or vectors of strings. All document types are subtypes of the parametric type <code>AbstractDocument{T}</code> where <code>T&lt;:AbstractString</code>.</p><pre><code class="language-julia-repl">julia&gt; using StringAnalysis
+
+julia&gt; sd = StringDocument(&quot;this is a string document&quot;)
+A StringDocument{String}
+
+julia&gt; nd = NGramDocument(&quot;this is a ngram document&quot;)
+A NGramDocument{SubString{String}}
+
+julia&gt; td = TokenDocument(&quot;this is a token document&quot;)
+A TokenDocument{SubString{String}}
+
+julia&gt; # fd = FileDocument(&quot;/some/file&quot;) # works the same way ...</code></pre><h2><a class="nav-anchor" id="Documents-and-types-1" href="#Documents-and-types-1">Documents and types</a></h2><p>The string type can be explicitly enforced:</p><pre><code class="language-julia-repl">julia&gt; nd = NGramDocument{String}(&quot;this is a ngram document&quot;)
+A NGramDocument{String}
+
+julia&gt; ngrams(nd)
+Dict{String,Int64} with 5 entries:
+  &quot;document&quot; =&gt; 1
+  &quot;this&quot;     =&gt; 1
+  &quot;is&quot;       =&gt; 1
+  &quot;ngram&quot;    =&gt; 1
+  &quot;a&quot;        =&gt; 1
+
+julia&gt; td = TokenDocument{String}(&quot;this is a token document&quot;)
+A TokenDocument{String}
+
+julia&gt; tokens(td)
+5-element Array{String,1}:
+ &quot;this&quot;
+ &quot;is&quot;
+ &quot;a&quot;
+ &quot;token&quot;
+ &quot;document&quot;</code></pre><p>Conversion methods are available to switch between document types (the type parameter has to be specified as well).</p><pre><code class="language-julia-repl">julia&gt; convert(TokenDocument{SubString}, StringDocument(&quot;some text&quot;))
+A TokenDocument{SubString{String}}
+
+julia&gt; convert(NGramDocument{String}, StringDocument(&quot;some more text&quot;))
+A NGramDocument{String}</code></pre><h2><a class="nav-anchor" id="Metadata-1" href="#Metadata-1">Metadata</a></h2><p>Alongside the text data, documents also contain metadata.</p><pre><code class="language-julia-repl">julia&gt; doc = StringDocument(&quot;this is another document&quot;)
+A StringDocument{String}
+
+julia&gt; metadata(doc)
+Unknown ID-[&quot;Unnamed Document&quot; by Unknown Author, Unknown Edition Year (Unknown Publishing Year)]
+
+julia&gt; fieldnames(typeof(metadata(doc)))
+(:language, :name, :author, :timestamp, :id, :publisher, :edition_year, :published_year, :documenttype, :note)</code></pre><p>Metadata fields can be modified through methods bearing the same name as the metadata field. Note that these methods are not explicitly exported.</p><pre><code class="language-julia-repl">julia&gt; StringAnalysis.id!(doc, &quot;doc1&quot;);
+
+julia&gt; StringAnalysis.author!(doc, &quot;Corneliu C.&quot;);
+
+julia&gt; StringAnalysis.name!(doc, &quot;A simple document&quot;);
+
+julia&gt; StringAnalysis.edition_year!(doc, &quot;2019&quot;);
+
+julia&gt; StringAnalysis.published_year!(doc, &quot;2019&quot;);
+
+julia&gt; metadata(doc)
+doc1-[&quot;A simple document&quot; by Corneliu C., 2019 (2019)]</code></pre><h2><a class="nav-anchor" id="Corpus-1" href="#Corpus-1">Corpus</a></h2><p>A corpus is an object that holds a bunch of documents together.</p><pre><code class="language-julia-repl">julia&gt; docs = [sd, nd, td]
+3-element Array{AbstractDocument{String},1}:
+ A StringDocument{String}
+ A NGramDocument{String}
+ A TokenDocument{String}
+
+julia&gt; crps = Corpus(docs)
+A Corpus with 3 documents
+
+julia&gt; crps.documents
+3-element Array{Union{FileDocument{String}, NGramDocument{String}, StringDocument{String}, TokenDocument{String}},1}:
+ A StringDocument{String}
+ A NGramDocument{String}
+ A TokenDocument{String}</code></pre><p>The corpus can be &#39;standardized&#39; to hold the same type of document.</p><pre><code class="language-julia-repl">julia&gt; standardize!(crps, NGramDocument{String})
+
+julia&gt; crps.documents
+3-element Array{Union{FileDocument{String}, NGramDocument{String}, StringDocument{String}, TokenDocument{String}},1}:
+ A NGramDocument{String}
+ A NGramDocument{String}
+ A NGramDocument{String}</code></pre><p>however, the corpus has to created from an <code>AbstractDocument</code> document vector for the standardization to work (<code>AbstractDocument{T}</code> vectors are converted to a <code>Union</code> of all documents types parametrized by <code>T</code> during <code>Corpus</code> construction):</p><pre><code class="language-julia-repl">julia&gt; doc1 = StringDocument(&quot;one&quot;);
+
+julia&gt; doc2 = StringDocument(&quot;two&quot;);
+
+julia&gt; doc3 = TokenDocument(&quot;three&quot;);
+
+julia&gt; standardize!(Corpus([doc1, doc3]), NGramDocument{String})  # works
+
+julia&gt; standardize!(Corpus([doc1, doc2]), NGramDocument{String})  # fails because we have a Vector{StringDocument{T}}
+ERROR: MethodError: Cannot `convert` an object of type NGramDocument{String} to an object of type StringDocument{String}
+Closest candidates are:
+  convert(::Type{StringDocument{T&lt;:AbstractString}}, !Matched::Union{FileDocument, StringDocument}) where T&lt;:AbstractString at /home/travis/build/zgornel/StringAnalysis.jl/src/document.jl:188
+  convert(::Type{T}, !Matched::T) where T at essentials.jl:154
+  StringDocument{String}(::Any, !Matched::Any) where T&lt;:AbstractString at /home/travis/build/zgornel/StringAnalysis.jl/src/document.jl:50
+
+julia&gt; standardize!(Corpus(AbstractDocument[doc1, doc2]), NGramDocument{String})  # works</code></pre><p>The corpus can be also iterated through,</p><pre><code class="language-julia-repl">julia&gt; for (i,doc) in enumerate(crps)
+           @show (i, doc)
+       end
+(i, doc) = (1, A NGramDocument{String})
+(i, doc) = (2, A NGramDocument{String})
+(i, doc) = (3, A NGramDocument{String})</code></pre><p>indexed into,</p><pre><code class="language-julia-repl">julia&gt; doc = crps[1]
+A NGramDocument{String}
+
+julia&gt; docs = crps[2:3]
+2-element Array{Union{FileDocument{String}, NGramDocument{String}, StringDocument{String}, TokenDocument{String}},1}:
+ A NGramDocument{String}
+ A NGramDocument{String}</code></pre><p>and used as a container.</p><pre><code class="language-julia-repl">julia&gt; push!(crps, NGramDocument{String}(&quot;new document&quot;))
+4-element Array{Union{FileDocument{String}, NGramDocument{String}, StringDocument{String}, TokenDocument{String}},1}:
+ A NGramDocument{String}
+ A NGramDocument{String}
+ A NGramDocument{String}
+ A NGramDocument{String}
+
+julia&gt; doc4 = pop!(crps)
+A NGramDocument{String}
+
+julia&gt; ngrams(doc4)
+Dict{String,Int64} with 2 entries:
+  &quot;document&quot; =&gt; 1
+  &quot;new&quot;      =&gt; 1</code></pre><h2><a class="nav-anchor" id="The-lexicon-and-inverse-index-1" href="#The-lexicon-and-inverse-index-1">The lexicon and inverse index</a></h2><p>The <code>Corpus</code> object offers the ability of creating a <a href="https://en.wikipedia.org/wiki/Lexicon">lexicon</a> and an <a href="https://en.wikipedia.org/wiki/Inverted_index">inverse index</a> for the documents present. These are not created when the Corpus is created</p><pre><code class="language-julia-repl">julia&gt; crps.lexicon
+Dict{String,Int64} with 0 entries
+
+julia&gt; crps.inverse_index
+Dict{String,Array{Int64,1}} with 0 entries</code></pre><p>but instead have to be explicitly created:</p><pre><code class="language-julia-repl">julia&gt; update_lexicon!(crps)
+
+julia&gt; crps.lexicon
+Dict{String,Int64} with 7 entries:
+  &quot;string&quot;   =&gt; 1
+  &quot;document&quot; =&gt; 3
+  &quot;token&quot;    =&gt; 1
+  &quot;this&quot;     =&gt; 3
+  &quot;is&quot;       =&gt; 3
+  &quot;ngram&quot;    =&gt; 1
+  &quot;a&quot;        =&gt; 3
+
+julia&gt; update_inverse_index!(crps)
+
+julia&gt; crps.inverse_index
+Dict{String,Array{Int64,1}} with 7 entries:
+  &quot;string&quot;   =&gt; [1]
+  &quot;document&quot; =&gt; [1, 2, 3]
+  &quot;token&quot;    =&gt; [3]
+  &quot;this&quot;     =&gt; [1, 2, 3]
+  &quot;is&quot;       =&gt; [1, 2, 3]
+  &quot;ngram&quot;    =&gt; [2]
+  &quot;a&quot;        =&gt; [1, 2, 3]</code></pre><h2><a class="nav-anchor" id="Features-1" href="#Features-1">Features</a></h2><p>If a lexicon is present in the corpus, a <a href="https://en.wikipedia.org/wiki/Document-term_matrix">document term matrix (DTM)</a> can be created. The DTM acts as a basis for word-document statistics, allowing for the representation of documents as numerical vectors. The DTM is created by calling the object constructor using as argument the corpus</p><pre><code class="language-julia-repl">julia&gt; M = DocumentTermMatrix(crps)
+
+julia&gt; typeof(M)
+DocumentTermMatrix{Int64}
+
+julia&gt; M = DocumentTermMatrix{Int8}(crps)
+
+julia&gt; typeof(M)
+DocumentTermMatrix{Int8}</code></pre><p>or the <code>dtm</code> function (not recommended as the element type cannot be specified)</p><pre><code class="language-julia-repl">julia&gt; M = dtm(crps)
+3×7 SparseArrays.SparseMatrixCSC{Int64,Int64} with 15 stored entries:
+  [1, 1]  =  1
+  [2, 1]  =  1
+  [3, 1]  =  1
+  [1, 2]  =  1
+  [2, 2]  =  1
+  [3, 2]  =  1
+  [1, 3]  =  1
+  [2, 3]  =  1
+  [3, 3]  =  1
+  [2, 4]  =  1
+  [1, 5]  =  1
+  [1, 6]  =  1
+  [2, 6]  =  1
+  [3, 6]  =  1
+  [3, 7]  =  1</code></pre><p>The default element type of the DTM is specified by the constant <code>DEFAULT_DTM_TYPE</code> present in <code>src/defaults.jl</code>.</p><p>The individual rows of the DTM can also be generated iteratively whether a lexicon is present or not. If a lexicon is present, the <code>each_dtv</code> iterator allows the generation of the document vectors along with the control of the vector element type:</p><pre><code class="language-julia-repl">julia&gt; for dv in each_dtv(crps, eltype=Int8)
+           @show dv
+       end
+dv = Int8[1, 1, 1, 0, 1, 1, 0]
+dv = Int8[1, 1, 1, 1, 0, 1, 0]
+dv = Int8[1, 1, 1, 0, 0, 1, 1]</code></pre><p>Alternatively, the vectors can be generated using the <a href="https://en.wikipedia.org/wiki/Feature_hashing">hash trick</a>. The dimension of these vectors can be controlled through the <code>cardinality</code> keyword argument of the <code>Corpus</code> constructor while their type can be specified when building the iterator:</p><pre><code class="language-julia-repl">julia&gt; for dv in each_hash_dtv(Corpus(documents(crps), cardinality=5), eltype=Int8)
+           @show dv
+       end
+dv = Int8[0, 1, 2, 0, 2]
+dv = Int8[0, 1, 2, 0, 2]
+dv = Int8[1, 0, 2, 0, 2]</code></pre><p>The default <code>Corpus</code> cardinality is specified by the constant <code>DEFAULT_CARDINALITY</code> present in <code>src/defaults.jl</code>.</p><h2><a class="nav-anchor" id="More-features-1" href="#More-features-1">More features</a></h2><p>From the DTM, three more document-word statistics can be constructed: the <a href="https://en.wikipedia.org/wiki/Tf%E2%80%93idf#Term_frequency_2">term frequency</a>, the <a href="https://en.wikipedia.org/wiki/Tf%E2%80%93idf#Term_frequency%E2%80%93Inverse_document_frequency">tf-idf (term frequency - inverse document frequency)</a> and <a href="https://en.wikipedia.org/wiki/Okapi_BM25">Okapi BM25</a> using the <code>tf</code>, <code>tf!</code>, <code>tf_idf</code>, <code>tf_idf!</code>, <code>bm_25</code> and <code>bm_25!</code> functions respectively. Their usage is very similar yet there exist several approaches one can take to constructing the output.</p><p>The following examples with use the term frequency i.e. <code>tf</code> and <code>tf!</code>. When calling the functions that end without a <code>!</code>, one does not control the element type, which is defined by the constant <code>DEFAULT_FLOAT_TYPE = eltype(1.0)</code>:</p><pre><code class="language-julia-repl">julia&gt; M = DocumentTermMatrix(crps);
+
+julia&gt; tfm = tf(M);
+
+julia&gt; Matrix(tfm)
+3×7 Array{Float64,2}:
+ 0.447214  0.447214  0.447214  0.0       0.447214  0.447214  0.0
+ 0.447214  0.447214  0.447214  0.447214  0.0       0.447214  0.0
+ 0.447214  0.447214  0.447214  0.0       0.0       0.447214  0.447214</code></pre><p>Control of the output matrix element type - which has to be a subtype of <code>AbstractFloat</code> - can be done only by using the in-place modification functions. One approach is to directly modify the DTM, provided that its elements are floating point numbers:</p><pre><code class="language-julia-repl">julia&gt; M = DocumentTermMatrix{Float16}(crps)
+
+julia&gt; Matrix(M.dtm)
+3×7 Array{Float16,2}:
+ 1.0  1.0  1.0  0.0  1.0  1.0  0.0
+ 1.0  1.0  1.0  1.0  0.0  1.0  0.0
+ 1.0  1.0  1.0  0.0  0.0  1.0  1.0
+
+julia&gt; tf!(M.dtm);  # inplace modification
+
+julia&gt; Matrix(M.dtm)
+3×7 Array{Float16,2}:
+ 0.4473  0.4473  0.4473  0.0     0.4473  0.4473  0.0
+ 0.4473  0.4473  0.4473  0.4473  0.0     0.4473  0.0
+ 0.4473  0.4473  0.4473  0.0     0.0     0.4473  0.4473
+
+julia&gt; M = DocumentTermMatrix(crps)  # Int elements
+
+julia&gt; tf!(M.dtm)  # fails
+ERROR: MethodError: no method matching tf!(::SparseArrays.SparseMatrixCSC{Int64,Int64}, ::SparseArrays.SparseMatrixCSC{Int64,Int64})
+Closest candidates are:
+  tf!(::SparseArrays.SparseMatrixCSC{T&lt;:Real,Ti} where Ti&lt;:Integer, !Matched::SparseArrays.SparseMatrixCSC{F&lt;:AbstractFloat,Ti} where Ti&lt;:Integer) where {T&lt;:Real, F&lt;:AbstractFloat} at /home/travis/build/zgornel/StringAnalysis.jl/src/stats.jl:20
+  tf!(::AbstractArray{T&lt;:Real,2}) where T&lt;:Real at /home/travis/build/zgornel/StringAnalysis.jl/src/stats.jl:37
+  tf!(::AbstractArray{T&lt;:Real,2}, !Matched::AbstractArray{F&lt;:AbstractFloat,2}) where {T&lt;:Real, F&lt;:AbstractFloat} at /home/travis/build/zgornel/StringAnalysis.jl/src/stats.jl:7</code></pre><p>or, to provide a matrix output:</p><pre><code class="language-julia-repl">julia&gt; rows, cols = size(M.dtm);
+
+julia&gt; tfm = zeros(Float16, rows, cols);
+
+julia&gt; tf!(M.dtm, tfm);
+
+julia&gt; tfm
+3×7 Array{Float16,2}:
+ 0.4473  0.4473  0.4473  0.0     0.4473  0.4473  0.0
+ 0.4473  0.4473  0.4473  0.4473  0.0     0.4473  0.0
+ 0.4473  0.4473  0.4473  0.0     0.0     0.4473  0.4473</code></pre><p>One could also provide a sparse matrix output however it is important to note that in this case, the output matrix non-zero values have to correspond to the DTM&#39;s non-zero values:</p><pre><code class="language-julia-repl">julia&gt; using SparseArrays
+
+julia&gt; rows, cols = size(M.dtm);
+
+julia&gt; tfm = spzeros(Float16, rows, cols)
+3×7 SparseArrays.SparseMatrixCSC{Float16,Int64} with 0 stored entries
+
+julia&gt; tfm[M.dtm .!= 0] .= 123;  # create explicitly non-zeros
+
+julia&gt; tf!(M.dtm, tfm);
+
+julia&gt; Matrix(tfm)
+3×7 Array{Float16,2}:
+ 0.4473  0.4473  0.4473  0.0     0.4473  0.4473  0.0
+ 0.4473  0.4473  0.4473  0.4473  0.0     0.4473  0.0
+ 0.4473  0.4473  0.4473  0.0     0.0     0.4473  0.4473</code></pre><h2><a class="nav-anchor" id="Pre-processing-1" href="#Pre-processing-1">Pre-processing</a></h2><p>The text preprocessing mainly consists of the <code>prepare</code> and <code>prepare!</code> functions and preprocessing flags which start mostly with <code>strip_</code> except for <code>stem_words</code>. The preprocessing function <code>prepare</code> works on <code>AbstractDocument</code>, <code>Corpus</code> and <code>AbstractString</code> types, returning new objects; <code>prepare!</code> works only on <code>AbstractDocument</code>s and <code>Corpus</code> as the strings are immutable.</p><pre><code class="language-julia-repl">julia&gt; str=&quot;This is a text containing words and a bit of punctuation...&quot;;
+
+julia&gt; flags = strip_punctuation|strip_articles|strip_punctuation|strip_whitespace
+0x00300600
+
+julia&gt; prepare(str, flags)
+&quot;This is text containing words and bit of punctuation &quot;
+
+julia&gt; sd = StringDocument(str);
+
+julia&gt; prepare!(sd, flags);
+
+julia&gt; text(sd)
+&quot;This is text containing words and bit of punctuation &quot;</code></pre><p>More extensive preprocessing examples can be viewed in <code>test/preprocessing.jl</code>.</p><h2><a class="nav-anchor" id="Semantic-Analysis-1" href="#Semantic-Analysis-1">Semantic Analysis</a></h2><p>The semantic analysis of a corpus relates to the task of building structures that approximate the concepts present in its documents. It does not necessarily involve prior semantic understanding of the documents <a href="https://en.wikipedia.org/wiki/Semantic_analysis_(machine_learning)">(Wikipedia)</a>.</p><p><code>StringAnalysis</code> provides two approaches of performing semantic analysis of a corpus: latent semantic analysis (LSA) and latent Dirichlet allocation (LDA).</p><h3><a class="nav-anchor" id="Latent-Semantic-Analysis-(LSA)-1" href="#Latent-Semantic-Analysis-(LSA)-1">Latent Semantic Analysis (LSA)</a></h3><p>Documentation coming soon. Check the API reference for more information. <a href="http://lsa.colorado.edu/papers/JASIS.lsi.90.pdf">LSA paper</a></p><h3><a class="nav-anchor" id="Latent-Dirichlet-Allocation-(LDA)-1" href="#Latent-Dirichlet-Allocation-(LDA)-1">Latent Dirichlet Allocation (LDA)</a></h3><p>Documentation coming soon. Check the API reference for more information. <a href="http://jmlr.org/papers/volume3/blei03a/blei03a.pdf">LDA paper</a></p><footer><hr/><a class="previous" href="../"><span class="direction">Previous</span><span class="title">Introduction</span></a><a class="next" href="../api/"><span class="direction">Next</span><span class="title">API Reference</span></a></footer></article></body></html>
