@@ -118,14 +118,14 @@ end
 
 Alternatively, the vectors can be generated using the [hash trick](https://en.wikipedia.org/wiki/Feature_hashing). The dimension of these vectors can be controlled through the `cardinality` keyword argument of the `Corpus` constructor while their type can be specified when building the iterator:
 ```@repl index
-for dv in each_hash_dtv(Corpus(documents(crps)), eltype=Int8)
+for dv in each_hash_dtv(Corpus(documents(crps), cardinality=5), eltype=Int8)
     @show dv
 end
 ```
 The default `Corpus` cardinality is specified by the constant `DEFAULT_CARDINALITY` present in `src/defaults.jl`.
 
 ## More features
-From the DTM three more document-word statistics can be constructed: the [term frequency](https://en.wikipedia.org/wiki/Tf%E2%80%93idf#Term_frequency_2), the [tf-idf (term frequency - inverse document frequency)](https://en.wikipedia.org/wiki/Tf%E2%80%93idf#Term_frequency%E2%80%93Inverse_document_frequency) and [Okapi BM25](https://en.wikipedia.org/wiki/Okapi_BM25) using the `tf`, `tf!`, `tf_idf`, `tf_idf!`, `bm_25` and `bm_25!` functions respectively. Their usage is very similar yet there exist several approaches one can take to constructing the output.
+From the DTM, three more document-word statistics can be constructed: the [term frequency](https://en.wikipedia.org/wiki/Tf%E2%80%93idf#Term_frequency_2), the [tf-idf (term frequency - inverse document frequency)](https://en.wikipedia.org/wiki/Tf%E2%80%93idf#Term_frequency%E2%80%93Inverse_document_frequency) and [Okapi BM25](https://en.wikipedia.org/wiki/Okapi_BM25) using the `tf`, `tf!`, `tf_idf`, `tf_idf!`, `bm_25` and `bm_25!` functions respectively. Their usage is very similar yet there exist several approaches one can take to constructing the output.
 
 The following examples with use the term frequency i.e. `tf` and `tf!`. When calling the functions that end without a `!`, one does not control the element type, which is defined by the constant `DEFAULT_FLOAT_TYPE = eltype(1.0)`:
 ```@repl index
@@ -133,7 +133,7 @@ M = DocumentTermMatrix(crps);
 tfm = tf(M);
 Matrix(tfm)
 ```
-Control of the output type - which has to be a subtype of `AbstractFloat` - can be done only by using the in-place modification functions. One approach is to directly modify the DTM, provided that its elements are floating point numbers:
+Control of the output matrix element type - which has to be a subtype of `AbstractFloat` - can be done only by using the in-place modification functions. One approach is to directly modify the DTM, provided that its elements are floating point numbers:
 ```@repl index
 M = DocumentTermMatrix{Float16}(crps)
 Matrix(M.dtm)
@@ -143,11 +143,43 @@ Matrix(M.dtm)
 M = DocumentTermMatrix(crps)  # Int elements
 tf!(M.dtm)  # fails
 ```
-or, to provide a sparse matrix output:
+or, to provide a matrix output:
+```@repl index
+rows, cols = size(M.dtm);
+tfm = zeros(Float16, rows, cols);
+tf!(M.dtm, tfm);
+tfm
+```
+One could also provide a sparse matrix output however it is important to note that in this case, the output matrix non-zero values have to correspond to the DTM's non-zero values:
 ```@repl index
 using SparseArrays
 rows, cols = size(M.dtm);
 tfm = spzeros(Float16, rows, cols)
-tf!(M.dtm, tfm)
+tfm[M.dtm .!= 0] .= 123;  # create explicitly non-zeros
+tf!(M.dtm, tfm);
 Matrix(tfm)
 ```
+
+## Pre-processing
+The text preprocessing mainly consists of the `prepare` and `prepare!` functions and preprocessing flags which start mostly with `strip_` except for `stem_words`. The preprocessing function `prepare` works on `AbstractDocument`, `Corpus` and `AbstractString` types, returning new objects; `prepare!` works only on `AbstractDocument`s and `Corpus` as the strings are immutable.
+```@repl index
+str="This is a text containing words and a bit of punctuation...";
+flags = strip_punctuation|strip_articles|strip_punctuation|strip_whitespace
+prepare(str, flags)
+sd = StringDocument(str);
+prepare!(sd, flags);
+text(sd)
+```
+More extensive preprocessing examples can be viewed in `test/preprocessing.jl`.
+
+## Semantic Analysis
+
+The semantic analysis of a corpus relates to the task of building structures that approximate the concepts present in its documents. It does not necessarily involve prior semantic understanding of the documents [(Wikipedia)](https://en.wikipedia.org/wiki/Semantic_analysis_(machine_learning)).
+
+`StringAnalysis` provides two approaches of performing semantic analysis of a corpus: latent semantic analysis (LSA) and latent Dirichlet allocation (LDA).
+
+### Latent Semantic Analysis (LSA)
+Documentation coming soon. Check the API reference for more information. [LSA paper](http://lsa.colorado.edu/papers/JASIS.lsi.90.pdf)
+
+### Latent Dirichlet Allocation (LDA)
+Documentation coming soon. Check the API reference for more information. [LDA paper](http://jmlr.org/papers/volume3/blei03a/blei03a.pdf)
