@@ -1,7 +1,7 @@
 # Usage examples
 
-## Document creation
-Documents are simple wrappers around basic structures that contain text. The underlying data representation can be simple strings, dictionaries or vectors of strings. All document types are subtypes of the parametric type AbstractDocument{T}` where `T<:AbstractString`.
+## Documents
+Documents are simple wrappers around basic structures that contain text. The underlying data representation can be simple strings, dictionaries or vectors of strings. All document types are subtypes of the parametric type `AbstractDocument{T}` where `T<:AbstractString`.
 ```@repl index
 using StringAnalysis
 
@@ -11,8 +11,8 @@ td = TokenDocument("this is a token document")
 # fd = FileDocument("/some/file") # works the same way ...
 ```
 
-## Document creation (continued...)
-The string type can be explicity enforced:
+## Documents and types
+The string type can be explicitly enforced:
 ```@repl index
 nd = NGramDocument{String}("this is a ngram document")
 ngrams(nd)
@@ -93,4 +93,61 @@ update_lexicon!(crps)
 crps.lexicon
 update_inverse_index!(crps)
 crps.inverse_index
+```
+
+## Features
+If a lexicon is present in the corpus, a [document term matrix (DTM)](https://en.wikipedia.org/wiki/Document-term_matrix) can be created. The DTM acts as a basis for word-document statistics, allowing for the representation of documents as numerical vectors. The DTM is created by calling the object constructor using as argument the corpus
+```@repl index
+M = DocumentTermMatrix(crps)
+typeof(M)
+M = DocumentTermMatrix{Int8}(crps)
+typeof(M)
+```
+or the `dtm` function (not recommended as the element type cannot be specified)
+```@repl index
+M = dtm(crps)
+```
+The default element type of the DTM is specified by the constant `DEFAULT_DTM_TYPE` present in `src/defaults.jl`.
+
+The individual rows of the DTM can also be generated iteratively whether a lexicon is present or not. If a lexicon is present, the `each_dtv` iterator allows the generation of the document vectors along with the control of the vector element type:
+```@repl index
+for dv in each_dtv(crps, eltype=Int8)
+    @show dv
+end
+```
+
+Alternatively, the vectors can be generated using the [hash trick](https://en.wikipedia.org/wiki/Feature_hashing). The dimension of these vectors can be controlled through the `cardinality` keyword argument of the `Corpus` constructor while their type can be specified when building the iterator:
+```@repl index
+for dv in each_hash_dtv(Corpus(documents(crps)), eltype=Int8)
+    @show dv
+end
+```
+The default `Corpus` cardinality is specified by the constant `DEFAULT_CARDINALITY` present in `src/defaults.jl`.
+
+## More features
+From the DTM three more document-word statistics can be constructed: the [term frequency](https://en.wikipedia.org/wiki/Tf%E2%80%93idf#Term_frequency_2), the [tf-idf (term frequency - inverse document frequency)](https://en.wikipedia.org/wiki/Tf%E2%80%93idf#Term_frequency%E2%80%93Inverse_document_frequency) and [Okapi BM25](https://en.wikipedia.org/wiki/Okapi_BM25) using the `tf`, `tf!`, `tf_idf`, `tf_idf!`, `bm_25` and `bm_25!` functions respectively. Their usage is very similar yet there exist several approaches one can take to constructing the output.
+
+The following examples with use the term frequency i.e. `tf` and `tf!`. When calling the functions that end without a `!`, one does not control the element type, which is defined by the constant `DEFAULT_FLOAT_TYPE = eltype(1.0)`:
+```@repl index
+M = DocumentTermMatrix(crps);
+tfm = tf(M);
+Matrix(tfm)
+```
+Control of the output type - which has to be a subtype of `AbstractFloat` - can be done only by using the in-place modification functions. One approach is to directly modify the DTM, provided that its elements are floating point numbers:
+```@repl index
+M = DocumentTermMatrix{Float16}(crps)
+Matrix(M.dtm)
+tf!(M.dtm);  # inplace modification
+Matrix(M.dtm)
+
+M = DocumentTermMatrix(crps)  # Int elements
+tf!(M.dtm)  # fails
+```
+or, to provide a sparse matrix output:
+```@repl index
+using SparseArrays
+rows, cols = size(M.dtm);
+tfm = spzeros(Float16, rows, cols)
+tf!(M.dtm, tfm)
+Matrix(tfm)
 ```
