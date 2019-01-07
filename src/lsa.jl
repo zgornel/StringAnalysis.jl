@@ -307,3 +307,87 @@ Return the cosine similarity value between two documents `doc1` and `doc2`.
 function similarity(lm::LSAModel, doc1, doc2)
     return embed_document(lm, doc1)' * embed_document(lm, doc2)
 end
+
+
+"""
+    save(lm, filename)
+
+Saves an LSA model `lm` to disc in file `filename`.
+"""
+function save(lm::LSAModel{S,T,A,H}, filename::AbstractString) where {S,T,A,H}
+    ndocs = size(lm.U, 1)
+    nwords = size(lm.Vᵀ, 2)
+    k = size(lm.U, 2)
+    open(filename, "w") do fid
+        println(fid, "LSA Model saved at $(Dates.now())")
+        println(fid, "$ndocs $nwords $k")  # number of documents, words, k
+        println(fid, lm.stats)
+        writedlm(fid, lm.idf', " ")
+        println(fid, lm.nwords)
+        println(fid, lm.κ)
+        println(fid, lm.β)
+        println(fid, lm.tol)
+        # Σinv diagonal
+        writedlm(fid, diag(lm.Σinv)', " ")
+        # Word embeddings
+        idxs = [lm.vocab_hash[word] for word in lm.vocab]
+        writedlm(fid, [lm.vocab lm.Vᵀ[:, idxs]'], " ")
+        # Document embeddings
+        writedlm(fid, lm.U, " ")
+    end
+end
+
+
+"""
+    load(filename, type; [sparse=true])
+
+Loads an LSA model from `filename` into an LSA model object. The embeddings matrix
+element type is specified by `type` (default `Float32`) while the keyword argument
+`sparse` specifies whether the matrix should be sparse or not.
+"""
+function load(filename::AbstractString, ::Type{T}=Float32;
+              sparse::Bool=true) where T<: AbstractFloat
+    # Matrix type for LSA model
+    A = ifelse(sparse, SparseMatrixCSC{T, Int}, Matrix{T})
+    # Define parsed variables local to outer scope of do statement
+    local vocab, vocab_hash, U, Σinv, Vᵀ, stats, idf, nwords, κ, β, tol
+    open(filename, "r") do fid
+        readline(fid)  # first line, header
+        line = readline(fid)
+        docs_size, vocab_size, k = map(x -> parse(Int, x), split(line, ' '))
+        # Preallocate
+        vocab = Vector{String}(undef, vocab_size)
+        vocab_hash = Dict{String, Int}()
+        if sparse
+            U = SparseMatrixCSC{T, Int}(UniformScaling(0), docs_size, k)
+            Vᵀ = SparseMatrixCSC{T, Int}(UniformScaling(0), k, vocab_size)
+            Σinv = spzeros(T, k, k)
+        else
+            U = Matrix{T}(undef, docs_size, k)
+            Vᵀ = Matrix{T}(undef, k, vocab_size)
+            Σinv = zeros(T, k, k)
+        end
+        # Start parsing the rest of the file
+        stats = Symbol(strip(readline(fid)))
+        idf = map(x->parse(T, x), split(readline(fid), ' '))
+        nwords = parse(T, readline(fid))
+        κ = parse(Int, readline(fid))
+        β = parse(Float64, readline(fid))
+        tol = parse(Float64, readline(fid))
+        Σinv[diagind(Σinv)] .= map(x->parse(T, x), split(readline(fid), ' '))
+        for i in 1:vocab_size
+            line = strip(readline(fid))
+            parts = split(line, ' ')
+            word = parts[1]
+            vector = map(x-> parse(T, x), parts[2:end])
+            vocab[i] = word
+            push!(vocab_hash, word=>i)
+            Vᵀ[:, i] = vector
+        end
+        for i in 1:docs_size
+            U[i,:] = map(x->parse(T,x), split(readline(fid), ' '))
+        end
+    end
+    return LSAModel{String, T, A, Int}(vocab, vocab_hash, U, Σinv, Vᵀ,
+                                       stats, idf, nwords, κ, β, tol)
+end
