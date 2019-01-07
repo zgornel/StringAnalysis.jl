@@ -26,7 +26,6 @@ DocumentMetadata() = DocumentMetadata(
 )
 
 
-
 # The abstract Document type
 abstract type AbstractDocument{T<:AbstractString}; end
 
@@ -64,6 +63,9 @@ end
 
 TokenDocument(tkns::Vector{T}) where T <: AbstractString =
     TokenDocument{T}(tkns, DocumentMetadata())
+
+TokenDocument{T}(tkns::Vector{S}) where {T<:AbstractString, S<:AbstractString} =
+    TokenDocument{T}(T.(tkns), DocumentMetadata())
 
 TokenDocument{T}(txt::AbstractString, dm::DocumentMetadata=DocumentMetadata()
                 ) where T<:AbstractString =

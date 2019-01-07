@@ -35,6 +35,9 @@
     td = TokenDocument(my_tokens)
     @test isa(td, TokenDocument)
     @test all(tokens(td) .== my_tokens)
+    td = TokenDocument{String}(split("To be or not to be..."))
+    @test isa(td, TokenDocument{String})
+    @test all(tokens(td) .== my_tokens)
 
     my_ngrams = Dict{String,Int}()
     my_ngrams["To"] = 1

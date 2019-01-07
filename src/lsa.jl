@@ -244,6 +244,9 @@ embed_document(lm::LSAModel{S,T,A,H}, doc::AbstractDocument) where {S,T,A,H} =
 embed_document(lm::LSAModel{S,T,A,H}, doc::AbstractString) where {S,T,A,H} =
     embed_document(lm, NGramDocument{S}(doc))
 
+embed_document(lm::LSAModel{S,T,A,H}, doc::Vector{S2}) where {S,T,A,H,S2<:AbstractString} =
+    embed_document(lm, TokenDocument{S}(doc))
+
 # Actual embedding function: takes as input the LSA model `lm` and a document
 # term vector `dtv`. Returns the representation of `dtv` in the embedding space.
 function embed_document(lm::LSAModel{S,T,A,H}, dtv::Vector{T}) where {S,T,A,H}
