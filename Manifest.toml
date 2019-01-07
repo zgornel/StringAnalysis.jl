@@ -11,6 +11,10 @@ version = "0.5.3"
 deps = ["Printf"]
 uuid = "ade2ca70-3891-5945-98fb-dc099432e06a"
 
+[[DelimitedFiles]]
+deps = ["Mmap"]
+uuid = "8bb1440f-4735-579b-a4ab-409b98df4dab"
+
 [[Distributed]]
 deps = ["LinearAlgebra", "Random", "Serialization", "Sockets"]
 uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
@@ -27,9 +31,9 @@ version = "0.20.0"
 
 [[Languages]]
 deps = ["JSON", "Test"]
-git-tree-sha1 = "5f67cd326789d6c1d88b03c64e48ae7eb7985c48"
+git-tree-sha1 = "fc6ee05e35074a66dc12a716065a25d9deece6fb"
 uuid = "8ef0a80b-9436-5d2c-a485-80b904378c43"
-version = "0.4.1"
+version = "0.4.2"
 
 [[LibGit2]]
 uuid = "76f85450-5226-5b5a-8eaa-529ad045b433"

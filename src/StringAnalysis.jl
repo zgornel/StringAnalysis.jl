@@ -27,6 +27,8 @@ module StringAnalysis
     using SparseArrays
     using LinearAlgebra
     using Statistics
+    using Dates
+    using DelimitedFiles
     using TSVD
     using Languages
     using WordTokenizers
@@ -52,7 +54,7 @@ module StringAnalysis
     export tokenize, tokenize_fast, tokenize_slow, sentence_tokenize
     export tf!, tf, tf_idf!, tf_idf, bm_25!, bm_25
     export LSAModel, lsa, embed_document, embed_word, get_vector, index,
-           cosine, similarity
+           cosine, similarity, load, save
     export lda
     export frequent_terms, sparse_terms,
            prepare!, prepare,
