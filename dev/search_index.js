@@ -225,11 +225,27 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "api/#StringAnalysis.load-Union{Tuple{AbstractString}, Tuple{T}, Tuple{AbstractString,Type{T}}} where T<:AbstractFloat",
+    "page": "API Reference",
+    "title": "StringAnalysis.load",
+    "category": "method",
+    "text": "load(filename, type; [sparse=true])\n\nLoads an LSA model from filename into an LSA model object. The embeddings matrix element type is specified by type (default Float32) while the keyword argument sparse specifies whether the matrix should be sparse or not.\n\n\n\n\n\n"
+},
+
+{
     "location": "api/#StringAnalysis.lsa-Union{Tuple{DocumentTermMatrix{T}}, Tuple{T}} where T<:AbstractFloat",
     "page": "API Reference",
     "title": "StringAnalysis.lsa",
     "category": "method",
     "text": "lsa(X [;k=3, stats=:tfidf, κ=2, β=0.75, tol=1e-15])\n\nConstructs an LSA model. The input X can be a Corpus or a DocumentTermMatrix. Use ?LSAModel for more details. Vector components smaller than tol will be zeroed out.\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#StringAnalysis.save-Union{Tuple{H}, Tuple{A}, Tuple{T}, Tuple{S}, Tuple{LSAModel{S,T,A,H},AbstractString}} where H where A where T where S",
+    "page": "API Reference",
+    "title": "StringAnalysis.save",
+    "category": "method",
+    "text": "save(lm, filename)\n\nSaves an LSA model lm to disc in file filename.\n\n\n\n\n\n"
 },
 
 {

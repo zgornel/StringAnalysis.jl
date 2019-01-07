@@ -82,9 +82,9 @@ julia&gt; standardize!(Corpus([doc1, doc3]), NGramDocument{String})  # works
 julia&gt; standardize!(Corpus([doc1, doc2]), NGramDocument{String})  # fails because we have a Vector{StringDocument{T}}
 ERROR: MethodError: Cannot `convert` an object of type NGramDocument{String} to an object of type StringDocument{String}
 Closest candidates are:
-  convert(::Type{StringDocument{T&lt;:AbstractString}}, !Matched::Union{FileDocument, StringDocument}) where T&lt;:AbstractString at /home/travis/build/zgornel/StringAnalysis.jl/src/document.jl:188
+  convert(::Type{StringDocument{T&lt;:AbstractString}}, !Matched::Union{FileDocument, StringDocument}) where T&lt;:AbstractString at /home/travis/build/zgornel/StringAnalysis.jl/src/document.jl:190
   convert(::Type{T}, !Matched::T) where T at essentials.jl:154
-  StringDocument{String}(::Any, !Matched::Any) where T&lt;:AbstractString at /home/travis/build/zgornel/StringAnalysis.jl/src/document.jl:50
+  StringDocument{String}(::Any, !Matched::Any) where T&lt;:AbstractString at /home/travis/build/zgornel/StringAnalysis.jl/src/document.jl:49
 
 julia&gt; standardize!(Corpus(AbstractDocument[doc1, doc2]), NGramDocument{String})  # works</code></pre><p>The corpus can be also iterated through,</p><pre><code class="language-julia-repl">julia&gt; for (i,doc) in enumerate(crps)
            @show (i, doc)
