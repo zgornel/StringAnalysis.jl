@@ -148,7 +148,7 @@ function remove_patterns(s::AbstractString, rex::Regex)
     iob = IOBuffer()
     ibegin = 1
     v=codeunits(s)
-    for m in eachmatch(rex, s)
+    for m in eachmatch(rex, s, overlap=true)
         len = m.match.offset-ibegin+1
         if len > 0
             Base.write_sub(iob, v, ibegin, len)
@@ -166,7 +166,7 @@ function remove_patterns(s::SubString{T}, rex::Regex) where T <: String
     ioffset = s.offset
     data = codeunits(s.string)
     ibegin = 1
-    for m in eachmatch(rex, s)
+    for m in eachmatch(rex, s, overlap=true)
         len = m.match.offset-ibegin+1
         if len > 0
             Base.write_sub(iob, data, ibegin+ioffset, len)
