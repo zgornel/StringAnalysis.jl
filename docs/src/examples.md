@@ -176,10 +176,41 @@ More extensive preprocessing examples can be viewed in `test/preprocessing.jl`.
 
 The semantic analysis of a corpus relates to the task of building structures that approximate the concepts present in its documents. It does not necessarily involve prior semantic understanding of the documents [(Wikipedia)](https://en.wikipedia.org/wiki/Semantic_analysis_(machine_learning)).
 
-`StringAnalysis` provides two approaches of performing semantic analysis of a corpus: latent semantic analysis (LSA) and latent Dirichlet allocation (LDA).
+`StringAnalysis` provides two approaches of performing semantic analysis of a corpus: [latent semantic analysis (LSA)](http://lsa.colorado.edu/papers/JASIS.lsi.90.pdf) and [latent Dirichlet allocation (LDA)](http://jmlr.org/papers/volume3/blei03a/blei03a.pdf).
 
 ### Latent Semantic Analysis (LSA)
-Documentation coming soon. Check the API reference for more information. [LSA paper](http://lsa.colorado.edu/papers/JASIS.lsi.90.pdf)
+The following example gives a straightforward usage example of LSA and can be found in the documentation of `LSAModel` as well.
+```@repl index
+doc1 = StringDocument("This is a text about an apple. There are many texts about apples.");
+doc2 = StringDocument("Pears and apples are good but not exotic. An apple a day keeps the doctor away.");
+doc3 = StringDocument("Fruits are good for you.");
+doc4 = StringDocument("This phrase has nothing to do with the others...");
+doc5 = StringDocument("Simple text, little info inside");
+# Build corpus
+crps = Corpus(AbstractDocument[doc1, doc2, doc3, doc4, doc5]);
+prepare!(crps, strip_punctuation);
+update_lexicon!(crps);
+M = DocumentTermMatrix{Float32}(crps, sort(collect(keys(crps.lexicon))));
+
+### Build LSA Model ###
+lsa_model = LSAModel(M, k=3, stats=:tf);
+
+query = StringDocument("Apples and an exotic fruit.");
+idxs, corrs = cosine(lsa_model, query);
+
+for (idx, corr) in zip(idxs, corrs)
+    println("$corr -> \"$(crps[idx].text)\"");
+end
+```
+LSA models can be saved and retrieved
+```@repl index
+file = "model.txt"
+lsa_model
+save(lsa_model, file)  # model saved
+print(join(readlines(file)[1:3], "\n"))  # first three lines
+new_model = load(file, Float64)  # change element type
+rm(file)
+```
 
 ### Latent Dirichlet Allocation (LDA)
-Documentation coming soon. Check the API reference for more information. [LDA paper](http://jmlr.org/papers/volume3/blei03a/blei03a.pdf)
+Documentation coming soon; check the API reference for information on the associated methods.
