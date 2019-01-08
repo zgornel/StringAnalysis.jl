@@ -117,6 +117,8 @@ Document(ng::Dict{String, Int}) = NGramDocument(ng)
 
 
 # text() / text!(): Access to document text as a string
+text(d::AbstractString) = d
+
 text(fd::FileDocument) = begin
     !isfile(fd.filename) && error("Can't find file: $(fd.filename)")
     read(fd.filename, String)
@@ -140,7 +142,9 @@ text!(d::AbstractDocument, new_text::AbstractString) =
 
 
 # tokens() / tokens!(): Access to document text as a token array
-tokens(d::(Union{FileDocument, StringDocument})) = tokenize(text(d))
+tokens(d::AbstractString) = tokenize(d)
+
+tokens(d::(Union{FileDocument, StringDocument})) = tokens(text(d))
 
 tokens(d::TokenDocument) = d.tokens
 
@@ -153,8 +157,10 @@ tokens!(d::TokenDocument{T}, new_tokens::Vector{T}) where T<:AbstractString =
 tokens!(d::AbstractDocument, new_tokens::Vector{T}) where T<:AbstractString =
     error("The tokens of a $(typeof(d)) cannot be directly edited")
 
-
 # ngrams() / ngrams!(): Access to document text as n-gram counts
+ngrams(d::AbstractString, n::Int=DEFAULT_NGRAM_COMPLEXITY) =
+    ngramize(DEFAULT_LANGUAGE, tokens(d), n)
+
 ngrams(d::NGramDocument) = d.ngrams
 
 ngrams(d::AbstractDocument, n::Int=DEFAULT_NGRAM_COMPLEXITY) =
@@ -165,7 +171,6 @@ ngrams!(d::NGramDocument{T}, new_ngrams::Dict{T, Int}) where T<:AbstractString =
 
 ngrams!(d::AbstractDocument, new_ngrams::Dict) =
     error("The n-grams of $(typeof(d)) cannot be directly edited")
-
 
 # Length describes length of document in characters
 Base.length(d::NGramDocument) =

@@ -85,8 +85,6 @@ remove_html_tags(s::T) where T<:AbstractString =
 #       methods
 for fname in [:remove_corrupt_utf8, :remove_case, :remove_accents, :remove_html_tags]
     # File document
-    # TODO(Corneliu): Make these work on file documents
-    #                 i.e. load file, process, re-write
     definition = """
         $(fname)!(d::FileDocument) = error("FileDocument cannot be modified.")
         """
@@ -231,10 +229,15 @@ end
 const alpha_sparse = 0.05
 const alpha_frequent = 0.95
 
-# Returns a vector with rare terms among all documents
-function sparse_terms(crps::Corpus, alpha = alpha_sparse)
-    #isempty(crps.inverse_index) && @warn "Inverse index is empty."
-    #isempty(crps.lexicon) && @warn "Lexicon is empty."
+"""
+    sparse_terms(crps::Corpus, alpha)
+
+Returns a vector with rare terms among all documents. The parameter
+`alpha` indicates the sparsity threshold (a frequency <= alpha means sparse).
+"""
+function sparse_terms(crps::Corpus, alpha = DEFAULT_CORPUS_SPARSITY)
+    isempty(crps.lexicon) && update_lexicon!(crps)
+    isempty(crps.inverse_index) && update_inverse_index!(crps)
     res = Vector{String}(undef, 0)
     ndocs = length(crps.documents)
     for term in keys(crps.lexicon)
@@ -246,28 +249,60 @@ function sparse_terms(crps::Corpus, alpha = alpha_sparse)
     return res
 end
 
-# Returns a vector with frequent terms among all documents
-function frequent_terms(crps::Corpus, alpha = alpha_frequent)
-    #isempty(crps.inverse_index) && @warn "Inverse index is empty."
-    #isempty(crps.lexicon) && @warn "Lexicon is empty."
+"""
+    frequent_terms(crps::Corpus, alpha)
+
+Returns a vector with frequent terms among all documents. The parameter
+`alpha` indicates the sparsity threshold (a frequency <= alpha means sparse).
+"""
+function frequent_terms(crps::Corpus, alpha = 1.0 - DEFAULT_CORPUS_SPARSITY)
+    isempty(crps.lexicon) && update_lexicon!(crps)
+    isempty(crps.inverse_index) && update_inverse_index!(crps)
     res = Vector{String}(undef, 0)
     ndocs = length(crps.documents)
     for term in keys(crps.lexicon)
         f = length(crps.inverse_index[term]) / ndocs
-        if f >= alpha
+        if f > alpha
             push!(res, String(term))
         end
     end
     return res
 end
 
-# TODO(Corneliu): Implement for Documents
-function sparse_terms(doc::AbstractDocument, alpha = alpha_sparse)
-    String[]
+"""
+    sparse_terms(doc, alpha)
+
+Returns a vector with rare terms in the document `doc`. The parameter
+`alpha` indicates the sparsity threshold (a frequency <= alpha means sparse).
+"""
+function sparse_terms(doc, alpha = DEFAULT_DOC_SPARSITY)
+    ng = ngrams(doc)
+    n = sum(values(ng))
+    res = Vector{String}(undef, 0)
+    for (term, count) in ng
+        if count/n <= alpha
+            push!(res, String(term))
+        end
+    end
+    return res
 end
 
-function frequent_terms(doc::AbstractDocument, alpha = alpha_frequent)
-    String[]
+"""
+    frequent_terms(doc, alpha)
+
+Returns a vector with frequent terms in the document `doc`. The parameter
+`alpha` indicates the sparsity threshold (a frequency <= alpha means sparse).
+"""
+function frequent_terms(doc, alpha = 1.0 - DEFAULT_DOC_SPARSITY)
+    ng = ngrams(doc)
+    n = sum(values(ng))
+    res = Vector{String}(undef, 0)
+    for (term, count) in ng
+        if count/n > alpha
+            push!(res, String(term))
+        end
+    end
+    return res
 end
 
 
@@ -384,8 +419,8 @@ function prepare(s::AbstractString,
         push!(rpatterns, _build_words_pattern(skip_words))
     end
     # sparse, frequent terms
-    #((flags & strip_sparse_terms) > 0) && union!(skip_words, sparse_terms(os))
-    #((flags & strip_frequent_terms) > 0) && union!(skip_words, frequent_terms(os))
+    ((flags & strip_sparse_terms) > 0) && union!(skip_words, sparse_terms(os))
+    ((flags & strip_frequent_terms) > 0) && union!(skip_words, frequent_terms(os))
     # custom regex
     if !isempty(skip_patterns)
         push!(rpatterns, _build_regex_pattern(skip_patterns))

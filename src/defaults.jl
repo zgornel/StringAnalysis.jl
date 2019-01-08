@@ -15,3 +15,5 @@ const DEFAULT_CARDINALITY = 100
 const DEFAULT_FLOAT_TYPE = eltype(1.0)
 const DEFAULT_DTM_TYPE = Int  # can be anything <:Real
 const DEFAULT_NGRAM_COMPLEXITY = 1  # default ngram complexity
+const DEFAULT_CORPUS_SPARSITY = 0.05  # if a term is present in less docs of a corpus than this percent, it is sparse
+const DEFAULT_DOC_SPARSITY = 0.05  # if a term is present less than this percent in a document, it is sparse
