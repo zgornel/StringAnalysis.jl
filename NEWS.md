@@ -1,5 +1,15 @@
 ## StringAnalysis Release Notes
 
+v0.2.2
+------
+ - LSA models can be saved/loaded
+ - Small additions
+
+v0.2.1
+------
+ - Improved LSA
+ - Expanded online documentation
+
 v0.2.0
 ------
  - Improved latent semantic analysis (LSA)
