@@ -201,6 +201,22 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "api/#StringAnalysis.frequent_terms",
+    "page": "API Reference",
+    "title": "StringAnalysis.frequent_terms",
+    "category": "function",
+    "text": "frequent_terms(doc, alpha)\n\nReturns a vector with frequent terms in the document doc. The parameter alpha indicates the sparsity threshold (a frequency <= alpha means sparse).\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#StringAnalysis.frequent_terms",
+    "page": "API Reference",
+    "title": "StringAnalysis.frequent_terms",
+    "category": "function",
+    "text": "frequent_terms(crps::Corpus, alpha)\n\nReturns a vector with frequent terms among all documents. The parameter alpha indicates the sparsity threshold (a frequency <= alpha means sparse).\n\n\n\n\n\n"
+},
+
+{
     "location": "api/#StringAnalysis.get_vector-Union{Tuple{H}, Tuple{A}, Tuple{T}, Tuple{S}, Tuple{LSAModel{S,T,A,H},Any}} where H where A where T where S",
     "page": "API Reference",
     "title": "StringAnalysis.get_vector",
@@ -262,6 +278,22 @@ var documenterSearchIndex = {"docs": [
     "title": "StringAnalysis.similarity",
     "category": "method",
     "text": "similarity(lm, doc1, doc2)\n\nReturn the cosine similarity value between two documents doc1 and doc2.\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#StringAnalysis.sparse_terms",
+    "page": "API Reference",
+    "title": "StringAnalysis.sparse_terms",
+    "category": "function",
+    "text": "sparse_terms(doc, alpha)\n\nReturns a vector with rare terms in the document doc. The parameter alpha indicates the sparsity threshold (a frequency <= alpha means sparse).\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#StringAnalysis.sparse_terms",
+    "page": "API Reference",
+    "title": "StringAnalysis.sparse_terms",
+    "category": "function",
+    "text": "sparse_terms(crps::Corpus, alpha)\n\nReturns a vector with rare terms among all documents. The parameter alpha indicates the sparsity threshold (a frequency <= alpha means sparse).\n\n\n\n\n\n"
 },
 
 {

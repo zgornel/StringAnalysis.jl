@@ -82,7 +82,7 @@ julia&gt; standardize!(Corpus([doc1, doc3]), NGramDocument{String})  # works
 julia&gt; standardize!(Corpus([doc1, doc2]), NGramDocument{String})  # fails because we have a Vector{StringDocument{T}}
 ERROR: MethodError: Cannot `convert` an object of type NGramDocument{String} to an object of type StringDocument{String}
 Closest candidates are:
-  convert(::Type{StringDocument{T&lt;:AbstractString}}, !Matched::Union{FileDocument, StringDocument}) where T&lt;:AbstractString at /home/travis/build/zgornel/StringAnalysis.jl/src/document.jl:190
+  convert(::Type{StringDocument{T&lt;:AbstractString}}, !Matched::Union{FileDocument, StringDocument}) where T&lt;:AbstractString at /home/travis/build/zgornel/StringAnalysis.jl/src/document.jl:195
   convert(::Type{T}, !Matched::T) where T at essentials.jl:154
   StringDocument{String}(::Any, !Matched::Any) where T&lt;:AbstractString at /home/travis/build/zgornel/StringAnalysis.jl/src/document.jl:49
 
@@ -281,7 +281,7 @@ LSA Model (tf) 5 documents, 38 terms, 3-element Float32 vectors
 julia&gt; save(lsa_model, file)  # model saved
 
 julia&gt; print(join(readlines(file)[1:3], &quot;\n&quot;))  # first three lines
-LSA Model saved at 2019-01-08T13:10:54.586
+LSA Model saved at 2019-01-08T14:19:57.442
 5 38 3
 tf
 julia&gt; new_model = load(file, Float64)  # change element type
