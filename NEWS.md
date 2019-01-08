@@ -1,5 +1,10 @@
 ## StringAnalysis Release Notes
 
+v0.2.3
+------
+ - Preprocessing improvements
+ - Additional documentation
+
 v0.2.2
 ------
  - LSA models can be saved/loaded
