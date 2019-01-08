@@ -239,4 +239,52 @@ julia&gt; sd = StringDocument(str);
 julia&gt; prepare!(sd, flags);
 
 julia&gt; text(sd)
-&quot;This is text containing words and bit of punctuation &quot;</code></pre><p>More extensive preprocessing examples can be viewed in <code>test/preprocessing.jl</code>.</p><h2><a class="nav-anchor" id="Semantic-Analysis-1" href="#Semantic-Analysis-1">Semantic Analysis</a></h2><p>The semantic analysis of a corpus relates to the task of building structures that approximate the concepts present in its documents. It does not necessarily involve prior semantic understanding of the documents <a href="https://en.wikipedia.org/wiki/Semantic_analysis_(machine_learning)">(Wikipedia)</a>.</p><p><code>StringAnalysis</code> provides two approaches of performing semantic analysis of a corpus: latent semantic analysis (LSA) and latent Dirichlet allocation (LDA).</p><h3><a class="nav-anchor" id="Latent-Semantic-Analysis-(LSA)-1" href="#Latent-Semantic-Analysis-(LSA)-1">Latent Semantic Analysis (LSA)</a></h3><p>Documentation coming soon. Check the API reference for more information. <a href="http://lsa.colorado.edu/papers/JASIS.lsi.90.pdf">LSA paper</a></p><h3><a class="nav-anchor" id="Latent-Dirichlet-Allocation-(LDA)-1" href="#Latent-Dirichlet-Allocation-(LDA)-1">Latent Dirichlet Allocation (LDA)</a></h3><p>Documentation coming soon. Check the API reference for more information. <a href="http://jmlr.org/papers/volume3/blei03a/blei03a.pdf">LDA paper</a></p><footer><hr/><a class="previous" href="../"><span class="direction">Previous</span><span class="title">Introduction</span></a><a class="next" href="../api/"><span class="direction">Next</span><span class="title">API Reference</span></a></footer></article></body></html>
+&quot;This is text containing words and bit of punctuation &quot;</code></pre><p>More extensive preprocessing examples can be viewed in <code>test/preprocessing.jl</code>.</p><h2><a class="nav-anchor" id="Semantic-Analysis-1" href="#Semantic-Analysis-1">Semantic Analysis</a></h2><p>The semantic analysis of a corpus relates to the task of building structures that approximate the concepts present in its documents. It does not necessarily involve prior semantic understanding of the documents <a href="https://en.wikipedia.org/wiki/Semantic_analysis_(machine_learning)">(Wikipedia)</a>.</p><p><code>StringAnalysis</code> provides two approaches of performing semantic analysis of a corpus: <a href="http://lsa.colorado.edu/papers/JASIS.lsi.90.pdf">latent semantic analysis (LSA)</a> and <a href="http://jmlr.org/papers/volume3/blei03a/blei03a.pdf">latent Dirichlet allocation (LDA)</a>.</p><h3><a class="nav-anchor" id="Latent-Semantic-Analysis-(LSA)-1" href="#Latent-Semantic-Analysis-(LSA)-1">Latent Semantic Analysis (LSA)</a></h3><p>The following example gives a straightforward usage example of LSA and can be found in the documentation of <code>LSAModel</code> as well.</p><pre><code class="language-julia-repl">julia&gt; doc1 = StringDocument(&quot;This is a text about an apple. There are many texts about apples.&quot;);
+
+julia&gt; doc2 = StringDocument(&quot;Pears and apples are good but not exotic. An apple a day keeps the doctor away.&quot;);
+
+julia&gt; doc3 = StringDocument(&quot;Fruits are good for you.&quot;);
+
+julia&gt; doc4 = StringDocument(&quot;This phrase has nothing to do with the others...&quot;);
+
+julia&gt; doc5 = StringDocument(&quot;Simple text, little info inside&quot;);
+
+julia&gt; # Build corpus
+       crps = Corpus(AbstractDocument[doc1, doc2, doc3, doc4, doc5]);
+
+julia&gt; prepare!(crps, strip_punctuation);
+
+julia&gt; update_lexicon!(crps);
+
+julia&gt; M = DocumentTermMatrix{Float32}(crps, sort(collect(keys(crps.lexicon))));
+
+julia&gt; ### Build LSA Model ###
+       lsa_model = LSAModel(M, k=3, stats=:tf);
+
+julia&gt; query = StringDocument(&quot;Apples and an exotic fruit.&quot;);
+
+julia&gt; idxs, corrs = cosine(lsa_model, query);
+
+julia&gt; for (idx, corr) in zip(idxs, corrs)
+           println(&quot;$corr -&gt; \&quot;$(crps[idx].text)\&quot;&quot;);
+       end
+0.9746108 -&gt; &quot;Pears and apples are good but not exotic  An apple a day keeps the doctor away &quot;
+0.870703 -&gt; &quot;This is a text about an apple  There are many texts about apples &quot;
+0.7122063 -&gt; &quot;Fruits are good for you &quot;
+0.22725986 -&gt; &quot;This phrase has nothing to do with the others &quot;
+0.076901935 -&gt; &quot;Simple text  little info inside&quot;</code></pre><p>LSA models can be saved and retrieved</p><pre><code class="language-julia-repl">julia&gt; file = &quot;model.txt&quot;
+&quot;model.txt&quot;
+
+julia&gt; lsa_model
+LSA Model (tf) 5 documents, 38 terms, 3-element Float32 vectors
+
+julia&gt; save(lsa_model, file)  # model saved
+
+julia&gt; print(join(readlines(file)[1:3], &quot;\n&quot;))  # first three lines
+LSA Model saved at 2019-01-08T13:10:54.586
+5 38 3
+tf
+julia&gt; new_model = load(file, Float64)  # change element type
+LSA Model (tf) 5 documents, 38 terms, 3-element Float64 vectors
+
+julia&gt; rm(file)</code></pre><h3><a class="nav-anchor" id="Latent-Dirichlet-Allocation-(LDA)-1" href="#Latent-Dirichlet-Allocation-(LDA)-1">Latent Dirichlet Allocation (LDA)</a></h3><p>Documentation coming soon; check the API reference for information on the associated methods.</p><footer><hr/><a class="previous" href="../"><span class="direction">Previous</span><span class="title">Introduction</span></a><a class="next" href="../api/"><span class="direction">Next</span><span class="title">API Reference</span></a></footer></article></body></html>

@@ -13,7 +13,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "Introduction",
     "category": "section",
-    "text": "StringAnalysis is a package for working with strings and text. It is a hard-fork from TextAnalysis.jl designed to provide a more powerful, faster and orthogonal API.Note: This documentation is still under construction and incomplete. For an overview of the basic capabilities of the package, consult the - still relevant - TextAnalysis.jl documentation."
+    "text": "StringAnalysis is a package for working with strings and text. It is a hard-fork from TextAnalysis.jl designed to provide a more powerful, faster and orthogonal API."
 },
 
 {
@@ -21,7 +21,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "What is new?",
     "category": "section",
-    "text": "This package brings several changes over TextAnalysis.jl:Simpler API (less exported methods)\nImproved test coverage\nParametrized many of the objects i.e. DocumentTermMatrix, AbstractDocument etc\nExtended DocumentMetadata with new fields\nMany of the repetitive functions are now automatically generated (see metadata.jl, preprocessing.jl)\nRe-factored the text preprocessing API\nImproved latent semantic analysis (LSA)\neach_dtv, each_hash_dtv iterators support vector element type specification\nAdded Okapi BM25 statistic\nMany bugfixes and small extensions"
+    "text": "This package brings several changes over TextAnalysis.jl:Simpler API (less exported methods)\nImproved test coverage\nParametrized many of the objects i.e. DocumentTermMatrix, AbstractDocument etc\nExtended DocumentMetadata with new fields\nprepare function for preprocessing AbstractStrings\nMany of the repetitive functions are now automatically generated (see metadata.jl, preprocessing.jl)\nRe-factored the text preprocessing API\nImproved latent semantic analysis (LSA)\neach_dtv, each_hash_dtv iterators support vector element type specification\nAdded Okapi BM25 statistic\nMany bugfixes and small extensions"
 },
 
 {
@@ -141,7 +141,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Usage examples",
     "title": "Latent Semantic Analysis (LSA)",
     "category": "section",
-    "text": "Documentation coming soon. Check the API reference for more information. LSA paper"
+    "text": "The following example gives a straightforward usage example of LSA and can be found in the documentation of LSAModel as well.doc1 = StringDocument(\"This is a text about an apple. There are many texts about apples.\");\ndoc2 = StringDocument(\"Pears and apples are good but not exotic. An apple a day keeps the doctor away.\");\ndoc3 = StringDocument(\"Fruits are good for you.\");\ndoc4 = StringDocument(\"This phrase has nothing to do with the others...\");\ndoc5 = StringDocument(\"Simple text, little info inside\");\n# Build corpus\ncrps = Corpus(AbstractDocument[doc1, doc2, doc3, doc4, doc5]);\nprepare!(crps, strip_punctuation);\nupdate_lexicon!(crps);\nM = DocumentTermMatrix{Float32}(crps, sort(collect(keys(crps.lexicon))));\n\n### Build LSA Model ###\nlsa_model = LSAModel(M, k=3, stats=:tf);\n\nquery = StringDocument(\"Apples and an exotic fruit.\");\nidxs, corrs = cosine(lsa_model, query);\n\nfor (idx, corr) in zip(idxs, corrs)\n    println(\"$corr -> \\\"$(crps[idx].text)\\\"\");\nendLSA models can be saved and retrievedfile = \"model.txt\"\nlsa_model\nsave(lsa_model, file)  # model saved\nprint(join(readlines(file)[1:3], \"\\n\"))  # first three lines\nnew_model = load(file, Float64)  # change element type\nrm(file)"
 },
 
 {
@@ -149,7 +149,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Usage examples",
     "title": "Latent Dirichlet Allocation (LDA)",
     "category": "section",
-    "text": "Documentation coming soon. Check the API reference for more information. LDA paper"
+    "text": "Documentation coming soon; check the API reference for information on the associated methods."
 },
 
 {
