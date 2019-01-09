@@ -1,4 +1,14 @@
-# Basic DocumentTermMatrix type
+"""
+Basic Document-Term-Matrix (DTM) type.
+
+# Fields
+  * `dtm::SparseMatriCSC{T,Int}` the actual DTM; rows represent documents
+and columns represent terms
+  * `terms::Vector{String}` a list of terms that represent the lexicon of
+the corpus associated with the DTM
+  * `column_indices::Dict{String, Int}` a map between the `terms` and the
+columns of the `dtm`
+"""
 mutable struct DocumentTermMatrix{T}
     dtm::SparseMatrixCSC{T, Int}
     terms::Vector{String}
@@ -15,6 +25,15 @@ function columnindices(terms::Vector{String})
     return column_indices
 end
 
+"""
+    DocumentTermMatrix{T}(crps::Corpus [,terms])
+
+Auxiliary constructor(s) of the `DocumentTermMatrix` type. The type `T` has to be
+a subtype of `Real`. The constructor(s) requires a corpus `crps` and
+a `terms` structure representing the lexicon of the corpus. The latter
+can be a `Vector{String}`, an `AbstractDict` where the keys are the lexicon or can
+be missing, in which case the `lexicon` field of the corpus is used.
+"""
 function DocumentTermMatrix{T}(crps::Corpus, terms::Vector{String}) where T<:Real
     column_indices = columnindices(terms)
     m = length(crps)
@@ -66,9 +85,20 @@ DocumentTermMatrix(dtm::SparseMatrixCSC{T, Int},
     DocumentTermMatrix(dtm, terms, columnindices(terms))
 
 
-# Access the DTM of a DocumentTermMatrix
+"""
+    dtm(d::DocumentTermMatrix)
+
+Access the matrix of a `DocumentTermMatrix` `d`.
+"""
 dtm(d::DocumentTermMatrix) = d.dtm
 
+"""
+    dtm(crps::Corpus, eltype::Type{T}=DEFAULT_DTM_TYPE)
+
+Access the matrix of the DTM associated with the corpus `crps`. The
+`DocumentTermMatrix{T}` will first have to be created in order for
+the actual matrix to be accessed.
+"""
 dtm(crps::Corpus, eltype::Type{T}=DEFAULT_DTM_TYPE) where T<:Real =
     dtm(DocumentTermMatrix{T}(crps))
 
@@ -99,6 +129,12 @@ function dtm_entries(d::AbstractDocument,
     return (indices, values)
 end
 
+"""
+    dtv(d::AbstractDocument, lex::Dict{String,Int}, eltype::Type{T}=DEFAULT_DTM_TYPE)
+
+Creates a document-term-vector with elements of type `T` for document `d`
+using the lexicon `lex`.
+"""
 function dtv(d::AbstractDocument,
              lex::Dict{String, Int},
              eltype::Type{T}=DEFAULT_DTM_TYPE) where T<:Real
@@ -109,6 +145,12 @@ function dtv(d::AbstractDocument,
     return row
 end
 
+"""
+    dtv(crps::Corpus, idx::Int, eltype::Type{T}=DEFAULT_DTM_TYPE)
+
+Creates a document-term-vector with elements of type `T` for document `idx`
+of the corpus `crps`.
+"""
 function dtv(crps::Corpus,
              idx::Int,
              eltype::Type{T}=DEFAULT_DTM_TYPE) where T<:Real
@@ -126,8 +168,12 @@ function dtv(d::AbstractDocument)
 end
 
 
-# The hash trick: use a hash function instead of a lexicon to determine the
-# columns of a DocumentTermMatrix-like encoding of the data
+"""
+    hash_dtv(d::AbstractDocument, h::TextHashFunction, eltype::Type{T}=DEFAULT_DTM_TYPE)
+
+Creates a hashed document-term-vector with elements of type `T` for document `d`
+using the hashing function `h`.
+"""
 function hash_dtv(d::AbstractDocument,
                   h::TextHashFunction,
                   eltype::Type{T}=DEFAULT_DTM_TYPE) where T<:Real
@@ -145,6 +191,14 @@ hash_dtv(d::AbstractDocument;
          eltype::Type{T}=DEFAULT_DTM_TYPE) where T<:Real =
     hash_dtv(d, TextHashFunction(cardinality), eltype)
 
+
+"""
+    hash_dtm(crps::Corpus [,h::TextHashFunction], eltype::Type{T}=DEFAULT_DTM_TYPE)
+
+Creates a hashed DTM with elements of type `T` for corpus `crps` using the
+the hashing function `h`. If `h` is missing, the hash function of the `Corpus`
+is used.
+"""
 function hash_dtm(crps::Corpus,
                   h::TextHashFunction,
                   eltype::Type{T}=DEFAULT_DTM_TYPE) where T<:Real
@@ -155,7 +209,6 @@ function hash_dtm(crps::Corpus,
     end
     return res
 end
-
 
 hash_dtm(crps::Corpus, eltype::Type{T}=DEFAULT_DTM_TYPE) where T<:Real =
     hash_dtm(crps, hash_function(crps), eltype)
@@ -168,6 +221,11 @@ hash_tdm(crps::Corpus, eltype::Type{T}=DEFAULT_DTM_TYPE) where T<:Real =
 # Produce entries for on-line analysis when DTM would not fit in memory
 mutable struct EachDTV{U, S<:AbstractString, T<:AbstractDocument}
     corpus::Corpus{S,T}
+    function EachDTV{U,S,T}(corpus::Corpus{S,T}) where
+            {U, S<:AbstractString, T<:AbstractDocument}
+        isempty(lexicon(corpus)) && update_lexicon!(corpus)
+        new(corpus)
+    end
 end
 
 EachDTV{U}(crps::Corpus{S,T}) where {U,S,T} = EachDTV{U,S,T}(crps)
@@ -183,6 +241,13 @@ end
 next(edt::EachDTV{U,S,T}, state::Int) where {U,S,T} =
     (dtv(edt.corpus.documents[state], lexicon(edt.corpus), U), state + 1)
 
+"""
+    each_dtv(crps::Corpus [; eltype::Type{U}=DEFAULT_DTM_TYPE])
+
+Iterates through the rows of the DTM of the corpus `crps` without
+constructing it. Useful when the DTM would not fit in memory.
+`eltype` specifies the element type of the generated vectors.
+"""
 each_dtv(crps::Corpus; eltype::Type{U}=DEFAULT_DTM_TYPE) where U<:Real =
     EachDTV{U}(crps)
 
@@ -198,6 +263,11 @@ Base.show(io::IO, edt::EachDTV{U,S,T}) where {U,S,T} =
 
 mutable struct EachHashDTV{U, S<:AbstractString, T<:AbstractDocument}
     corpus::Corpus{S,T}
+    function EachHashDTV{U,S,T}(corpus::Corpus{S,T}) where
+            {U, S<:AbstractString, T<:AbstractDocument}
+        isempty(lexicon(corpus)) && update_lexicon!(corpus)
+        new(corpus)
+    end
 end
 
 EachHashDTV{U}(crps::Corpus{S,T}) where {U,S,T} = EachHashDTV{U,S,T}(crps)
@@ -213,6 +283,13 @@ end
 next(edt::EachHashDTV{U,S,T}, state::Int) where {U,S,T} =
     (hash_dtv(edt.corpus.documents[state], edt.corpus.h, U), state + 1)
 
+"""
+    each_hash_dtv(crps::Corpus [; eltype::Type{U}=DEFAULT_DTM_TYPE])
+
+Iterates through the rows of the hashed DTM of the corpus `crps` without
+constructing it. Useful when the DTM would not fit in memory.
+`eltype` specifies the element type of the generated vectors.
+"""
 each_hash_dtv(crps::Corpus; eltype::Type{U}=DEFAULT_DTM_TYPE) where U<:Real =
     EachHashDTV{U}(crps)
 
