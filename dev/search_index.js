@@ -109,15 +109,31 @@ var documenterSearchIndex = {"docs": [
     "page": "Usage examples",
     "title": "Features",
     "category": "section",
-    "text": "If a lexicon is present in the corpus, a document term matrix (DTM) can be created. The DTM acts as a basis for word-document statistics, allowing for the representation of documents as numerical vectors. The DTM is created by calling the object constructor using as argument the corpusM = DocumentTermMatrix(crps)\ntypeof(M)\nM = DocumentTermMatrix{Int8}(crps)\ntypeof(M)or the dtm function (not recommended as the element type cannot be specified)M = dtm(crps)The default element type of the DTM is specified by the constant DEFAULT_DTM_TYPE present in src/defaults.jl.The individual rows of the DTM can also be generated iteratively whether a lexicon is present or not. If a lexicon is present, the each_dtv iterator allows the generation of the document vectors along with the control of the vector element type:for dv in each_dtv(crps, eltype=Int8)\n    @show dv\nendAlternatively, the vectors can be generated using the hash trick. The dimension of these vectors can be controlled through the cardinality keyword argument of the Corpus constructor while their type can be specified when building the iterator:for dv in each_hash_dtv(Corpus(documents(crps), cardinality=5), eltype=Int8)\n    @show dv\nendThe default Corpus cardinality is specified by the constant DEFAULT_CARDINALITY present in src/defaults.jl."
+    "text": ""
 },
 
 {
-    "location": "examples/#More-features-1",
+    "location": "examples/#Document-Term-Matrix-(DTM)-1",
     "page": "Usage examples",
-    "title": "More features",
+    "title": "Document Term Matrix (DTM)",
     "category": "section",
-    "text": "From the DTM, three more document-word statistics can be constructed: the term frequency, the tf-idf (term frequency - inverse document frequency) and Okapi BM25 using the tf, tf!, tf_idf, tf_idf!, bm_25 and bm_25! functions respectively. Their usage is very similar yet there exist several approaches one can take to constructing the output.The following examples with use the term frequency i.e. tf and tf!. When calling the functions that end without a !, one does not control the element type, which is defined by the constant DEFAULT_FLOAT_TYPE = eltype(1.0):M = DocumentTermMatrix(crps);\ntfm = tf(M);\nMatrix(tfm)Control of the output matrix element type - which has to be a subtype of AbstractFloat - can be done only by using the in-place modification functions. One approach is to directly modify the DTM, provided that its elements are floating point numbers:M = DocumentTermMatrix{Float16}(crps)\nMatrix(M.dtm)\ntf!(M.dtm);  # inplace modification\nMatrix(M.dtm)\n\nM = DocumentTermMatrix(crps)  # Int elements\ntf!(M.dtm)  # failsor, to provide a matrix output:rows, cols = size(M.dtm);\ntfm = zeros(Float16, rows, cols);\ntf!(M.dtm, tfm);\ntfmOne could also provide a sparse matrix output however it is important to note that in this case, the output matrix non-zero values have to correspond to the DTM\'s non-zero values:using SparseArrays\nrows, cols = size(M.dtm);\ntfm = spzeros(Float16, rows, cols)\ntfm[M.dtm .!= 0] .= 123;  # create explicitly non-zeros\ntf!(M.dtm, tfm);\nMatrix(tfm)"
+    "text": "If a lexicon is present in the corpus, a document term matrix (DTM) can be created. The DTM acts as a basis for word-document statistics, allowing for the representation of documents as numerical vectors. The DTM is created by calling the object constructor using as argument the corpusM = DocumentTermMatrix(crps)\ntypeof(M)\nM = DocumentTermMatrix{Int8}(crps)\ntypeof(M)or the dtm functionM = dtm(crps, Int8);\nMatrix(M)It is important to note that the type parameter of the DTM object can be specified (also in the dtm function) but not specifically required. This can be useful in some cases for reducing memory requirements. The default element type of the DTM is specified by the constant DEFAULT_DTM_TYPE present in src/defaults.jl."
+},
+
+{
+    "location": "examples/#Document-Term-Vectors-(DTVs)-1",
+    "page": "Usage examples",
+    "title": "Document Term Vectors (DTVs)",
+    "category": "section",
+    "text": "The individual rows of the DTM can also be generated iteratively whether a lexicon is present or not. If a lexicon is present, the each_dtv iterator allows the generation of the document vectors along with the control of the vector element type:for dv in each_dtv(crps, eltype=Int8)\n    @show dv\nendAlternatively, the vectors can be generated using the hash trick. This is a form of dimensionality reduction as cardinality i.e. output dimension is much smaller than the dimension of the original DTM vectors, which is equal to the length of the lexicon. The cardinality is a keyword argument of the Corpus constructor. The hashed vector output type can be specified when building the iterator:for dv in each_hash_dtv(Corpus(documents(crps), cardinality=5), eltype=Int8)\n    @show dv\nendOne can construct a \'hashed\' version of the DTM as well:hash_dtm(Corpus(documents(crps), cardinality=5), Int8)The default Corpus cardinality is specified by the constant DEFAULT_CARDINALITY present in src/defaults.jl."
+},
+
+{
+    "location": "examples/#TF,-TF-IDF,-BM25-1",
+    "page": "Usage examples",
+    "title": "TF, TF-IDF, BM25",
+    "category": "section",
+    "text": "From the DTM, three more document-word statistics can be constructed: the term frequency, the tf-idf (term frequency - inverse document frequency) and Okapi BM25 using the tf, tf!, tf_idf, tf_idf!, bm_25 and bm_25! functions respectively. Their usage is very similar yet there exist several approaches one can take to constructing the output.The following examples with use the term frequency i.e. tf and tf!. When calling the functions that end without a !, which do not require the specification of an output matrix, one does not control the output\'s element type. The default output type is defined by the constant DEFAULT_FLOAT_TYPE = eltype(1.0):M = DocumentTermMatrix(crps);\ntfm = tf(M);\nMatrix(tfm)Control of the output matrix element type - which has to be a subtype of AbstractFloat - can be done only by using the in-place modification functions. One approach is to directly modify the DTM, provided that its elements are floating point numbers:M = DocumentTermMatrix{Float16}(crps)\nMatrix(M.dtm)\ntf!(M.dtm);  # inplace modification\nMatrix(M.dtm)\nM = DocumentTermMatrix(crps)  # Int elements\ntf!(M.dtm)  # fails because of Int elementsor, to provide a matrix output:rows, cols = size(M.dtm);\ntfm = zeros(Float16, rows, cols);\ntf!(M.dtm, tfm);\ntfmOne could also provide a sparse matrix output however it is important to note that in this case, the output matrix non-zero values have to correspond to the DTM\'s non-zero values:using SparseArrays\nrows, cols = size(M.dtm);\ntfm = spzeros(Float16, rows, cols)\ntfm[M.dtm .!= 0] .= 123;  # create explicitly non-zeros\ntf!(M.dtm, tfm);\nMatrix(tfm)"
 },
 
 {
@@ -141,7 +157,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Usage examples",
     "title": "Latent Semantic Analysis (LSA)",
     "category": "section",
-    "text": "The following example gives a straightforward usage example of LSA and can be found in the documentation of LSAModel as well.doc1 = StringDocument(\"This is a text about an apple. There are many texts about apples.\");\ndoc2 = StringDocument(\"Pears and apples are good but not exotic. An apple a day keeps the doctor away.\");\ndoc3 = StringDocument(\"Fruits are good for you.\");\ndoc4 = StringDocument(\"This phrase has nothing to do with the others...\");\ndoc5 = StringDocument(\"Simple text, little info inside\");\n# Build corpus\ncrps = Corpus(AbstractDocument[doc1, doc2, doc3, doc4, doc5]);\nprepare!(crps, strip_punctuation);\nupdate_lexicon!(crps);\nM = DocumentTermMatrix{Float32}(crps, sort(collect(keys(crps.lexicon))));\n\n### Build LSA Model ###\nlsa_model = LSAModel(M, k=3, stats=:tf);\n\nquery = StringDocument(\"Apples and an exotic fruit.\");\nidxs, corrs = cosine(lsa_model, query);\n\nfor (idx, corr) in zip(idxs, corrs)\n    println(\"$corr -> \\\"$(crps[idx].text)\\\"\");\nendLSA models can be saved and retrievedfile = \"model.txt\"\nlsa_model\nsave(lsa_model, file)  # model saved\nprint(join(readlines(file)[1:3], \"\\n\"))  # first three lines\nnew_model = load(file, Float64)  # change element type\nrm(file)"
+    "text": "The following example gives a straightforward usage example of LSA. It is geared towards information retrieval (LSI) as it focuses on document comparison and embedding. Assuming a number of documentsdoc1 = StringDocument(\"This is a text about an apple. There are many texts about apples.\");\ndoc2 = StringDocument(\"Pears and apples are good but not exotic. An apple a day keeps the doctor away.\");\ndoc3 = StringDocument(\"Fruits are good for you.\");\ndoc4 = StringDocument(\"This phrase has nothing to do with the others...\");\ndoc5 = StringDocument(\"Simple text, little info inside\");and creating a corpus and its DTMcrps = Corpus(AbstractDocument[doc1, doc2, doc3, doc4, doc5]);\nprepare!(crps, strip_punctuation);\nupdate_lexicon!(crps);\nM = DocumentTermMatrix{Float32}(crps, sort(collect(keys(crps.lexicon))));building an LSA model is straightforward:lsa_model = LSAModel(M, k=3, stats=:tf)Once the model is created, it can be used to either embed documentsquery = StringDocument(\"Apples and an exotic fruit.\");\nembed_document(lsa_model, query)search for matching documentsidxs, corrs = cosine(lsa_model, query);\n\nfor (idx, corr) in zip(idxs, corrs)\n    println(\"$corr -> \\\"$(crps[idx].text)\\\"\");\nendor check for structure within the dataU, V = lsa_model.U, lsa_model.Vᵀ\';\nMatrix(U*U\')  # document to document similarity\nMatrix(V*V\')  # term to term similarityLSA models can be saved and retrieved to and from am easy to read and parse text format.file = \"model.txt\"\nlsa_model\nsave(lsa_model, file)  # model saved\nprint(join(readlines(file)[1:5], \"\\n\"))  # first five lines\nnew_model = load(file, Float64)  # change element type\nrm(file)"
 },
 
 {
@@ -158,6 +174,22 @@ var documenterSearchIndex = {"docs": [
     "title": "StringAnalysis.StringAnalysis",
     "category": "module",
     "text": "A Julia library for working with text hard-forked from TextAnalysis.jl.\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#StringAnalysis.DocumentTermMatrix",
+    "page": "API Reference",
+    "title": "StringAnalysis.DocumentTermMatrix",
+    "category": "type",
+    "text": "Basic Document-Term-Matrix (DTM) type.\n\nFields\n\ndtm::SparseMatriCSC{T,Int} the actual DTM; rows represent documents\n\nand columns represent terms\n\nterms::Vector{String} a list of terms that represent the lexicon of\n\nthe corpus associated with the DTM\n\ncolumn_indices::Dict{String, Int} a map between the terms and the\n\ncolumns of the dtm\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#StringAnalysis.DocumentTermMatrix-Union{Tuple{T}, Tuple{Corpus,Array{String,1}}} where T<:Real",
+    "page": "API Reference",
+    "title": "StringAnalysis.DocumentTermMatrix",
+    "category": "method",
+    "text": "DocumentTermMatrix{T}(crps::Corpus [,terms])\n\nAuxiliary constructor(s) of the DocumentTermMatrix type. The type T has to be a subtype of Real. The constructor(s) requires a corpus crps and a terms structure representing the lexicon of the corpus. The latter can be a Vector{String}, an AbstractDict where the keys are the lexicon or can be missing, in which case the lexicon field of the corpus is used.\n\n\n\n\n\n"
 },
 
 {
@@ -182,6 +214,54 @@ var documenterSearchIndex = {"docs": [
     "title": "StringAnalysis.cosine",
     "category": "function",
     "text": "cosine(lm, doc, n=10)\n\nReturn the position of n (by default n = 10) neighbors of document doc and their cosine similarities.\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#StringAnalysis.dtm-Tuple{DocumentTermMatrix}",
+    "page": "API Reference",
+    "title": "StringAnalysis.dtm",
+    "category": "method",
+    "text": "dtm(d::DocumentTermMatrix)\n\nAccess the matrix of a DocumentTermMatrix d.\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#StringAnalysis.dtm-Union{Tuple{Corpus}, Tuple{T}, Tuple{Corpus,Type{T}}} where T<:Real",
+    "page": "API Reference",
+    "title": "StringAnalysis.dtm",
+    "category": "method",
+    "text": "dtm(crps::Corpus, eltype::Type{T}=DEFAULT_DTM_TYPE)\n\nAccess the matrix of the DTM associated with the corpus crps. The DocumentTermMatrix{T} will first have to be created in order for the actual matrix to be accessed.\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#StringAnalysis.dtv-Union{Tuple{T}, Tuple{AbstractDocument,Dict{String,Int64}}, Tuple{AbstractDocument,Dict{String,Int64},Type{T}}} where T<:Real",
+    "page": "API Reference",
+    "title": "StringAnalysis.dtv",
+    "category": "method",
+    "text": "dtv(d::AbstractDocument, lex::Dict{String,Int}, eltype::Type{T}=DEFAULT_DTM_TYPE)\n\nCreates a document-term-vector with elements of type T for document d using the lexicon lex.\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#StringAnalysis.dtv-Union{Tuple{T}, Tuple{Corpus,Int64}, Tuple{Corpus,Int64,Type{T}}} where T<:Real",
+    "page": "API Reference",
+    "title": "StringAnalysis.dtv",
+    "category": "method",
+    "text": "dtv(crps::Corpus, idx::Int, eltype::Type{T}=DEFAULT_DTM_TYPE)\n\nCreates a document-term-vector with elements of type T for document idx of the corpus crps.\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#StringAnalysis.each_dtv-Union{Tuple{Corpus}, Tuple{U}} where U<:Real",
+    "page": "API Reference",
+    "title": "StringAnalysis.each_dtv",
+    "category": "method",
+    "text": "each_dtv(crps::Corpus [; eltype::Type{U}=DEFAULT_DTM_TYPE])\n\nIterates through the rows of the DTM of the corpus crps without constructing it. Useful when the DTM would not fit in memory. eltype specifies the element type of the generated vectors.\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#StringAnalysis.each_hash_dtv-Union{Tuple{Corpus}, Tuple{U}} where U<:Real",
+    "page": "API Reference",
+    "title": "StringAnalysis.each_hash_dtv",
+    "category": "method",
+    "text": "each_hash_dtv(crps::Corpus [; eltype::Type{U}=DEFAULT_DTM_TYPE])\n\nIterates through the rows of the hashed DTM of the corpus crps without constructing it. Useful when the DTM would not fit in memory. eltype specifies the element type of the generated vectors.\n\n\n\n\n\n"
 },
 
 {
@@ -222,6 +302,22 @@ var documenterSearchIndex = {"docs": [
     "title": "StringAnalysis.get_vector",
     "category": "method",
     "text": "get_vector(lm, word)\n\nReturns the vector representation of word from the LSA model lm.\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#StringAnalysis.hash_dtm-Union{Tuple{T}, Tuple{Corpus,TextHashFunction}, Tuple{Corpus,TextHashFunction,Type{T}}} where T<:Real",
+    "page": "API Reference",
+    "title": "StringAnalysis.hash_dtm",
+    "category": "method",
+    "text": "hash_dtm(crps::Corpus [,h::TextHashFunction], eltype::Type{T}=DEFAULT_DTM_TYPE)\n\nCreates a hashed DTM with elements of type T for corpus crps using the the hashing function h. If h is missing, the hash function of the Corpus is used.\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#StringAnalysis.hash_dtv-Union{Tuple{T}, Tuple{AbstractDocument,TextHashFunction}, Tuple{AbstractDocument,TextHashFunction,Type{T}}} where T<:Real",
+    "page": "API Reference",
+    "title": "StringAnalysis.hash_dtv",
+    "category": "method",
+    "text": "hash_dtv(d::AbstractDocument, h::TextHashFunction, eltype::Type{T}=DEFAULT_DTM_TYPE)\n\nCreates a hashed document-term-vector with elements of type T for document d using the hashing function h.\n\n\n\n\n\n"
 },
 
 {
