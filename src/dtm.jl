@@ -69,7 +69,8 @@ DocumentTermMatrix(dtm::SparseMatrixCSC{T, Int},
 # Access the DTM of a DocumentTermMatrix
 dtm(d::DocumentTermMatrix) = d.dtm
 
-dtm(crps::Corpus) = dtm(DocumentTermMatrix(crps))
+dtm(crps::Corpus, eltype::Type{T}=DEFAULT_DTM_TYPE) where T<:Real =
+    dtm(DocumentTermMatrix{T}(crps))
 
 
 # Term-document matrix
