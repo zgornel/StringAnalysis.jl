@@ -15,7 +15,7 @@
     query = StringDocument("Apples and an exotic fruit.")
     for k in [1, 3]
         for stats in [:tf, :tfidf, :bm25]
-            for T in [Float32, Float64]
+            for T in [Float16, Float32, Float64]
                 dtm = DocumentTermMatrix{T}(crps, lex)
                 model = lsa(dtm, k=k, stats=stats)
                 @test model isa LSAModel{String, T, SparseMatrixCSC{T,Int}, Int}
