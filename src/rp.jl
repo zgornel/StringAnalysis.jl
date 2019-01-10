@@ -1,7 +1,7 @@
 """
     RPModel{S<:AbstractString, T<:AbstractFloat, A<:AbstractMatrix{T}, H<:Integer}
 
-Random projection model. It constructs from a document term matrix (dtm)
+Random projection model. It constructs from a document term matrix (DTM)
 a model that can be used to embed documents in a random sub-space. The model requires
 that the document term matrix be a `DocumentTermMatrix{T<:AbstractFloat}` because
 the elements of the matrices resulted projection operation are floating point
@@ -13,17 +13,13 @@ based on the effects of the
   * `vocab::Vector{S}` a vector with all the words in the corpus
   * `vocab_hash::Dict{S,H}` a word to index in the random projection maatrix mapping
   * `R::A` the random projection matrix
-  * `stats::Symbol` the statistical measure to use for word importances in documents
-Available values are: `:tf` (term frequency), `:tfidf` (default, term frequency -
-inverse document frequency) and `:bm25` (Okapi BM25)
+  * `stats::Symbol` the statistical measure to use for word importances in documents.
+  Available values are: `:tf` (term frequency), `:tfidf` (default, term frequency -
+  inverse document frequency) and `:bm25` (Okapi BM25)
   * `idf::Vector{T}` inverse document frequencies for the words in the vocabulary
   * `nwords::T` averge number of words in a document
   * `κ::Int` the `κ` parameter of the BM25 statistic
   * `β::Float64` the `β` parameter of the BM25 statistic
-
-# Examples
-```
-```
 
 # References:
   * [Kaski 1998](http://www.academia.edu/371863/Dimensionality_Reduction_by_Random_Mapping_Fast_Similarity_Computation_for_Clustering)
@@ -80,7 +76,7 @@ Builds a `m`×`k` sparse random projection matrix with elements of type `T` and
 a non-zero element frequency of `density`. `m` and `k` are the input and output
 dimensionalities.
 
-If we note `s = 1 / density` the components of the random matrix are drawn from:
+If we note `s = 1 / density`, the components of the random matrix are drawn from:
 - `-sqrt(s) / sqrt(k)` with probability `1/2s`
 - `0` with probability `1 - 1/s`
 - `+sqrt(s) / sqrt(k)`   with probability `1/2s`

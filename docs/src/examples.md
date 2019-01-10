@@ -95,6 +95,27 @@ update_inverse_index!(crps)
 crps.inverse_index
 ```
 
+## Preprocessing
+The text preprocessing mainly consists of the `prepare` and `prepare!` functions and preprocessing flags which start mostly with `strip_` except for `stem_words`. The preprocessing function `prepare` works on `AbstractDocument`, `Corpus` and `AbstractString` types, returning new objects; `prepare!` works only on `AbstractDocument`s and `Corpus` as the strings are immutable.
+```@repl index
+str="This is a text containing words, some more words, a bit of punctuation and 1 number...";
+sd = StringDocument(str);
+flags = strip_punctuation|strip_articles|strip_punctuation|strip_whitespace
+prepare(str, flags)
+prepare!(sd, flags);
+text(sd)
+```
+More extensive preprocessing examples can be viewed in `test/preprocessing.jl`.
+
+One can strip parts of languages i.e. prepositions, articles in languages other than English (support provided from [Languages.jl](https://github.com/JuliaText/Languages.jl)):
+```@repl index
+using Languages
+it = StringDocument("Quest'e un piccolo esempio di come si puo fare l'analisi");
+StringAnalysis.language!(it, Languages.Italian());
+prepare!(it, strip_articles|strip_prepositions|strip_whitespace);
+it.text
+```
+
 ## Features
 
 ### Document Term Matrix (DTM)
@@ -167,17 +188,35 @@ tf!(M.dtm, tfm);
 Matrix(tfm)
 ```
 
-## Pre-processing
-The text preprocessing mainly consists of the `prepare` and `prepare!` functions and preprocessing flags which start mostly with `strip_` except for `stem_words`. The preprocessing function `prepare` works on `AbstractDocument`, `Corpus` and `AbstractString` types, returning new objects; `prepare!` works only on `AbstractDocument`s and `Corpus` as the strings are immutable.
+## Dimensionality reduction
+
+### Random projections
+In mathematics and statistics, random projection is a technique used to reduce the dimensionality of a set of points which lie in Euclidean space. Random projection methods are powerful methods known for their simplicity and less erroneous output compared with other methods. According to experimental results, random projection preserve distances well, but empirical results are sparse. They have been applied to many natural language tasks under the name of _random indexing_. The core idea behind random projection is given in the [Johnson-Lindenstrauss lemma](https://cseweb.ucsd.edu/~dasgupta/papers/jl.pdf) which states that if points in a vector space are of sufficiently high dimension, then they may be projected into a suitable lower-dimensional space in a way which approximately preserves the distances between the points [(Wikipedia)](https://en.wikipedia.org/wiki/Random_projection). 
+
+The implementation here relies on the generalized sparse random projection matrix to generate a random projection model. For more details see the API documentation for `RPModel` and `random_projection_matrix`.
+To construct a random projection matrix that maps `m` dimension to `k`, one can do
 ```@repl index
-str="This is a text containing words and a bit of punctuation...";
-flags = strip_punctuation|strip_articles|strip_punctuation|strip_whitespace
-prepare(str, flags)
-sd = StringDocument(str);
-prepare!(sd, flags);
-text(sd)
+m = 10; k = 2; T = Float32;
+density = 0.2;  # percentage of non-zero elements
+R = StringAnalysis.random_projection_matrix(m, k, T, density)
 ```
-More extensive preprocessing examples can be viewed in `test/preprocessing.jl`.
+Building a random projection model from a `DocumentTermMatrix` or `Corpus` is straightforward
+```@repl index
+M = DocumentTermMatrix{Float32}(crps)
+model = RPModel(M, k=2, density=0.5, stats=:tf)
+model2 = rp(crps, T, k=17, density=0.1, stats=:tfidf)
+```
+Once the model is created, one can reduce document term vector dimensionality. First, the document term vector is constructed using the `stats` keyword argument and subsequently, the vector is projected into the random sub-space:
+```@repl index
+doc = StringDocument("this is a new document")
+embed_document(model, doc)
+embed_document(model2, doc)
+```
+To embed a document term matrix, one only has to do
+```@repl index
+Matrix(M.dtm * model.R')  # 3 documents x 2 sub-space dimensions
+Matrix(M.dtm * model2.R')  # 3 documents x 17 sub-space dimentsions
+```
 
 ## Semantic Analysis
 
@@ -203,16 +242,16 @@ M = DocumentTermMatrix{Float32}(crps, sort(collect(keys(crps.lexicon))));
 ```
 building an LSA model is straightforward:
 ```@repl index
-lsa_model = LSAModel(M, k=3, stats=:tf)
+lm = LSAModel(M, k=3, stats=:tf)
 ```
 Once the model is created, it can be used to either embed documents
 ```@repl index
 query = StringDocument("Apples and an exotic fruit.");
-embed_document(lsa_model, query)
+embed_document(lm, query)
 ```
 search for matching documents
 ```@repl index
-idxs, corrs = cosine(lsa_model, query);
+idxs, corrs = cosine(lm, query);
 
 for (idx, corr) in zip(idxs, corrs)
     println("$corr -> \"$(crps[idx].text)\"");
@@ -220,17 +259,17 @@ end
 ```
 or check for structure within the data
 ```@repl index
-U, V = lsa_model.U, lsa_model.Vᵀ';
+U, V = lm.U, lm.Vᵀ';
 Matrix(U*U')  # document to document similarity
 Matrix(V*V')  # term to term similarity
 ```
 LSA models can be saved and retrieved to and from am easy to read and parse text format.
 ```@repl index
 file = "model.txt"
-lsa_model
-save(lsa_model, file)  # model saved
+lm
+save_lsa_model(lm, file)  # model saved
 print(join(readlines(file)[1:5], "\n"))  # first five lines
-new_model = load(file, Float64)  # change element type
+new_model = load_lsa_model(file, Float64)  # change element type
 rm(file)
 ```
 
