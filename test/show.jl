@@ -22,7 +22,7 @@
     #Document Term Matrix
     update_lexicon!(crps)
     update_inverse_index!(crps)
-    m = DocumentTermMatrix(crps)
+    m = DocumentTermMatrix(crps);
     Test.@test try show(buf,m); true
                catch; false end
     # Stemmer

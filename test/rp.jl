@@ -1,4 +1,4 @@
-@testset "LSA" begin
+@testset "Random Projections" begin
     # Documents
     doc1 = StringDocument("This is a text about an apple. There are many texts about apples.")
     doc2 = StringDocument("Pears and apples are good but not exotic. An apple a day keeps the doctor away.")
@@ -11,6 +11,7 @@
     update_lexicon!(crps)
     update_inverse_index!(crps)
     lex = sort(collect(keys(crps.lexicon)))
+    m = length(lexicon(crps))
     n = length(crps)
     # Retrieval
     query = StringDocument("Apples and an exotic fruit.")
@@ -18,11 +19,10 @@
         for stats in [:tf, :tfidf, :bm25]
             for T in [Float16, Float32, Float64]
                 dtm = DocumentTermMatrix{T}(crps, lex)
-                model = lsa(dtm, k=k, stats=stats)
-                @test model isa LSAModel{String, T, SparseMatrixCSC{T,Int}, Int}
-                idxs, corrs = cosine(model, query)
-                @test length(idxs) == length(corrs) == length(crps)
-                @test size(model.Σinv, 1) == k
+                model = rp(dtm, k=k, stats=stats)
+                @test model isa RPModel{String, T, SparseMatrixCSC{T,Int}, Int}
+                @test size(model.R, 1) == k
+                @test size(model.R, 2) == m
                 sim = similarity(model, crps[rand(1:n)], query)
                 @test -1.0 <= sim <= 1.0
             end
@@ -31,20 +31,19 @@
     # Tests for the rest of the functions
     K = 2
     T = Float32
-    model = lsa(crps, T, k=K)
-    @test model isa LSAModel{String, T, SparseMatrixCSC{T, Int}, Int}
+    model = rp(crps, T, k=K)
+    @test model isa RPModel{String, T, SparseMatrixCSC{T, Int}, Int}
     @test all(in_vocabulary(model, word) for word in keys(crps.lexicon))
     @test vocabulary(model) == sort(collect(keys(crps.lexicon)))
-    @test size(model) == (length(crps.lexicon), length(crps), K)
+    @test size(model) == (K, length(crps.lexicon))
     idx = 2
     word = model.vocab[idx]
     @test index(model, word) == model.vocab_hash[word]
-    @test get_vector(model, word) == model.Vᵀ[:, idx]
+    @test get_vector(model, word) == model.R[:, idx]
     @test similarity(model, crps[1], crps[2]) isa T
     @test similarity(model, crps[1], crps[2]) == similarity(model, crps[2], crps[1])
-    @test_throws ErrorException LSAModel(DocumentTermMatrix{Int}(crps), k=K)
-    @test_throws ErrorException StringAnalysis.embed_word(model, "word")
-    # Test saving and loading an LSA model
+    @test_throws ErrorException RPModel(DocumentTermMatrix{Int}(crps), k=K)
+    # Test saving and loading an random projection model
     T = Float32
     vocab = split("a random string")
     vocab_hash = Dict("a"=>1, "random"=>2, "string"=>3)
@@ -52,16 +51,13 @@
     stats = :tf
     κ = 2
     β = 0.71
-    tol = 1e-5
-    model = lsa(crps, T, k=k, stats=stats, tol=T(tol), κ=κ, β=β)
-    file = "./_lsa_model.txt"
-    save_lsa_model(model, file)
+    model = rp(crps, T, k=k, stats=stats, κ=κ, β=β)
+    file = "./_rp_model.txt"
+    save_rp_model(model, file)
     # Model 1
-    loaded_model_1 = load_lsa_model(file, Float64, sparse=true)
-    @test loaded_model_1 isa LSAModel{String, Float64, SparseMatrixCSC{Float64, Int}, Int}
-    @test all(loaded_model_1.U .≈ sparse(model.U))
-    @test all(loaded_model_1.Vᵀ .≈ sparse(model.Vᵀ))
-    @test all(loaded_model_1.Σinv .≈ sparse(model.Σinv))
+    loaded_model_1 = load_rp_model(file, Float64, sparse=true)
+    @test loaded_model_1 isa RPModel{String, Float64, SparseMatrixCSC{Float64, Int}, Int}
+    @test all(loaded_model_1.R .≈ model.R)
     @test loaded_model_1.vocab == model.vocab
     @test loaded_model_1.vocab_hash == model.vocab_hash
     @test loaded_model_1.stats == model.stats
@@ -69,13 +65,10 @@
     @test loaded_model_1.nwords ≈ model.nwords
     @test loaded_model_1.κ == model.κ
     @test loaded_model_1.β == model.β
-    @test loaded_model_1.tol ≈ model.tol
     # Model 2
-    loaded_model_2 = load_lsa_model(file, Float32, sparse=false)
-    @test loaded_model_2 isa LSAModel{String, Float32, Matrix{Float32}, Int}
-    @test all(loaded_model_2.U .≈ model.U)
-    @test all(loaded_model_2.Vᵀ .≈ model.Vᵀ)
-    @test all(loaded_model_2.Σinv .≈ model.Σinv)
+    loaded_model_2 = load_rp_model(file, Float32, sparse=false)
+    @test loaded_model_2 isa RPModel{String, Float32, Matrix{Float32}, Int}
+    @test all(loaded_model_1.R .≈ model.R)
     @test loaded_model_2.vocab == model.vocab
     @test loaded_model_2.vocab_hash == model.vocab_hash
     @test loaded_model_2.stats == model.stats
@@ -83,6 +76,5 @@
     @test loaded_model_2.nwords ≈ model.nwords
     @test loaded_model_2.κ == model.κ
     @test loaded_model_2.β == model.β
-    @test loaded_model_2.tol ≈ model.tol
     rm(file)
 end

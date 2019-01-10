@@ -1,5 +1,10 @@
 ## StringAnalysis Release Notes
 
+v0.2.4
+------
+ - Added sparse random projections
+ - Bugfixes
+
 v0.2.3
 ------
  - Preprocessing improvements

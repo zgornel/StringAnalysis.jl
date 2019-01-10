@@ -53,8 +53,10 @@ module StringAnalysis
     export Stemmer, stem!, stem, stemmer_types
     export tokenize, tokenize_fast, tokenize_slow, sentence_tokenize
     export tf!, tf, tf_idf!, tf_idf, bm_25!, bm_25
-    export LSAModel, lsa, embed_document, embed_word, get_vector, index,
-           cosine, similarity, load, save
+    export LSAModel, lsa, save_lsa_model, load_lsa_model
+    export RPModel, rp, save_rp_model, load_rp_model
+    export embed_document, similarity, cosine,
+           vocabulary, in_vocabulary, index, get_vector
     export lda
     export frequent_terms, sparse_terms,
            prepare!, prepare,
@@ -80,6 +82,7 @@ module StringAnalysis
     include("dtm.jl")
     include("stats.jl")
     include("lsa.jl")
+    include("rp.jl")
     include("lda.jl")
     include("preprocessing.jl")
     include("show.jl")
