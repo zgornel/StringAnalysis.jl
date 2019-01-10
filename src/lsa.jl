@@ -4,8 +4,9 @@
 LSA (latent semantic analysis) model. It constructs from a document term matrix (dtm)
 a model that can be used to embed documents in a latent semantic space pertaining to
 the data. The model requires that the document term matrix be a
-`DocumentTermMatrix{T<:AbstractFloat}` because the matrices resulted from the SVD operation
-will be forced to contain elements of type `T`.
+`DocumentTermMatrix{T<:AbstractFloat}` because the elements of the matrices resulted
+from the SVD operation are floating point numbers and these have to match or be
+convertible to type `T`.
 
 # Fields
   * `vocab::Vector{S}` a vector with all the words in the corpus
@@ -14,10 +15,8 @@ will be forced to contain elements of type `T`.
   * `Σinv::A` inverse of the singular value matrix
   * `Vᵀ::A` transpose of the word embedding matrix
   * `stats::Symbol` the statistical measure to use for word importances in documents
-                    available values are:
-                    `:tf` (term frequency)
-                    `:tfidf` (default, term frequency - inverse document frequency)
-                    `:bm25` (Okapi BM25)
+Available values are: `:tf` (term frequency), `:tfidf` (default, term frequency -
+inverse document frequency) and `:bm25` (Okapi BM25)
   * `idf::Vector{T}` inverse document frequencies for the words in the vocabulary
   * `nwords::T` averge number of words in a document
   * `κ::Int` the `κ` parameter of the BM25 statistic
@@ -148,14 +147,14 @@ function Base.show(io::IO, lm::LSAModel{S,T,A,H}) where {S,T,A,H}
     num_docs, len_vecs = size(lm.U)
     num_terms = length(lm.vocab)
     print(io, "LSA Model ($(lm.stats)) $(num_docs) documents, " *
-          "$(num_terms) terms, $(len_vecs)-element $(T) vectors")
+          "$(num_terms) terms, dimensionality $(len_vecs), $(T) vectors")
 end
 
 
 """
-    lsa(X [;k=3, stats=:tfidf, κ=2, β=0.75, tol=1e-15])
+    lsa(X [;k=<num documents>, stats=:tfidf, κ=2, β=0.75, tol=1e-15])
 
-Constructs an LSA model. The input `X` can be a `Corpus` or a `DocumentTermMatrix`.
+Constructs a LSA model. The input `X` can be a `Corpus` or a `DocumentTermMatrix`.
 Use `?LSAModel` for more details. Vector components smaller than `tol` will be
 zeroed out.
 """
@@ -169,7 +168,7 @@ function lsa(dtm::DocumentTermMatrix{T};
 end
 
 function lsa(crps::Corpus,
-             ::Type{T} = Float32;
+             ::Type{T} = DEFAULT_FLOAT_TYPE;
              k::Int=length(crps),
              stats::Symbol=:tfidf,
              tol::T=T(1e-15),
@@ -235,7 +234,7 @@ end
 """
     embed_document(lm, doc)
 
-Return the vector representation of a document `doc` using the LSA model `lm`.
+Return the vector representation of a document `doc`, obtained using the LSA model `lm`.
 """
 embed_document(lm::LSAModel{S,T,A,H}, doc::AbstractDocument) where {S,T,A,H} =
     # Hijack vocabulary hash to use as lexicon (only the keys needed)
@@ -302,7 +301,8 @@ end
 """
     similarity(lm, doc1, doc2)
 
-Return the cosine similarity value between two documents `doc1` and `doc2`.
+Return the cosine similarity value between two documents `doc1` and `doc2`
+whose vector representations have been obtained using the LSA model `lm`.
 """
 function similarity(lm::LSAModel, doc1, doc2)
     return embed_document(lm, doc1)' * embed_document(lm, doc2)
@@ -314,7 +314,7 @@ end
 
 Saves an LSA model `lm` to disc in file `filename`.
 """
-function save(lm::LSAModel{S,T,A,H}, filename::AbstractString) where {S,T,A,H}
+function save_lsa_model(lm::LSAModel{S,T,A,H}, filename::AbstractString) where {S,T,A,H}
     ndocs = size(lm.U, 1)
     nwords = size(lm.Vᵀ, 2)
     k = size(lm.U, 2)
@@ -339,14 +339,14 @@ end
 
 
 """
-    load(filename, type; [sparse=true])
+    load_lsa_model(filename, eltype; [sparse=true])
 
 Loads an LSA model from `filename` into an LSA model object. The embeddings matrix
-element type is specified by `type` (default `Float32`) while the keyword argument
+element type is specified by `eltype` (default `DEFAULT_FLOAT_TYPE`) while the keyword argument
 `sparse` specifies whether the matrix should be sparse or not.
 """
-function load(filename::AbstractString, ::Type{T}=Float32;
-              sparse::Bool=true) where T<: AbstractFloat
+function load_lsa_model(filename::AbstractString, ::Type{T}=DEFAULT_FLOAT_TYPE;
+                        sparse::Bool=true) where T<: AbstractFloat
     # Matrix type for LSA model
     A = ifelse(sparse, SparseMatrixCSC{T, Int}, Matrix{T})
     # Define parsed variables local to outer scope of do statement
