@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Usage examples ·   </title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><a href="../index.html"><img class="logo" src="../assets/logo.png" alt="   logo"/></a><h1>  </h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../">Introduction</a></li><li class="current"><a class="toctext" href>Usage examples</a><ul class="internal"><li><a class="toctext" href="#Documents-1">Documents</a></li><li><a class="toctext" href="#Documents-and-types-1">Documents and types</a></li><li><a class="toctext" href="#Metadata-1">Metadata</a></li><li><a class="toctext" href="#Corpus-1">Corpus</a></li><li><a class="toctext" href="#The-lexicon-and-inverse-index-1">The lexicon and inverse index</a></li><li><a class="toctext" href="#Features-1">Features</a></li><li><a class="toctext" href="#Pre-processing-1">Pre-processing</a></li><li><a class="toctext" href="#Semantic-Analysis-1">Semantic Analysis</a></li></ul></li><li><a class="toctext" href="../api/">API Reference</a></li></ul></nav><article id="docs"><header><nav><ul><li><a href>Usage examples</a></li></ul><a class="edit-page" href="https://github.com/zgornel/StringAnalysis.jl/blob/master/docs/src/examples.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Usage examples</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Usage-examples-1" href="#Usage-examples-1">Usage examples</a></h1><h2><a class="nav-anchor" id="Documents-1" href="#Documents-1">Documents</a></h2><p>Documents are simple wrappers around basic structures that contain text. The underlying data representation can be simple strings, dictionaries or vectors of strings. All document types are subtypes of the parametric type <code>AbstractDocument{T}</code> where <code>T&lt;:AbstractString</code>.</p><pre><code class="language-julia-repl">julia&gt; using StringAnalysis
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Usage examples ·   </title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><a href="../index.html"><img class="logo" src="../assets/logo.png" alt="   logo"/></a><h1>  </h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../">Introduction</a></li><li class="current"><a class="toctext" href>Usage examples</a><ul class="internal"><li><a class="toctext" href="#Documents-1">Documents</a></li><li><a class="toctext" href="#Documents-and-types-1">Documents and types</a></li><li><a class="toctext" href="#Metadata-1">Metadata</a></li><li><a class="toctext" href="#Corpus-1">Corpus</a></li><li><a class="toctext" href="#The-lexicon-and-inverse-index-1">The lexicon and inverse index</a></li><li><a class="toctext" href="#Preprocessing-1">Preprocessing</a></li><li><a class="toctext" href="#Features-1">Features</a></li><li><a class="toctext" href="#Dimensionality-reduction-1">Dimensionality reduction</a></li><li><a class="toctext" href="#Semantic-Analysis-1">Semantic Analysis</a></li></ul></li><li><a class="toctext" href="../api/">API Reference</a></li></ul></nav><article id="docs"><header><nav><ul><li><a href>Usage examples</a></li></ul><a class="edit-page" href="https://github.com/zgornel/StringAnalysis.jl/blob/master/docs/src/examples.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Usage examples</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Usage-examples-1" href="#Usage-examples-1">Usage examples</a></h1><h2><a class="nav-anchor" id="Documents-1" href="#Documents-1">Documents</a></h2><p>Documents are simple wrappers around basic structures that contain text. The underlying data representation can be simple strings, dictionaries or vectors of strings. All document types are subtypes of the parametric type <code>AbstractDocument{T}</code> where <code>T&lt;:AbstractString</code>.</p><pre><code class="language-julia-repl">julia&gt; using StringAnalysis
 
 julia&gt; sd = StringDocument(&quot;this is a string document&quot;)
 A StringDocument{String}
@@ -136,7 +136,32 @@ Dict{String,Array{Int64,1}} with 7 entries:
   &quot;this&quot;     =&gt; [1, 2, 3]
   &quot;is&quot;       =&gt; [1, 2, 3]
   &quot;ngram&quot;    =&gt; [2]
-  &quot;a&quot;        =&gt; [1, 2, 3]</code></pre><h2><a class="nav-anchor" id="Features-1" href="#Features-1">Features</a></h2><h3><a class="nav-anchor" id="Document-Term-Matrix-(DTM)-1" href="#Document-Term-Matrix-(DTM)-1">Document Term Matrix (DTM)</a></h3><p>If a lexicon is present in the corpus, a <a href="https://en.wikipedia.org/wiki/Document-term_matrix">document term matrix (DTM)</a> can be created. The DTM acts as a basis for word-document statistics, allowing for the representation of documents as numerical vectors. The DTM is created by calling the object constructor using as argument the corpus</p><pre><code class="language-julia-repl">julia&gt; M = DocumentTermMatrix(crps)
+  &quot;a&quot;        =&gt; [1, 2, 3]</code></pre><h2><a class="nav-anchor" id="Preprocessing-1" href="#Preprocessing-1">Preprocessing</a></h2><p>The text preprocessing mainly consists of the <code>prepare</code> and <code>prepare!</code> functions and preprocessing flags which start mostly with <code>strip_</code> except for <code>stem_words</code>. The preprocessing function <code>prepare</code> works on <code>AbstractDocument</code>, <code>Corpus</code> and <code>AbstractString</code> types, returning new objects; <code>prepare!</code> works only on <code>AbstractDocument</code>s and <code>Corpus</code> as the strings are immutable.</p><pre><code class="language-julia-repl">julia&gt; str=&quot;This is a text containing words, some more words, a bit of punctuation and 1 number...&quot;;
+
+julia&gt; sd = StringDocument(str);
+
+julia&gt; flags = strip_punctuation|strip_articles|strip_punctuation|strip_whitespace
+0x00300600
+
+julia&gt; prepare(str, flags)
+&quot;This is text containing words some more words bit of punctuation and 1 number &quot;
+
+julia&gt; prepare!(sd, flags);
+
+julia&gt; text(sd)
+&quot;This is text containing words some more words bit of punctuation and 1 number &quot;</code></pre><p>More extensive preprocessing examples can be viewed in <code>test/preprocessing.jl</code>.</p><p>One can strip parts of languages i.e. prepositions, articles in languages other than English (support provided from <a href="https://github.com/JuliaText/Languages.jl">Languages.jl</a>):</p><pre><code class="language-julia-repl">julia&gt; using Languages
+ERROR: ArgumentError: Package Languages not found in current path:
+- Run `import Pkg; Pkg.add(&quot;Languages&quot;)` to install the Languages package.
+
+julia&gt; it = StringDocument(&quot;Quest&#39;e un piccolo esempio di come si puo fare l&#39;analisi&quot;);
+
+julia&gt; StringAnalysis.language!(it, Languages.Italian());
+ERROR: UndefVarError: Languages not defined
+
+julia&gt; prepare!(it, strip_articles|strip_prepositions|strip_whitespace);
+
+julia&gt; it.text
+&quot;Quest&#39;e un piccolo esempio di come si puo fare l&#39;analisi&quot;</code></pre><h2><a class="nav-anchor" id="Features-1" href="#Features-1">Features</a></h2><h3><a class="nav-anchor" id="Document-Term-Matrix-(DTM)-1" href="#Document-Term-Matrix-(DTM)-1">Document Term Matrix (DTM)</a></h3><p>If a lexicon is present in the corpus, a <a href="https://en.wikipedia.org/wiki/Document-term_matrix">document term matrix (DTM)</a> can be created. The DTM acts as a basis for word-document statistics, allowing for the representation of documents as numerical vectors. The DTM is created by calling the object constructor using as argument the corpus</p><pre><code class="language-julia-repl">julia&gt; M = DocumentTermMatrix(crps)
 
 julia&gt; typeof(M)
 DocumentTermMatrix{Int64}
@@ -220,20 +245,54 @@ julia&gt; Matrix(tfm)
 3×7 Array{Float16,2}:
  0.4473  0.4473  0.4473  0.0     0.4473  0.4473  0.0
  0.4473  0.4473  0.4473  0.4473  0.0     0.4473  0.0
- 0.4473  0.4473  0.4473  0.0     0.0     0.4473  0.4473</code></pre><h2><a class="nav-anchor" id="Pre-processing-1" href="#Pre-processing-1">Pre-processing</a></h2><p>The text preprocessing mainly consists of the <code>prepare</code> and <code>prepare!</code> functions and preprocessing flags which start mostly with <code>strip_</code> except for <code>stem_words</code>. The preprocessing function <code>prepare</code> works on <code>AbstractDocument</code>, <code>Corpus</code> and <code>AbstractString</code> types, returning new objects; <code>prepare!</code> works only on <code>AbstractDocument</code>s and <code>Corpus</code> as the strings are immutable.</p><pre><code class="language-julia-repl">julia&gt; str=&quot;This is a text containing words and a bit of punctuation...&quot;;
+ 0.4473  0.4473  0.4473  0.0     0.0     0.4473  0.4473</code></pre><h2><a class="nav-anchor" id="Dimensionality-reduction-1" href="#Dimensionality-reduction-1">Dimensionality reduction</a></h2><h3><a class="nav-anchor" id="Random-projections-1" href="#Random-projections-1">Random projections</a></h3><p>In mathematics and statistics, random projection is a technique used to reduce the dimensionality of a set of points which lie in Euclidean space. Random projection methods are powerful methods known for their simplicity and less erroneous output compared with other methods. According to experimental results, random projection preserve distances well, but empirical results are sparse. They have been applied to many natural language tasks under the name of <em>random indexing</em>. The core idea behind random projection is given in the <a href="https://cseweb.ucsd.edu/~dasgupta/papers/jl.pdf">Johnson-Lindenstrauss lemma</a> which states that if points in a vector space are of sufficiently high dimension, then they may be projected into a suitable lower-dimensional space in a way which approximately preserves the distances between the points <a href="https://en.wikipedia.org/wiki/Random_projection">(Wikipedia)</a>. </p><p>The implementation here relies on the generalized sparse random projection matrix to generate a random projection model. For more details see the API documentation for <code>RPModel</code> and <code>random_projection_matrix</code>. To construct a random projection matrix that maps <code>m</code> dimension to <code>k</code>, one can do</p><pre><code class="language-julia-repl">julia&gt; m = 10; k = 2; T = Float32;
 
-julia&gt; flags = strip_punctuation|strip_articles|strip_punctuation|strip_whitespace
-0x00300600
+julia&gt; density = 0.2;  # percentage of non-zero elements
 
-julia&gt; prepare(str, flags)
-&quot;This is text containing words and bit of punctuation &quot;
+julia&gt; R = StringAnalysis.random_projection_matrix(m, k, T, density)
+2×10 SparseArrays.SparseMatrixCSC{Float32,Int64} with 0 stored entries</code></pre><p>Building a random projection model from a <code>DocumentTermMatrix</code> or <code>Corpus</code> is straightforward</p><pre><code class="language-julia-repl">julia&gt; M = DocumentTermMatrix{Float32}(crps)
 
-julia&gt; sd = StringDocument(str);
+julia&gt; model = RPModel(M, k=2, density=0.5, stats=:tf)
+Random Projection Model (tf) 7 terms, dimensionality 2, Float32 vectors
 
-julia&gt; prepare!(sd, flags);
+julia&gt; model2 = rp(crps, T, k=17, density=0.1, stats=:tfidf)
+Random Projection Model (tfidf) 7 terms, dimensionality 17, Float32 vectors</code></pre><p>Once the model is created, one can reduce document term vector dimensionality. First, the document term vector is constructed using the <code>stats</code> keyword argument and subsequently, the vector is projected into the random sub-space:</p><pre><code class="language-julia-repl">julia&gt; doc = StringDocument(&quot;this is a new document&quot;)
+A StringDocument{String}
 
-julia&gt; text(sd)
-&quot;This is text containing words and bit of punctuation &quot;</code></pre><p>More extensive preprocessing examples can be viewed in <code>test/preprocessing.jl</code>.</p><h2><a class="nav-anchor" id="Semantic-Analysis-1" href="#Semantic-Analysis-1">Semantic Analysis</a></h2><p>The semantic analysis of a corpus relates to the task of building structures that approximate the concepts present in its documents. It does not necessarily involve prior semantic understanding of the documents <a href="https://en.wikipedia.org/wiki/Semantic_analysis_(machine_learning)">(Wikipedia)</a>.</p><p><code>StringAnalysis</code> provides two approaches of performing semantic analysis of a corpus: <a href="http://lsa.colorado.edu/papers/JASIS.lsi.90.pdf">latent semantic analysis (LSA)</a> and <a href="http://jmlr.org/papers/volume3/blei03a/blei03a.pdf">latent Dirichlet allocation (LDA)</a>.</p><h3><a class="nav-anchor" id="Latent-Semantic-Analysis-(LSA)-1" href="#Latent-Semantic-Analysis-(LSA)-1">Latent Semantic Analysis (LSA)</a></h3><p>The following example gives a straightforward usage example of LSA. It is geared towards information retrieval (LSI) as it focuses on document comparison and embedding. Assuming a number of documents</p><pre><code class="language-julia-repl">julia&gt; doc1 = StringDocument(&quot;This is a text about an apple. There are many texts about apples.&quot;);
+julia&gt; embed_document(model, doc)
+2-element Array{Float32,1}:
+ -0.44721353
+ -0.89442706
+
+julia&gt; embed_document(model2, doc)
+17-element Array{Float32,1}:
+  0.0
+  0.57735014
+  0.0
+  0.0
+  0.0
+  0.0
+  0.0
+  0.0
+  0.0
+  0.0
+ -0.57735014
+  0.0
+ -0.57735014
+  0.0
+  0.0
+  0.0
+  0.0</code></pre><p>To embed a document term matrix, one only has to do</p><pre><code class="language-julia-repl">julia&gt; Matrix(M.dtm * model.R&#39;)  # 3 documents x 2 sub-space dimensions
+3×2 Array{Float32,2}:
+ -1.0  -1.0
+  0.0  -2.0
+ -1.0  -3.0
+
+julia&gt; Matrix(M.dtm * model2.R&#39;)  # 3 documents x 17 sub-space dimentsions
+3×17 Array{Float32,2}:
+ 0.0  0.766965  0.0  0.0  0.0  0.0  …  -0.766965  0.0  0.0  0.0       0.0
+ 0.0  0.766965  0.0  0.0  0.0  0.0     -0.766965  0.0  0.0  0.766965  0.0
+ 0.0  0.766965  0.0  0.0  0.0  0.0     -0.766965  0.0  0.0  0.0       0.0</code></pre><h2><a class="nav-anchor" id="Semantic-Analysis-1" href="#Semantic-Analysis-1">Semantic Analysis</a></h2><p>The semantic analysis of a corpus relates to the task of building structures that approximate the concepts present in its documents. It does not necessarily involve prior semantic understanding of the documents <a href="https://en.wikipedia.org/wiki/Semantic_analysis_(machine_learning)">(Wikipedia)</a>.</p><p><code>StringAnalysis</code> provides two approaches of performing semantic analysis of a corpus: <a href="http://lsa.colorado.edu/papers/JASIS.lsi.90.pdf">latent semantic analysis (LSA)</a> and <a href="http://jmlr.org/papers/volume3/blei03a/blei03a.pdf">latent Dirichlet allocation (LDA)</a>.</p><h3><a class="nav-anchor" id="Latent-Semantic-Analysis-(LSA)-1" href="#Latent-Semantic-Analysis-(LSA)-1">Latent Semantic Analysis (LSA)</a></h3><p>The following example gives a straightforward usage example of LSA. It is geared towards information retrieval (LSI) as it focuses on document comparison and embedding. Assuming a number of documents</p><pre><code class="language-julia-repl">julia&gt; doc1 = StringDocument(&quot;This is a text about an apple. There are many texts about apples.&quot;);
 
 julia&gt; doc2 = StringDocument(&quot;Pears and apples are good but not exotic. An apple a day keeps the doctor away.&quot;);
 
@@ -247,14 +306,14 @@ julia&gt; prepare!(crps, strip_punctuation);
 
 julia&gt; update_lexicon!(crps);
 
-julia&gt; M = DocumentTermMatrix{Float32}(crps, sort(collect(keys(crps.lexicon))));</code></pre><p>building an LSA model is straightforward:</p><pre><code class="language-julia-repl">julia&gt; lsa_model = LSAModel(M, k=3, stats=:tf)
-LSA Model (tf) 5 documents, 38 terms, 3-element Float32 vectors</code></pre><p>Once the model is created, it can be used to either embed documents</p><pre><code class="language-julia-repl">julia&gt; query = StringDocument(&quot;Apples and an exotic fruit.&quot;);
+julia&gt; M = DocumentTermMatrix{Float32}(crps, sort(collect(keys(crps.lexicon))));</code></pre><p>building an LSA model is straightforward:</p><pre><code class="language-julia-repl">julia&gt; lm = LSAModel(M, k=3, stats=:tf)
+LSA Model (tf) 5 documents, 38 terms, dimensionality 3, Float32 vectors</code></pre><p>Once the model is created, it can be used to either embed documents</p><pre><code class="language-julia-repl">julia&gt; query = StringDocument(&quot;Apples and an exotic fruit.&quot;);
 
-julia&gt; embed_document(lsa_model, query)
+julia&gt; embed_document(lm, query)
 3-element Array{Float32,1}:
  -0.9946968
-  0.10284486
- -1.4942579e-7</code></pre><p>search for matching documents</p><pre><code class="language-julia-repl">julia&gt; idxs, corrs = cosine(lsa_model, query);
+ -0.10284486
+ -1.4942513e-7</code></pre><p>search for matching documents</p><pre><code class="language-julia-repl">julia&gt; idxs, corrs = cosine(lm, query);
 
 julia&gt; for (idx, corr) in zip(idxs, corrs)
            println(&quot;$corr -&gt; \&quot;$(crps[idx].text)\&quot;&quot;);
@@ -263,7 +322,7 @@ julia&gt; for (idx, corr) in zip(idxs, corrs)
 0.870703 -&gt; &quot;This is a text about an apple  There are many texts about apples &quot;
 0.7122063 -&gt; &quot;Fruits are good for you &quot;
 0.22725986 -&gt; &quot;This phrase has nothing to do with the others &quot;
-0.076901935 -&gt; &quot;Simple text  little info inside&quot;</code></pre><p>or check for structure within the data</p><pre><code class="language-julia-repl">julia&gt; U, V = lsa_model.U, lsa_model.Vᵀ&#39;;
+0.076901935 -&gt; &quot;Simple text  little info inside&quot;</code></pre><p>or check for structure within the data</p><pre><code class="language-julia-repl">julia&gt; U, V = lm.U, lm.Vᵀ&#39;;
 
 julia&gt; Matrix(U*U&#39;)  # document to document similarity
 5×5 Array{Float32,2}:
@@ -297,18 +356,18 @@ julia&gt; Matrix(V*V&#39;)  # term to term similarity
   0.0306727    0.082461    0.0306727   -0.0343962     -0.0422042    0.082461</code></pre><p>LSA models can be saved and retrieved to and from am easy to read and parse text format.</p><pre><code class="language-julia-repl">julia&gt; file = &quot;model.txt&quot;
 &quot;model.txt&quot;
 
-julia&gt; lsa_model
-LSA Model (tf) 5 documents, 38 terms, 3-element Float32 vectors
+julia&gt; lm
+LSA Model (tf) 5 documents, 38 terms, dimensionality 3, Float32 vectors
 
-julia&gt; save(lsa_model, file)  # model saved
+julia&gt; save_lsa_model(lm, file)  # model saved
 
 julia&gt; print(join(readlines(file)[1:5], &quot;\n&quot;))  # first five lines
-LSA Model saved at 2019-01-09T12:02:09.275
+LSA Model saved at 2019-01-10T18:43:06.107
 5 38 3
 tf
 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.5108256 1.5108256 1.9162908 1.9162908 1.9162908 1.5108256 1.5108256 1.2231436 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.5108256 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.5108256 1.9162908 1.5108256 1.9162908 1.9162908 1.9162908
 9.6
-julia&gt; new_model = load(file, Float64)  # change element type
-LSA Model (tf) 5 documents, 38 terms, 3-element Float64 vectors
+julia&gt; new_model = load_lsa_model(file, Float64)  # change element type
+LSA Model (tf) 5 documents, 38 terms, dimensionality 3, Float64 vectors
 
 julia&gt; rm(file)</code></pre><h3><a class="nav-anchor" id="Latent-Dirichlet-Allocation-(LDA)-1" href="#Latent-Dirichlet-Allocation-(LDA)-1">Latent Dirichlet Allocation (LDA)</a></h3><p>Documentation coming soon; check the API reference for information on the associated methods.</p><footer><hr/><a class="previous" href="../"><span class="direction">Previous</span><span class="title">Introduction</span></a><a class="next" href="../api/"><span class="direction">Next</span><span class="title">API Reference</span></a></footer></article></body></html>
