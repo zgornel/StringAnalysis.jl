@@ -157,7 +157,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Usage examples",
     "title": "Random projections",
     "category": "section",
-    "text": "In mathematics and statistics, random projection is a technique used to reduce the dimensionality of a set of points which lie in Euclidean space. Random projection methods are powerful methods known for their simplicity and less erroneous output compared with other methods. According to experimental results, random projection preserve distances well, but empirical results are sparse. They have been applied to many natural language tasks under the name of random indexing. The core idea behind random projection is given in the Johnson-Lindenstrauss lemma which states that if points in a vector space are of sufficiently high dimension, then they may be projected into a suitable lower-dimensional space in a way which approximately preserves the distances between the points (Wikipedia). The implementation here relies on the generalized sparse random projection matrix to generate a random projection model. For more details see the API documentation for RPModel and random_projection_matrix. To construct a random projection matrix that maps m dimension to k, one can dom = 10; k = 2; T = Float32;\ndensity = 0.2;  # percentage of non-zero elements\nR = StringAnalysis.random_projection_matrix(m, k, T, density)Building a random projection model from a DocumentTermMatrix or Corpus is straightforwardM = DocumentTermMatrix{Float32}(crps)\nmodel = RPModel(M, k=2, density=0.5, stats=:tf)\nmodel2 = rp(crps, T, k=17, density=0.1, stats=:tfidf)Once the model is created, one can reduce document term vector dimensionality. First, the document term vector is constructed using the stats keyword argument and subsequently, the vector is projected into the random sub-space:doc = StringDocument(\"this is a new document\")\nembed_document(model, doc)\nembed_document(model2, doc)To embed a document term matrix, one only has to doMatrix(M.dtm * model.R\')  # 3 documents x 2 sub-space dimensions\nMatrix(M.dtm * model2.R\')  # 3 documents x 17 sub-space dimentsions"
+    "text": "In mathematics and statistics, random projection is a technique used to reduce the dimensionality of a set of points which lie in Euclidean space. Random projection methods are powerful methods known for their simplicity and less erroneous output compared with other methods. According to experimental results, random projection preserve distances well, but empirical results are sparse. They have been applied to many natural language tasks under the name of random indexing. The core idea behind random projection is given in the Johnson-Lindenstrauss lemma which states that if points in a vector space are of sufficiently high dimension, then they may be projected into a suitable lower-dimensional space in a way which approximately preserves the distances between the points (Wikipedia). The implementation here relies on the generalized sparse random projection matrix to generate a random projection model. For more details see the API documentation for RPModel and random_projection_matrix. To construct a random projection matrix that maps m dimension to k, one can dom = 10; k = 2; T = Float32;\ndensity = 0.2;  # percentage of non-zero elements\nR = StringAnalysis.random_projection_matrix(m, k, T, density)Building a random projection model from a DocumentTermMatrix or Corpus is straightforwardM = DocumentTermMatrix{Float32}(crps)\nmodel = RPModel(M, k=2, density=0.5, stats=:tf)\nmodel2 = rp(crps, T, k=17, density=0.1, stats=:tfidf)Once the model is created, one can reduce document term vector dimensionality. First, the document term vector is constructed using the stats keyword argument and subsequently, the vector is projected into the random sub-space:doc = StringDocument(\"this is a new document\")\nembed_document(model, doc)\nembed_document(model2, doc)Embedding a DTM or corpus can be done in a similar way:Matrix(embed_document(model, M))\nMatrix(embed_document(model2, crps))Random projection models can be saved/loaded to/from disk using a text format.file = \"model.txt\"\nmodel\nsave_rp_model(model, file)  # model saved\nprint(join(readlines(file)[1:5], \"\\n\"))  # first five lines\nnew_model = load_rp_model(file, Float64)  # change element type\nrm(file)"
 },
 
 {
@@ -173,7 +173,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Usage examples",
     "title": "Latent Semantic Analysis (LSA)",
     "category": "section",
-    "text": "The following example gives a straightforward usage example of LSA. It is geared towards information retrieval (LSI) as it focuses on document comparison and embedding. Assuming a number of documentsdoc1 = StringDocument(\"This is a text about an apple. There are many texts about apples.\");\ndoc2 = StringDocument(\"Pears and apples are good but not exotic. An apple a day keeps the doctor away.\");\ndoc3 = StringDocument(\"Fruits are good for you.\");\ndoc4 = StringDocument(\"This phrase has nothing to do with the others...\");\ndoc5 = StringDocument(\"Simple text, little info inside\");and creating a corpus and its DTMcrps = Corpus(AbstractDocument[doc1, doc2, doc3, doc4, doc5]);\nprepare!(crps, strip_punctuation);\nupdate_lexicon!(crps);\nM = DocumentTermMatrix{Float32}(crps, sort(collect(keys(crps.lexicon))));building an LSA model is straightforward:lm = LSAModel(M, k=3, stats=:tf)Once the model is created, it can be used to either embed documentsquery = StringDocument(\"Apples and an exotic fruit.\");\nembed_document(lm, query)search for matching documentsidxs, corrs = cosine(lm, query);\n\nfor (idx, corr) in zip(idxs, corrs)\n    println(\"$corr -> \\\"$(crps[idx].text)\\\"\");\nendor check for structure within the dataU, V = lm.U, lm.Vᵀ\';\nMatrix(U*U\')  # document to document similarity\nMatrix(V*V\')  # term to term similarityLSA models can be saved and retrieved to and from am easy to read and parse text format.file = \"model.txt\"\nlm\nsave_lsa_model(lm, file)  # model saved\nprint(join(readlines(file)[1:5], \"\\n\"))  # first five lines\nnew_model = load_lsa_model(file, Float64)  # change element type\nrm(file)"
+    "text": "The following example gives a straightforward usage example of LSA. It is geared towards information retrieval (LSI) as it focuses on document comparison and embedding. We assume a number of documents,doc1 = StringDocument(\"This is a text about an apple. There are many texts about apples.\");\ndoc2 = StringDocument(\"Pears and apples are good but not exotic. An apple a day keeps the doctor away.\");\ndoc3 = StringDocument(\"Fruits are good for you.\");\ndoc4 = StringDocument(\"This phrase has nothing to do with the others...\");\ndoc5 = StringDocument(\"Simple text, little info inside\");and create the corpus and its DTM:crps = Corpus(AbstractDocument[doc1, doc2, doc3, doc4, doc5]);\nprepare!(crps, strip_punctuation);\nupdate_lexicon!(crps);\nM = DocumentTermMatrix{Float32}(crps, sort(collect(keys(crps.lexicon))));Building an LSA model is straightforward:lm = LSAModel(M, k=3, stats=:tf)Once the model is created, it can be used to either embed documents,query = StringDocument(\"Apples and an exotic fruit.\");\nembed_document(lm, query)embed the corpus,U = embed_document(lm, crps)search for matching documents,idxs, corrs = cosine(lm, crps, query);\nfor (idx, corr) in zip(idxs, corrs)\n    println(\"$corr -> \\\"$(crps[idx].text)\\\"\");\nendor check for structure within the dataV = lm.Vᵀ\';\nMatrix(U*U\')  # document to document similarity\nMatrix(V*V\')  # term to term similarityLSA models can be saved/loaded to/from disk using a text format similar to the random projection model one.file = \"model.txt\"\nlm\nsave_lsa_model(lm, file)  # model saved\nprint(join(readlines(file)[1:5], \"\\n\"))  # first five lines\nnew_model = load_lsa_model(file, Float64)  # change element type\nrm(file)"
 },
 
 {
@@ -213,7 +213,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.LSAModel",
     "category": "type",
-    "text": "LSAModel{S<:AbstractString, T<:AbstractFloat, A<:AbstractMatrix{T}, H<:Integer}\n\nLSA (latent semantic analysis) model. It constructs from a document term matrix (dtm) a model that can be used to embed documents in a latent semantic space pertaining to the data. The model requires that the document term matrix be a DocumentTermMatrix{T<:AbstractFloat} because the elements of the matrices resulted from the SVD operation are floating point numbers and these have to match or be convertible to type T.\n\nFields\n\nvocab::Vector{S} a vector with all the words in the corpus\nvocab_hash::Dict{S,H} a word to index in word embeddings matrix mapping\nU::A the document embeddings matrix\nΣinv::A inverse of the singular value matrix\nVᵀ::A transpose of the word embedding matrix\nstats::Symbol the statistical measure to use for word importances in documents\n\nAvailable values are: :tf (term frequency), :tfidf (default, term frequency - inverse document frequency) and :bm25 (Okapi BM25)\n\nidf::Vector{T} inverse document frequencies for the words in the vocabulary\nnwords::T averge number of words in a document\nκ::Int the κ parameter of the BM25 statistic\nβ::Float64 the β parameter of the BM25 statistic\ntol::T minimum size of the vector components (default T(1e-15))\n\nU, Σinv and Vᵀ:\n\nIf X is a m×n document-term-matrix with m documents and n words so that X[i,j] represents a statistical indicator of the importance of term j in document i then:\n\nU, Σ, V = svd(X)\nΣinv = inv(Σ)\nVᵀ = V\'\n\nThe version of U actually stored in the model has its columns normalized to their norm.\n\nExamples\n\njulia> using StringAnalysis\n\n       doc1 = StringDocument(\"This is a text about an apple. There are many texts about apples.\")\n       doc2 = StringDocument(\"Pears and apples are good but not exotic. An apple a day keeps the doctor away.\")\n       doc3 = StringDocument(\"Fruits are good for you.\")\n       doc4 = StringDocument(\"This phrase has nothing to do with the others...\")\n       doc5 = StringDocument(\"Simple text, little info inside\")\n\n       crps = Corpus(AbstractDocument[doc1, doc2, doc3, doc4, doc5])\n       prepare!(crps, strip_punctuation)\n       update_lexicon!(crps)\n       dtm = DocumentTermMatrix{Float32}(crps, sort(collect(keys(crps.lexicon))))\n\n       ### Build LSA Model ###\n       lsa_model = LSAModel(dtm, k=3, stats=:tf)\n\n       query = StringDocument(\"Apples and an exotic fruit.\")\n       idxs, corrs = cosine(lsa_model, query)\n\n       println(\"Query: \"$(query.text)\"\")\n       for (idx, corr) in zip(idxs, corrs)\n           println(\"$corr -> \"$(crps[idx].text)\"\")\n       end\nQuery: \"Apples and an exotic fruit.\"\n0.9746108 -> \"Pears and apples are good but not exotic  An apple a day keeps the doctor away \"\n0.870703 -> \"This is a text about an apple  There are many texts about apples \"\n0.7122063 -> \"Fruits are good for you \"\n0.22725986 -> \"This phrase has nothing to do with the others \"\n0.076901935 -> \"Simple text  little info inside \"\n\nReferences:\n\nThe LSA wiki page\nDeerwester et al. 1990\n\n\n\n\n\n"
+    "text": "LSAModel{S<:AbstractString, T<:AbstractFloat, A<:AbstractMatrix{T}, H<:Integer}\n\nLSA (latent semantic analysis) model. It constructs from a document term matrix (dtm) a model that can be used to embed documents in a latent semantic space pertaining to the data. The model requires that the document term matrix be a DocumentTermMatrix{T<:AbstractFloat} because the elements of the matrices resulted from the SVD operation are floating point numbers and these have to match or be convertible to type T.\n\nFields\n\nvocab::Vector{S} a vector with all the words in the corpus\nvocab_hash::Dict{S,H} a word to index in word embeddings matrix mapping\nΣinv::A inverse of the singular value matrix\nVᵀ::A transpose of the word embedding matrix\nstats::Symbol the statistical measure to use for word importances in documents\n\nAvailable values are: :tf (term frequency), :tfidf (default, term frequency - inverse document frequency) and :bm25 (Okapi BM25)\n\nidf::Vector{T} inverse document frequencies for the words in the vocabulary\nnwords::T averge number of words in a document\nκ::Int the κ parameter of the BM25 statistic\nβ::Float64 the β parameter of the BM25 statistic\ntol::T minimum size of the vector components (default T(1e-15))\n\nSVD matrices U, Σinv and Vᵀ:\n\nIf X is a m×n document-term-matrix with m documents and n words so that X[i,j] represents a statistical indicator of the importance of term j in document i then:\n\nU, Σ, V = svd(X)\nΣinv = inv(Σ)\nVᵀ = V\'\n\nThe matrix U is not actually stored in the model.\n\nExamples\n\njulia> using StringAnalysis\n\n       doc1 = StringDocument(\"This is a text about an apple. There are many texts about apples.\")\n       doc2 = StringDocument(\"Pears and apples are good but not exotic. An apple a day keeps the doctor away.\")\n       doc3 = StringDocument(\"Fruits are good for you.\")\n       doc4 = StringDocument(\"This phrase has nothing to do with the others...\")\n       doc5 = StringDocument(\"Simple text, little info inside\")\n\n       crps = Corpus(AbstractDocument[doc1, doc2, doc3, doc4, doc5])\n       prepare!(crps, strip_punctuation)\n       update_lexicon!(crps)\n       dtm = DocumentTermMatrix{Float32}(crps, sort(collect(keys(crps.lexicon))))\n\n       ### Build LSA Model ###\n       lsa_model = LSAModel(dtm, k=3, stats=:tf)\n\n       query = StringDocument(\"Apples and an exotic fruit.\")\n       idxs, corrs = cosine(lsa_model, crps, query)\n\n       println(\"Query: \"$(query.text)\"\")\n       for (idx, corr) in zip(idxs, corrs)\n           println(\"$corr -> \"$(crps[idx].text)\"\")\n       end\nQuery: \"Apples and an exotic fruit.\"\n0.9746108 -> \"Pears and apples are good but not exotic  An apple a day keeps the doctor away \"\n0.870703 -> \"This is a text about an apple  There are many texts about apples \"\n0.7122063 -> \"Fruits are good for you \"\n0.22725986 -> \"This phrase has nothing to do with the others \"\n0.076901935 -> \"Simple text  little info inside \"\n\nReferences:\n\nThe LSA wiki page\nDeerwester et al. 1990\n\n\n\n\n\n"
 },
 
 {
@@ -237,7 +237,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.cosine",
     "category": "function",
-    "text": "cosine(lm, doc, n=10)\n\nReturn the position of n (by default n = 10) neighbors of document doc and their cosine similarities.\n\n\n\n\n\n"
+    "text": "cosine(model, docs, doc, n=10)\n\nReturn the positions of the n closest neighboring documents to doc found in docs. docs can be a corpus or document term matrix. The vector representations of docs and doc are obtained with the model which can be either a LSAModel or RPModel.\n\n\n\n\n\n"
 },
 
 {
@@ -293,7 +293,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.embed_document",
     "category": "method",
-    "text": "embed_document(lm, doc)\n\nReturn the vector representation of a document doc, obtained using the LSA model lm.\n\n\n\n\n\n"
+    "text": "embed_document(lm, doc)\n\nReturn the vector representation of doc, obtained using the LSA model lm. doc can be an AbstractDocument, Corpus or DTV or DTM.\n\n\n\n\n\n"
 },
 
 {
@@ -301,7 +301,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.embed_document",
     "category": "method",
-    "text": "embed_document(rpm, doc)\n\nReturn the vector representation of a document doc, obtained using the random projection model rpm.\n\n\n\n\n\n"
+    "text": "embed_document(rpm, doc)\n\nReturn the vector representation of doc, obtained using the random projection model rpm. doc can be an AbstractDocument, Corpus or DTV or DTM.\n\n\n\n\n\n"
 },
 
 {
@@ -449,19 +449,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api/#StringAnalysis.similarity-Tuple{LSAModel,Any,Any}",
+    "location": "api/#StringAnalysis.similarity-Tuple{Any,Any,Any}",
     "page": "API Reference",
     "title": "StringAnalysis.similarity",
     "category": "method",
-    "text": "similarity(lm, doc1, doc2)\n\nReturn the cosine similarity value between two documents doc1 and doc2 whose vector representations have been obtained using the LSA model lm.\n\n\n\n\n\n"
-},
-
-{
-    "location": "api/#StringAnalysis.similarity-Tuple{RPModel,Any,Any}",
-    "page": "API Reference",
-    "title": "StringAnalysis.similarity",
-    "category": "method",
-    "text": "similarity(rpm, doc1, doc2)\n\nReturn the cosine similarity value between two documents doc1 and doc2 whose vector representations have been obtained using the random projection model rpm.\n\n\n\n\n\n"
+    "text": "similarity(model, doc1, doc2)\n\nReturn the cosine similarity value between two documents doc1 and doc2 whose vector representations have been obtained using the model, which can be either a LSAModel or RPModel.\n\n\n\n\n\n"
 },
 
 {
@@ -525,7 +517,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "Base.size",
     "category": "method",
-    "text": "size(lm)\n\nReturn a tuple containing the number of terms, the number of documents and the vector representation dimensionality of the LSA model lm.\n\n\n\n\n\n"
+    "text": "size(lm)\n\nReturn a tuple containin input and output dimensionalities of the LSA model lm.\n\n\n\n\n\n"
 },
 
 {
@@ -533,7 +525,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "Base.size",
     "category": "method",
-    "text": "size(rpm)\n\nReturn a tuple containing the projection sub-space and input data dimensionalities of the random projection model rpm.\n\n\n\n\n\n"
+    "text": "size(rpm)\n\nReturn a tuple containing the input data and projection sub-space dimensionalities of the random projection model rpm.\n\n\n\n\n\n"
 },
 
 {
