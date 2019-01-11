@@ -251,7 +251,7 @@ M = DocumentTermMatrix{Float32}(crps, sort(collect(keys(crps.lexicon))));
 ```
 Building an LSA model is straightforward:
 ```@repl index
-lm = LSAModel(M, k=3, stats=:tf)
+lm = LSAModel(M, k=4, stats=:tfidf)
 ```
 Once the model is created, it can be used to either embed documents,
 ```@repl index

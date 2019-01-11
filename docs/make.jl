@@ -1,5 +1,6 @@
 using Pkg
 Pkg.add("Documenter")
+Pkg.add("Languages")
 using Documenter, StringAnalysis, Languages
 
 # Make src directory available
