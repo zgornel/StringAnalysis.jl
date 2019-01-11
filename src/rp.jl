@@ -102,7 +102,7 @@ function random_projection_matrix(m::Int, k::Int, eltype::Type{T}, density::Floa
 
 function Base.show(io::IO, rpm::RPModel{S,T,A,H}) where {S,T,A,H}
     len_vecs, num_terms = size(rpm.R)
-    print(io, "Random Projection Model ($(rpm.stats)) " *
+    print(io, "Random Projection Model ($(rpm.stats)), " *
           "$(num_terms) terms, dimensionality $(len_vecs), $(T) vectors")
 end
 
@@ -115,7 +115,7 @@ with `m` words in the lexicon. The model does not store the corpus or DTM docume
 just the projection matrix. Use `?RPModel` for more details.
 """
 function rp(dtm::DocumentTermMatrix{T};
-            k::Int=size(dtm.dtm, 1),
+            k::Int=size(dtm.dtm, 2),
             density::Float64=1/sqrt(k),
             stats::Symbol=:tfidf,
             κ::Int=2,
@@ -126,7 +126,7 @@ end
 
 function rp(crps::Corpus,
             ::Type{T} = DEFAULT_FLOAT_TYPE;
-            k::Int=size(dtm.dtm, 1),
+            k::Int=length(crps.lexicon),
             density::Float64=1/sqrt(k),
             stats::Symbol=:tfidf,
             κ::Int=2,
@@ -160,10 +160,10 @@ in_vocabulary(rpm::RPModel, word::AbstractString) = word in rpm.vocab
 """
     size(rpm)
 
-Return a tuple containing the projection sub-space and input data
+Return a tuple containing the input data and projection sub-space
 dimensionalities of the random projection model `rpm`.
 """
-size(rpm::RPModel) = size(rpm.R, 1), size(rpm.R, 2)
+size(rpm::RPModel) = size(rpm.R, 2), size(rpm.R, 1)
 
 
 """

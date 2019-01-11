@@ -21,8 +21,8 @@
                 dtm = DocumentTermMatrix{T}(crps, lex)
                 model = rp(dtm, k=k, stats=stats)
                 @test model isa RPModel{String, T, SparseMatrixCSC{T,Int}, Int}
-                @test size(model.R, 1) == k
                 @test size(model.R, 2) == m
+                @test size(model.R, 1) == k
                 sim = similarity(model, crps[rand(1:n)], query)
                 @test -1.0 <= sim <= 1.0
             end
@@ -35,7 +35,7 @@
     @test model isa RPModel{String, T, SparseMatrixCSC{T, Int}, Int}
     @test all(in_vocabulary(model, word) for word in keys(crps.lexicon))
     @test vocabulary(model) == sort(collect(keys(crps.lexicon)))
-    @test size(model) == (K, length(crps.lexicon))
+    @test size(model) == (length(crps.lexicon), K)
     idx = 2
     word = model.vocab[idx]
     @test index(model, word) == model.vocab_hash[word]
