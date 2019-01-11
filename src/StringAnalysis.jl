@@ -55,7 +55,7 @@ module StringAnalysis
     export tf!, tf, tf_idf!, tf_idf, bm_25!, bm_25
     export LSAModel, lsa, save_lsa_model, load_lsa_model
     export RPModel, rp, save_rp_model, load_rp_model
-    export embed_document, similarity, cosine,
+    export embed_document, cosine, similarity,
            vocabulary, in_vocabulary, index, get_vector
     export lda
     export frequent_terms, sparse_terms,

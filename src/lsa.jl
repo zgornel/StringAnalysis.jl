@@ -227,7 +227,8 @@ end
 """
     embed_document(lm, doc)
 
-Return the vector representation of a document `doc`, obtained using the LSA model `lm`.
+Return the vector representation of `doc`, obtained using the LSA model `lm`.
+`doc` can be an `AbstractDocument`, `Corpus` or DTV or DTM.
 """
 embed_document(lm::LSAModel{S,T,A,H}, doc::AbstractDocument) where {S,T,A,H} =
     # Hijack vocabulary hash to use as lexicon (only the keys needed)
@@ -262,6 +263,29 @@ function embed_document(lm::LSAModel{S,T,A,H}, dtv::AbstractVector{T}) where {S,
     return d̂
 end
 
+function embed_document(lm::LSAModel{S,T,A,H}, dtm::DocumentTermMatrix{T}) where {S,T,A,H}
+    n = size(dtm.dtm,1)
+    k = size(lm.Vᵀ, 1)
+    if lm.stats == :tf
+        X = tf(dtm)
+    elseif lm.stats == :tfidf
+        X = tf_idf(dtm)
+    elseif lm.stats == :bm25
+        X = bm_25(dtm, κ=lm.κ, β=lm.β)
+    end
+    U = X * lm.Vᵀ' * lm.Σinv
+    U ./= (sqrt.(sum(U.^2, dims=2)) .+ eps(T))
+    U[abs.(U) .< lm.tol] .= zero(T)
+    return U
+end
+
+function embed_document(lm::LSAModel{S,T,A,H}, crps::Corpus) where {S,T,A,H}
+    if isempty(crps.lexicon)
+        update_lexicon!(crps)
+    end
+    embed_document(lm, DocumentTermMatrix{T}(crps, lexicon(crps)))
+end
+
 
 """
     embed_word(lm, word)
@@ -277,43 +301,31 @@ end
 
 
 """
-    cosine(lm, docs, doc, n=10)
+    cosine(model, docs, doc, n=10)
 
 Return the positions of the `n` closest neighboring documents to `doc`
 found in `docs`. `docs` can be a corpus or document term matrix.
+The vector representations of `docs` and `doc` are obtained with the
+`model` which can be either a `LSAModel` or `RPModel`.
 """
-function cosine(lm::LSAModel{S,T,A,H}, docs::DocumentTermMatrix{T}, doc, n=10
-               ) where {S,T,A,H}
-    n = size(docs.dtm,1)
-    k = size(lm.Vᵀ, 1)
-    U = similar(lm.Vᵀ, n, k)
-    @inbounds for i in 1:n
-        U[i,:] = embed_document(lm, docs[i,:])
-    end
-    U[abs.(U) .< lm.tol] .= zero(T)
-    metrics = U * embed_document(lm, doc)
+function cosine(model, docs, doc, n=10)
+    metrics = embed_document(model, docs) * embed_document(model, doc)
     n = min(n, length(metrics))
     topn_positions = sortperm(metrics[:], rev = true)[1:n]
     topn_metrics = metrics[topn_positions]
     return topn_positions, topn_metrics
 end
 
-function cosine(lm::LSAModel{S,T,A,H}, crps::Corpus, doc, n=10) where {S,T,A,H}
-    if isempty(crps.lexicon)
-        update_lexicon!(crps)
-    end
-    cosine(lm, DocumentTermMatrix{T}(crps, lexicon(crps)), doc, n)
-end
-
 
 """
-    similarity(lm, doc1, doc2)
+    similarity(model, doc1, doc2)
 
 Return the cosine similarity value between two documents `doc1` and `doc2`
-whose vector representations have been obtained using the LSA model `lm`.
+whose vector representations have been obtained using the `model`,
+which can be either a `LSAModel` or `RPModel`.
 """
-function similarity(lm::LSAModel, doc1, doc2)
-    return embed_document(lm, doc1)' * embed_document(lm, doc2)
+function similarity(model, doc1, doc2)
+    return embed_document(model, doc1)' * embed_document(model, doc2)
 end
 
 

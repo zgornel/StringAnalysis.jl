@@ -69,6 +69,7 @@ function RPModel(dtm::DocumentTermMatrix{T}; kwargs...) where T<:Integer
         be a DocumentTermMatrix{<:AbstractFloat}!"""))
 end
 
+
 """
     random_projection_matrix(m::Int, k::Int, eltype::Type{T<:AbstractFloat}, density::Float64)
 
@@ -194,8 +195,9 @@ end
 """
     embed_document(rpm, doc)
 
-Return the vector representation of a document `doc`, obtained
-using the random projection model `rpm`.
+Return the vector representation of `doc`, obtained using the
+random projection model `rpm`. `doc` can be an `AbstractDocument`,
+`Corpus` or DTV or DTM.
 """
 embed_document(rpm::RPModel{S,T,A,H}, doc::AbstractDocument) where {S,T,A,H} =
     # Hijack vocabulary hash to use as lexicon (only the keys needed)
@@ -229,16 +231,26 @@ function embed_document(rpm::RPModel{S,T,A,H}, dtv::Vector{T}) where {S,T,A,H}
     return d̂
 end
 
+function embed_document(rpm::RPModel{S,T,A,H}, dtm::DocumentTermMatrix{T}) where {S,T,A,H}
+    n = size(dtm.dtm,1)
+    k = size(rpm.R, 1)
+    if rpm.stats == :tf
+        X = tf(dtm)
+    elseif rpm.stats == :tfidf
+        X = tf_idf(dtm)
+    elseif rpm.stats == :bm25
+        X = bm_25(dtm, κ=rpm.κ, β=rpm.β)
+    end
+    U = X * rpm.R'
+    U ./= (sqrt.(sum(U.^2, dims=2)) .+ eps(T))
+    return U
+end
 
-"""
-    similarity(rpm, doc1, doc2)
-
-Return the cosine similarity value between two documents `doc1` and `doc2`
-whose vector representations have been obtained using the random projection
-model `rpm`.
-"""
-function similarity(lm::RPModel, doc1, doc2)
-    return embed_document(lm, doc1)' * embed_document(lm, doc2)
+function embed_document(rpm::RPModel{S,T,A,H}, crps::Corpus) where {S,T,A,H}
+    if isempty(crps.lexicon)
+        update_lexicon!(crps)
+    end
+    embed_document(rpm, DocumentTermMatrix{T}(crps, lexicon(crps)))
 end
 
 

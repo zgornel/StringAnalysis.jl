@@ -23,6 +23,8 @@
                 @test model isa RPModel{String, T, SparseMatrixCSC{T,Int}, Int}
                 @test size(model.R, 2) == m
                 @test size(model.R, 1) == k
+                idxs, corrs = cosine(model, dtm, query)
+                @test length(idxs) == length(corrs) == length(crps)
                 sim = similarity(model, crps[rand(1:n)], query)
                 @test -1.0 <= sim <= 1.0
             end
@@ -31,11 +33,21 @@
     # Tests for the rest of the functions
     K = 2
     T = Float32
+    # Vocabulary
     model = rp(crps, T, k=K)
     @test model isa RPModel{String, T, SparseMatrixCSC{T, Int}, Int}
     @test all(in_vocabulary(model, word) for word in keys(crps.lexicon))
     @test vocabulary(model) == sort(collect(keys(crps.lexicon)))
     @test size(model) == (length(crps.lexicon), K)
+    # Document, corpus embedding 
+    dtm = DocumentTermMatrix{T}(crps, lex)
+    U = embed_document(model, crps)
+    @test eltype(U) == T
+    @test eltype(embed_document(model, crps[1])) == T
+    for i in 1:n
+        @test all(U[i,:] .≈ embed_document(model, crps[i]))
+    end
+    # Index, Similarity
     idx = 2
     word = model.vocab[idx]
     @test index(model, word) == model.vocab_hash[word]
