@@ -217,6 +217,15 @@ To embed a document term matrix, one only has to do
 Matrix(M.dtm * model.R')  # 3 documents x 2 sub-space dimensions
 Matrix(M.dtm * model2.R')  # 3 documents x 17 sub-space dimentsions
 ```
+Random projection models can be saved/loaded to/from disk using a text format.
+```@repl index
+file = "model.txt"
+model
+save_rp_model(model, file)  # model saved
+print(join(readlines(file)[1:5], "\n"))  # first five lines
+new_model = load_rp_model(file, Float64)  # change element type
+rm(file)
+```
 
 ## Semantic Analysis
 
@@ -263,7 +272,7 @@ U, V = lm.U, lm.Vᵀ';
 Matrix(U*U')  # document to document similarity
 Matrix(V*V')  # term to term similarity
 ```
-LSA models can be saved and retrieved to and from am easy to read and parse text format.
+LSA models can be saved/loaded to/from disk using a text format similar to the random projection model one.
 ```@repl index
 file = "model.txt"
 lm
