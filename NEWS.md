@@ -1,5 +1,11 @@
 ## StringAnalysis Release Notes
 
+v0.3.0
+------
+ - Refined LSA, RP models
+ - More embedding methods
+ - Small bugfixes, improvements
+
 v0.2.4
 ------
  - Added sparse random projections

@@ -37,7 +37,7 @@
     @test all(in_vocabulary(model, word) for word in keys(crps.lexicon))
     @test vocabulary(model) == sort(collect(keys(crps.lexicon)))
     @test size(model) == (length(crps.lexicon), K)
-    # Document, corpus embedding 
+    # Document, corpus embedding
     dtm = DocumentTermMatrix{T}(crps, lex)
     U = Matrix(embed_document(model, crps))
     @test eltype(U) == T

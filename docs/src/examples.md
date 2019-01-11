@@ -212,10 +212,10 @@ doc = StringDocument("this is a new document")
 embed_document(model, doc)
 embed_document(model2, doc)
 ```
-To embed a document term matrix, one only has to do
+Embedding a DTM or corpus can be done in a similar way:
 ```@repl index
-Matrix(M.dtm * model.R')  # 3 documents x 2 sub-space dimensions
-Matrix(M.dtm * model2.R')  # 3 documents x 17 sub-space dimentsions
+Matrix(embed_document(model, M))
+Matrix(embed_document(model2, crps))
 ```
 Random projection models can be saved/loaded to/from disk using a text format.
 ```@repl index
@@ -234,7 +234,7 @@ The semantic analysis of a corpus relates to the task of building structures tha
 `StringAnalysis` provides two approaches of performing semantic analysis of a corpus: [latent semantic analysis (LSA)](http://lsa.colorado.edu/papers/JASIS.lsi.90.pdf) and [latent Dirichlet allocation (LDA)](http://jmlr.org/papers/volume3/blei03a/blei03a.pdf).
 
 ### Latent Semantic Analysis (LSA)
-The following example gives a straightforward usage example of LSA. It is geared towards information retrieval (LSI) as it focuses on document comparison and embedding. Assuming a number of documents
+The following example gives a straightforward usage example of LSA. It is geared towards information retrieval (LSI) as it focuses on document comparison and embedding. We assume a number of documents,
 ```@repl index
 doc1 = StringDocument("This is a text about an apple. There are many texts about apples.");
 doc2 = StringDocument("Pears and apples are good but not exotic. An apple a day keeps the doctor away.");
@@ -242,33 +242,36 @@ doc3 = StringDocument("Fruits are good for you.");
 doc4 = StringDocument("This phrase has nothing to do with the others...");
 doc5 = StringDocument("Simple text, little info inside");
 ```
-and creating a corpus and its DTM
+and create the corpus and its DTM:
 ```@repl index
 crps = Corpus(AbstractDocument[doc1, doc2, doc3, doc4, doc5]);
 prepare!(crps, strip_punctuation);
 update_lexicon!(crps);
 M = DocumentTermMatrix{Float32}(crps, sort(collect(keys(crps.lexicon))));
 ```
-building an LSA model is straightforward:
+Building an LSA model is straightforward:
 ```@repl index
 lm = LSAModel(M, k=3, stats=:tf)
 ```
-Once the model is created, it can be used to either embed documents
+Once the model is created, it can be used to either embed documents,
 ```@repl index
 query = StringDocument("Apples and an exotic fruit.");
 embed_document(lm, query)
 ```
-search for matching documents
+embed the corpus,
 ```@repl index
-idxs, corrs = cosine(lm, query);
-
+U = embed_document(lm, crps)
+```
+search for matching documents,
+```@repl index
+idxs, corrs = cosine(lm, crps, query);
 for (idx, corr) in zip(idxs, corrs)
     println("$corr -> \"$(crps[idx].text)\"");
 end
 ```
 or check for structure within the data
 ```@repl index
-U, V = lm.U, lm.Vᵀ';
+V = lm.Vᵀ';
 Matrix(U*U')  # document to document similarity
 Matrix(V*V')  # term to term similarity
 ```
