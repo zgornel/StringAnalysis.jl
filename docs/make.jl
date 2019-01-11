@@ -1,6 +1,6 @@
 using Pkg
 Pkg.add("Documenter")
-using Documenter, StringAnalysis
+using Documenter, StringAnalysis, Languages
 
 # Make src directory available
 push!(LOAD_PATH,"../src/")

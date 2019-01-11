@@ -16,13 +16,13 @@
     query = StringDocument("Apples and an exotic fruit.")
     for k in [1, 3]
         for stats in [:tf, :tfidf, :bm25]
-            for T in [Float16, Float32, Float64]
+            for T in [Float32, Float64]
                 dtm = DocumentTermMatrix{T}(crps, lex)
                 model = lsa(dtm, k=k, stats=stats)
                 @test model isa LSAModel{String, T, SparseMatrixCSC{T,Int}, Int}
-                idxs, corrs = cosine(model, query)
-                @test length(idxs) == length(corrs) == length(crps)
                 @test size(model.Σinv, 1) == k
+                idxs, corrs = cosine(model, dtm, query)
+                @test length(idxs) == length(corrs) == length(crps)
                 sim = similarity(model, crps[rand(1:n)], query)
                 @test -1.0 <= sim <= 1.0
             end
@@ -31,11 +31,21 @@
     # Tests for the rest of the functions
     K = 2
     T = Float32
+    # Vocabulary
     model = lsa(crps, T, k=K)
     @test model isa LSAModel{String, T, SparseMatrixCSC{T, Int}, Int}
     @test all(in_vocabulary(model, word) for word in keys(crps.lexicon))
     @test vocabulary(model) == sort(collect(keys(crps.lexicon)))
-    @test size(model) == (length(crps.lexicon), length(crps), K)
+    @test size(model) == (length(crps.lexicon), K)
+    # Document, corpus embedding
+    dtm = DocumentTermMatrix{T}(crps, lex)
+    U = Matrix(embed_document(model, crps))
+    @test eltype(U) == T
+    @test eltype(embed_document(model, crps[1])) == T
+    for i in 1:n
+        @test all(U[i,:] .≈ embed_document(model, crps[i]))
+    end
+    # Index, Similarity
     idx = 2
     word = model.vocab[idx]
     @test index(model, word) == model.vocab_hash[word]
@@ -59,7 +69,6 @@
     # Model 1
     loaded_model_1 = load_lsa_model(file, Float64, sparse=true)
     @test loaded_model_1 isa LSAModel{String, Float64, SparseMatrixCSC{Float64, Int}, Int}
-    @test all(loaded_model_1.U .≈ sparse(model.U))
     @test all(loaded_model_1.Vᵀ .≈ sparse(model.Vᵀ))
     @test all(loaded_model_1.Σinv .≈ sparse(model.Σinv))
     @test loaded_model_1.vocab == model.vocab
@@ -73,7 +82,6 @@
     # Model 2
     loaded_model_2 = load_lsa_model(file, Float32, sparse=false)
     @test loaded_model_2 isa LSAModel{String, Float32, Matrix{Float32}, Int}
-    @test all(loaded_model_2.U .≈ model.U)
     @test all(loaded_model_2.Vᵀ .≈ model.Vᵀ)
     @test all(loaded_model_2.Σinv .≈ model.Σinv)
     @test loaded_model_2.vocab == model.vocab

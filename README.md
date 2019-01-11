@@ -1,4 +1,4 @@
-# StringAnalysis
+![Alt text](https://github.com/zgornel/StringAnalysis.jl/blob/master/docs/src/assets/logo.png)
 
 This is a hard fork of the [TextAnalysis.jl](https://github.com/JuliaText/TextAnalysis.jl) package, designed to provide a more powerful, faster and more orthogonal interface.
 

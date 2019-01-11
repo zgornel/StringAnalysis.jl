@@ -102,7 +102,7 @@ end
 # Stemming methods with implicit stemmer generated from language
 function stem(sentence::AbstractString;
               language::Language=DEFAULT_LANGUAGE)
-    stemmer = Stemmer(lowercase(name(language)))
+    stemmer = Stemmer(lowercase(Languages.english_name(language)))
     ret = stem_all(stemmer, language, sentence)
     release(stemmer)
     return ret
@@ -111,7 +111,7 @@ end
 function stem!(words::Vector{S};
                language::Language=DEFAULT_LANGUAGE
               ) where S<:AbstractString
-    stemmer = Stemmer(lowercase(name(language)))
+    stemmer = Stemmer(lowercase(Languages.english_name(language)))
     l::Int = length(words)
     @inbounds for idx in 1:l
         words[idx] = stem(stemmer, words[idx])
@@ -131,7 +131,7 @@ end
 
 # Stemming methods for documents
 function stemmer_for_document(d::AbstractDocument)
-    Stemmer(lowercase(name(language(d))))
+    Stemmer(lowercase(Languages.english_name(language(d))))
 end
 
 function stem!(d::AbstractDocument)
