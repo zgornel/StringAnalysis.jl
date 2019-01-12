@@ -37,10 +37,12 @@ end
 tf!(dtm::AbstractMatrix{T}) where T<:Real = tf!(dtm, dtm)
 
 tf(dtm::AbstractMatrix{T}) where T<:Integer = tf!(dtm, similar(dtm, DEFAULT_FLOAT_TYPE))
+
 tf(dtm::AbstractMatrix{T}) where T<:AbstractFloat = tf!(dtm, similar(dtm, T))
 
 tf(dtm::DocumentTermMatrix) = tf(dtm.dtm)
 
+tf!(dtm::DocumentTermMatrix) = tf!(dtm.dtm)
 
 
 # TF-IDF: Term frequency - Inverse document frequency
@@ -90,10 +92,12 @@ end
 tf_idf!(dtm::AbstractMatrix{T}) where T<:Real = tf_idf!(dtm, dtm)
 
 tf_idf(dtm::AbstractMatrix{T}) where T<:Integer = tf_idf!(dtm, similar(dtm, DEFAULT_FLOAT_TYPE))
+
 tf_idf(dtm::AbstractMatrix{T}) where T<:AbstractFloat = tf_idf!(dtm, similar(dtm, T))
 
 tf_idf(dtm::DocumentTermMatrix) = tf_idf(dtm.dtm)
 
+tf_idf!(dtm::DocumentTermMatrix) = tf_idf!(dtm.dtm)
 
 
 # BM25: Okapi Best Match 25
@@ -164,8 +168,12 @@ bm_25!(dtm::AbstractMatrix{T}; κ::Int=2, β::Float64=0.75) where T<:Real =
 
 bm_25(dtm::AbstractMatrix{T}; κ::Int=2, β::Float64=0.75) where T<:Integer =
     bm_25!(dtm, similar(dtm, DEFAULT_FLOAT_TYPE), κ=κ, β=β)
+
 bm_25(dtm::AbstractMatrix{T}; κ::Int=2, β::Float64=0.75) where T<:AbstractFloat =
     bm_25!(dtm, similar(dtm, T), κ=κ, β=β)
 
 bm_25(dtm::DocumentTermMatrix; κ::Int=2, β::Float64=0.75) =
     bm_25(dtm.dtm, κ=κ, β=β)
+
+bm_25!(dtm::DocumentTermMatrix; κ::Int=2, β::Float64=0.75) =
+    bm_25!(dtm.dtm, κ=κ, β=β)
