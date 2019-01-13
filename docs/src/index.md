@@ -11,6 +11,7 @@ StringAnalysis is a package for working with strings and text. It is a hard-fork
 This package brings several changes over `TextAnalysis.jl`:
  - Added the [Okapi BM25](https://en.wikipedia.org/wiki/Okapi_BM25) statistic
  - Added dimensionality reduction with [Sparse random projections](https://en.wikipedia.org/wiki/Random_projection)
+ - Added co-occurence matrix
  - Improved latent semantic analysis (LSA)
  - Re-factored text preprocessing API (`prepare` and `strip_<things>` methods)
  - Element type specification for `each_dtv`, `each_hash_dtv`, `DocumentTermMatrix`
