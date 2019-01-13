@@ -104,8 +104,8 @@ tf_idf!(dtm::DocumentTermMatrix) = tf_idf!(dtm.dtm)
 # Details at: https://en.wikipedia.org/wiki/Okapi_BM25
 function bm_25!(dtm::AbstractMatrix{T},
                 bm25::AbstractMatrix{F};
-                κ::Int=2,
-                β::Float64=0.75
+                κ::Int=BM25_KAPPA,
+                β::Float64=BM25_BETA
                ) where {T<:Real, F<:AbstractFloat}
     @assert size(dtm) == size(bm25)
     # Initializations
@@ -133,8 +133,8 @@ end
 
 function bm_25!(dtm::SparseMatrixCSC{T},
                 bm25::SparseMatrixCSC{F};
-                κ::Int=2,
-                β::Float64=0.75
+                κ::Int=BM25_KAPPA,
+                β::Float64=BM25_BETA
                ) where {T<:Real, F<:AbstractFloat}
     @assert size(dtm) == size(bm25)
     # Initializations
@@ -163,17 +163,17 @@ function bm_25!(dtm::SparseMatrixCSC{T},
     return bm25
 end
 
-bm_25!(dtm::AbstractMatrix{T}; κ::Int=2, β::Float64=0.75) where T<:Real =
+bm_25!(dtm::AbstractMatrix{T}; κ::Int=BM25_KAPPA, β::Float64=BM25_BETA) where T<:Real =
     bm_25!(dtm, dtm, κ=κ, β=β)
 
-bm_25(dtm::AbstractMatrix{T}; κ::Int=2, β::Float64=0.75) where T<:Integer =
+bm_25(dtm::AbstractMatrix{T}; κ::Int=BM25_KAPPA, β::Float64=BM25_BETA) where T<:Integer =
     bm_25!(dtm, similar(dtm, DEFAULT_FLOAT_TYPE), κ=κ, β=β)
 
-bm_25(dtm::AbstractMatrix{T}; κ::Int=2, β::Float64=0.75) where T<:AbstractFloat =
+bm_25(dtm::AbstractMatrix{T}; κ::Int=BM25_KAPPA, β::Float64=BM25_BETA) where T<:AbstractFloat =
     bm_25!(dtm, similar(dtm, T), κ=κ, β=β)
 
-bm_25(dtm::DocumentTermMatrix; κ::Int=2, β::Float64=0.75) =
+bm_25(dtm::DocumentTermMatrix; κ::Int=BM25_KAPPA, β::Float64=BM25_BETA) =
     bm_25(dtm.dtm, κ=κ, β=β)
 
-bm_25!(dtm::DocumentTermMatrix; κ::Int=2, β::Float64=0.75) =
+bm_25!(dtm::DocumentTermMatrix; κ::Int=BM25_KAPPA, β::Float64=BM25_BETA) =
     bm_25!(dtm.dtm, κ=κ, β=β)

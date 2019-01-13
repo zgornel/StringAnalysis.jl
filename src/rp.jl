@@ -41,8 +41,8 @@ function RPModel(dtm::DocumentTermMatrix{T};
                  k::Int=size(dtm.dtm, 1),
 				 density::Float64=1/sqrt(k),
                  stats::Symbol=:tfidf,
-                 κ::Int=2,
-                 β::Float64=0.75
+                 κ::Int=BM25_KAPPA,
+                 β::Float64=BM25_BETA
                 ) where T<:AbstractFloat
     n, m = size(dtm.dtm)
     zeroval = zero(T)
@@ -119,8 +119,8 @@ function rp(dtm::DocumentTermMatrix{T};
             k::Int=size(dtm.dtm, 2),
             density::Float64=1/sqrt(k),
             stats::Symbol=:tfidf,
-            κ::Int=2,
-            β::Float64=0.75
+            κ::Int=BM25_KAPPA,
+            β::Float64=BM25_BETA
            ) where T<:AbstractFloat
     RPModel(dtm, k=k, density=density, stats=stats, κ=κ, β=β)
 end
@@ -130,8 +130,8 @@ function rp(crps::Corpus,
             k::Int=length(crps.lexicon),
             density::Float64=1/sqrt(k),
             stats::Symbol=:tfidf,
-            κ::Int=2,
-            β::Float64=0.75
+            κ::Int=BM25_KAPPA,
+            β::Float64=BM25_BETA
            ) where T<:AbstractFloat
     if isempty(crps.lexicon)
         update_lexicon!(crps)
