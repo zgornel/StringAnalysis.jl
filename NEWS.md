@@ -2,6 +2,7 @@
 
 v0.3.0
 ------
+ - Added Co-occurrence matrix
  - Refined LSA, RP models
  - More embedding methods
  - Small bugfixes, improvements

@@ -188,6 +188,34 @@ tf!(M.dtm, tfm);
 Matrix(tfm)
 ```
 
+### Co-occurrence Matrix (COOM)
+Another type of matrix that can be created is the [co-occurence matrix (COOM)](https://en.wikipedia.org/wiki/Co-occurrence_matrix) of the document or corpus. The elements of the matrix indicate how many times two words co-occur in a (sliding) word window of a given size. The COOM can be calculated for objects of type `Corpus`, `AbstractDocument` and `AbstractString` and the constructor supports specification of the window size, whether the counts should be normalized (to the distance between words in the window) as well as specific terms for which co-occurrences in the document should be calculated.
+
+**Remarks**:
+  - The sliding window used to count co-occurrences does not take into consideration sentence stops however, it does with documents i.e. does not span across documents
+  - The co-occurrence matrices of the documents in a corpus are summed up when calculating the matrix for an entire corpus.
+  - The co-occurrence matrix always has elements that are subtypes of `AbstractFloat` and cannot be calculated for `NGramDocument`s
+```@repl index
+C = CooMatrix(crps, window=1, normalize=false)  # fails
+smallcrps = Corpus([sd, td])
+C = CooMatrix(smallcrps, window=1, normalize=false)  # works
+```
+  - The actual size of the sliding window is `2 * window + 1`, with the keyword argument `window` specifying how many words to consider to the left and right of the center one
+
+For a simple document, one should first preprocess the document and subsequently calculate the matrix:
+```@repl index
+some_document = "This is a document. In the document, there are two sentences.";
+filtered_document = prepare(some_document, strip_whitespace|strip_case|strip_punctuation)
+C = CooMatrix{Float32}(some_document, window=3)  # word distances matter
+Matrix(coom(C))
+```
+One can also calculate the COOM corresponding to a reduced lexicon. The resulting matrix will be proportional to the size of the new lexicon and more sparse if the window size is small.
+```@repl index
+C = CooMatrix(smallcrps, ["this", "is", "a"], window=1, normalize=false)
+C.column_indices
+Matrix(coom(C))
+```
+
 ## Dimensionality reduction
 
 ### Random projections
