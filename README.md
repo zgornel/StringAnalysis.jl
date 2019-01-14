@@ -17,7 +17,7 @@ Pkg.add("StringAnalysis")
 
 
 ## Features
-To keep track with the latest features, please consult [NEWS.md](https://github.com/zgornel/StringAnalysis.jl/blob/master/NEWS.md) and the [documentation](https://github.com/timholy/SnoopCompile.jl).
+To keep track with the latest features, please consult [NEWS.md](https://github.com/zgornel/StringAnalysis.jl/blob/master/NEWS.md) and the [documentation](https://zgornel.github.io/StringAnalysis.jl/dev).
 
 
 ## License
