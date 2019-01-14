@@ -294,10 +294,10 @@ julia&gt; density = 0.2;  # percentage of non-zero elements
 
 julia&gt; R = StringAnalysis.random_projection_matrix(m, k, T, density)
 2×10 SparseArrays.SparseMatrixCSC{Float32,Int64} with 4 stored entries:
-  [1 ,  1]  =  -1.58114
-  [2 ,  6]  =  -1.58114
+  [2 ,  5]  =  1.58114
+  [1 ,  6]  =  -1.58114
   [1 ,  8]  =  -1.58114
-  [2 ,  9]  =  -1.58114</code></pre><p>Building a random projection model from a <code>DocumentTermMatrix</code> or <code>Corpus</code> is straightforward</p><pre><code class="language-julia-repl">julia&gt; M = DocumentTermMatrix{Float32}(crps)
+  [2 , 10]  =  1.58114</code></pre><p>Building a random projection model from a <code>DocumentTermMatrix</code> or <code>Corpus</code> is straightforward</p><pre><code class="language-julia-repl">julia&gt; M = DocumentTermMatrix{Float32}(crps)
 A 3x7 DocumentTermMatrix{Float32}
 
 julia&gt; model = RPModel(M, k=2, density=0.5, stats=:tf)
@@ -309,38 +309,38 @@ A StringDocument{String}
 
 julia&gt; embed_document(model, doc)
 2-element Array{Float32,1}:
- 0.99999994
- 0.0
+  0.7071067
+ -0.7071067
 
 julia&gt; embed_document(model2, doc)
 17-element Array{Float32,1}:
-  0.0
-  0.0
- -0.57735014
- -0.57735014
-  0.0
-  0.0
-  0.0
-  0.0
-  0.0
-  0.57735014
+ -0.49999988
+ -0.49999988
   0.0
   0.0
   0.0
   0.0
   0.0
   0.0
+  0.0
+  0.0
+  0.0
+ -0.49999988
+  0.0
+  0.0
+  0.0
+  0.49999988
   0.0</code></pre><p>Embedding a DTM or corpus can be done in a similar way:</p><pre><code class="language-julia-repl">julia&gt; Matrix(embed_document(model, M))
 3×2 Array{Float32,2}:
- 1.0        0.0
- 1.0        0.0
- 0.970142  -0.242536
+ 0.83205   -0.5547
+ 0.5547    -0.83205
+ 0.707107  -0.707107
 
 julia&gt; Matrix(embed_document(model2, crps))
 3×17 Array{Float32,2}:
- 0.0  0.0  -0.77459   -0.260534  0.0  …  0.0  0.0  0.0       0.0  0.0
- 0.0  0.0  -0.232375   0.226121  0.0     0.0  0.0  0.458496  0.0  0.458496
- 0.0  0.0  -0.380885  -0.380885  0.0     0.0  0.0  0.0       0.0  0.751519</code></pre><p>Random projection models can be saved/loaded to/from disk using a text format.</p><pre><code class="language-julia-repl">julia&gt; file = &quot;model.txt&quot;
+ -0.291941   0.284084  0.0  0.0  0.0  …  0.0  0.0       0.291941  0.576024
+ -0.5       -0.5       0.0  0.0  0.0     0.0  0.0       0.5       0.0
+ -0.225731  -0.671117  0.0  0.0  0.0     0.0  0.445386  0.225731  0.0</code></pre><p>Random projection models can be saved/loaded to/from disk using a text format.</p><pre><code class="language-julia-repl">julia&gt; file = &quot;model.txt&quot;
 &quot;model.txt&quot;
 
 julia&gt; model
@@ -349,7 +349,7 @@ Random Projection Model (tf), 7 terms, dimensionality 2, Float32 vectors
 julia&gt; save_rp_model(model, file)  # model saved
 
 julia&gt; print(join(readlines(file)[1:5], &quot;\n&quot;))  # first five lines
-Random Projection Model saved at 2019-01-14T13:21:49.158
+Random Projection Model saved at 2019-01-14T13:43:15.547
 7 2
 tf
 0.71231794 0.71231794 0.71231794 1.4054651 1.4054651 0.71231794 1.4054651
@@ -376,71 +376,71 @@ LSA Model (tfidf), 38 terms, dimensionality 4, Float32 vectors</code></pre><p>On
 
 julia&gt; embed_document(lm, query)
 4-element Array{Float32,1}:
-  0.732248
-  0.1437839
- -0.31718937
-  0.58526003</code></pre><p>embed the corpus,</p><pre><code class="language-julia-repl">julia&gt; U = embed_document(lm, crps)
+  0.73225087
+  0.14378983
+ -0.31717807
+  0.58526105</code></pre><p>embed the corpus,</p><pre><code class="language-julia-repl">julia&gt; U = embed_document(lm, crps)
 5×4 SparseArrays.SparseMatrixCSC{Float32,Int64} with 20 stored entries:
-  [1, 1]  =  0.735058
-  [2, 1]  =  0.822167
+  [1, 1]  =  0.735057
+  [2, 1]  =  0.822172
   [3, 1]  =  0.361582
-  [4, 1]  =  0.369557
-  [5, 1]  =  0.267474
-  [1, 2]  =  -0.12794
-  [2, 2]  =  0.281837
-  [3, 2]  =  0.155927
-  [4, 2]  =  0.31266
-  [5, 2]  =  -0.925018
-  [1, 3]  =  -0.0854233
-  [2, 3]  =  -0.393267
-  [3, 3]  =  -0.432534
-  [4, 3]  =  0.844541
-  [5, 3]  =  0.165565
-  [1, 4]  =  0.660321
-  [2, 4]  =  0.299916
-  [3, 4]  =  -0.811085
+  [4, 1]  =  0.369556
+  [5, 1]  =  0.267473
+  [1, 2]  =  -0.127939
+  [2, 2]  =  0.281846
+  [3, 2]  =  0.15593
+  [4, 2]  =  0.312656
+  [5, 2]  =  -0.925019
+  [1, 3]  =  -0.0854198
+  [2, 3]  =  -0.393252
+  [3, 3]  =  -0.43253
+  [4, 3]  =  0.844543
+  [5, 3]  =  0.165557
+  [1, 4]  =  0.660322
+  [2, 4]  =  0.299915
+  [3, 4]  =  -0.811086
   [4, 4]  =  -0.228957
   [5, 4]  =  -0.213045</code></pre><p>search for matching documents,</p><pre><code class="language-julia-repl">julia&gt; idxs, corrs = cosine(lm, crps, query);
 
 julia&gt; for (idx, corr) in zip(idxs, corrs)
            println(&quot;$corr -&gt; \&quot;$(crps[idx].text)\&quot;&quot;);
        end
-0.94282293 -&gt; &quot;Pears and apples are good but not exotic  An apple a day keeps the doctor away &quot;
-0.9334038 -&gt; &quot;This is a text about an apple  There are many texts about apples &quot;
--0.050313205 -&gt; &quot;Fruits are good for you &quot;
--0.08631587 -&gt; &quot;This phrase has nothing to do with the others &quot;
--0.11434731 -&gt; &quot;Simple text  little info inside&quot;</code></pre><p>or check for structure within the data</p><pre><code class="language-julia-repl">julia&gt; V = lm.Vᵀ&#39;;
+0.94282186 -&gt; &quot;Pears and apples are good but not exotic  An apple a day keeps the doctor away &quot;
+0.93340427 -&gt; &quot;This is a text about an apple  There are many texts about apples &quot;
+-0.050318003 -&gt; &quot;Fruits are good for you &quot;
+-0.08630589 -&gt; &quot;This phrase has nothing to do with the others &quot;
+-0.11434841 -&gt; &quot;Simple text  little info inside&quot;</code></pre><p>or check for structure within the data</p><pre><code class="language-julia-repl">julia&gt; V = lm.Vᵀ&#39;;
 
 julia&gt; Matrix(U*U&#39;)  # document to document similarity
 5×5 Array{Float32,2}:
-  1.0          0.799917    -0.252794     0.00831549   0.160135
-  0.799917     1.0          0.268071    -0.00884099  -0.169803
- -0.252794     0.268071     1.0          0.00278747   0.0536635
-  0.00831549  -0.00884099   0.00278747   1.0         -0.00176413
-  0.160135    -0.169803     0.0536635   -0.00176413   1.0
+  1.0          0.799916    -0.252798     0.00831765   0.160134
+  0.799916     1.0          0.268068    -0.00882676  -0.169805
+ -0.252798     0.268068     1.0          0.00279014   0.0536645
+  0.00831765  -0.00882676   0.00279014   1.0         -0.00176886
+  0.160134    -0.169805     0.0536645   -0.00176886   1.0
 
 julia&gt; Matrix(V*V&#39;)  # term to term similarity
 38×38 Array{Float32,2}:
-  0.0338671    0.0144178    0.0338671   …  -0.00553287   0.0144178
-  0.0144178    0.229302     0.0144178       0.00245698   0.229302
-  0.0338671    0.0144178    0.0338671      -0.00553287   0.0144178
- -0.0191156    0.0165082   -0.0191156       0.00045021   0.0165082
-  0.0316604   -0.0412211    0.0316604      -0.005428    -0.0412211
-  0.0205992   -0.0305621    0.0205992   …   0.0920066   -0.0305621
-  0.0516626   -0.021132     0.0516626      -0.00864166  -0.021132
-  0.0447745   -0.0582955    0.0447745      -0.00767635  -0.0582955
-  0.0316604   -0.0412211    0.0316604      -0.005428    -0.0412211
-  0.0338671    0.0144178    0.0338671      -0.00553287   0.0144178
+  0.0338667    0.0144175    0.0338667   …  -0.00553185    0.0144175
+  0.0144175    0.229302     0.0144175       0.00245723    0.229302
+  0.0338667    0.0144175    0.0338667      -0.00553185    0.0144175
+ -0.0191157    0.0165084   -0.0191157       0.000449458   0.0165084
+  0.0316602   -0.0412214    0.0316602      -0.00542802   -0.0412214
+  0.0205999   -0.0305621    0.0205999   …   0.0920073    -0.0305621
+  0.0516622   -0.0211325    0.0516622      -0.00864088   -0.0211325
+  0.0447743   -0.0582959    0.0447743      -0.00767638   -0.0582959
+  0.0316602   -0.0412214    0.0316602      -0.00542802   -0.0412214
+  0.0338667    0.0144175    0.0338667      -0.00553185    0.0144175
   ⋮                                     ⋱
- -0.00553286   0.00245698  -0.00553286      0.122127     0.00245698
- -0.00553286   0.00245698  -0.00553286  …   0.122127     0.00245698
- -0.00553286   0.00245698  -0.00553286      0.122127     0.00245698
-  0.00989043  -0.019484     0.00989043     -0.00392454  -0.019484
-  0.0316604   -0.0412211    0.0316604      -0.005428    -0.0412211
-  0.0223391    0.0133043    0.0223391       0.0919239    0.0133043
- -0.00553287   0.00245698  -0.00553287  …   0.122127     0.00245698
- -0.00553287   0.00245698  -0.00553287      0.122127     0.00245698
-  0.0144178    0.229302     0.0144178       0.00245698   0.229302</code></pre><p>LSA models can be saved/loaded to/from disk using a text format similar to the random projection model one.</p><pre><code class="language-julia-repl">julia&gt; file = &quot;model.txt&quot;
+ -0.00553185   0.00245723  -0.00553185      0.122128      0.00245723
+ -0.00553185   0.00245723  -0.00553185  …   0.122128      0.00245723
+ -0.00553185   0.00245723  -0.00553185      0.122128      0.00245723
+  0.00989021  -0.019484     0.00989021     -0.00392515   -0.019484
+  0.0316602   -0.0412214    0.0316602      -0.00542802   -0.0412214
+  0.0223395    0.0133042    0.0223395       0.0919255     0.0133042
+ -0.00553185   0.00245723  -0.00553185  …   0.122128      0.00245723
+ -0.00553185   0.00245723  -0.00553185      0.122128      0.00245723
+  0.0144175    0.229302     0.0144175       0.00245723    0.229302</code></pre><p>LSA models can be saved/loaded to/from disk using a text format similar to the random projection model one.</p><pre><code class="language-julia-repl">julia&gt; file = &quot;model.txt&quot;
 &quot;model.txt&quot;
 
 julia&gt; lm
@@ -449,7 +449,7 @@ LSA Model (tfidf), 38 terms, dimensionality 4, Float32 vectors
 julia&gt; save_lsa_model(lm, file)  # model saved
 
 julia&gt; print(join(readlines(file)[1:5], &quot;\n&quot;))  # first five lines
-LSA Model saved at 2019-01-14T13:21:56.223
+LSA Model saved at 2019-01-14T13:43:22.501
 38 4
 tfidf
 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.5108256 1.5108256 1.9162908 1.9162908 1.9162908 1.5108256 1.5108256 1.2231436 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.5108256 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.5108256 1.9162908 1.5108256 1.9162908 1.9162908 1.9162908
