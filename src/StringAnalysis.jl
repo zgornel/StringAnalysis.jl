@@ -50,6 +50,7 @@ module StringAnalysis
     export hash_dtv, each_hash_dtv, hash_dtm, hash_tdm
     export TextHashFunction, index_hash, cardinality,
            hash_function, hash_function!
+    export CooMatrix, coom
     export Stemmer, stem!, stem, stemmer_types
     export tokenize, tokenize_fast, tokenize_slow, sentence_tokenize
     export tf!, tf, tf_idf!, tf_idf, bm_25!, bm_25
@@ -80,6 +81,7 @@ module StringAnalysis
     include("tokenizer.jl")
     include("ngramizer.jl")
     include("dtm.jl")
+    include("coom.jl")
     include("stats.jl")
     include("lsa.jl")
     include("rp.jl")

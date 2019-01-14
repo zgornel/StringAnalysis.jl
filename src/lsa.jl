@@ -92,8 +92,8 @@ function LSAModel(dtm::DocumentTermMatrix{T};
                   k::Int=size(dtm.dtm, 1),
                   stats::Symbol=:tfidf,
                   tol::T=T(1e-15),
-                  κ::Int=2,
-                  β::Float64=0.75
+                  κ::Int=BM25_KAPPA,
+                  β::Float64=BM25_BETA
                  ) where T<:AbstractFloat
     n, p = size(dtm.dtm)
     zeroval = zero(T)
@@ -156,8 +156,8 @@ function lsa(dtm::DocumentTermMatrix{T};
              k::Int=size(dtm.dtm, 1),
              stats::Symbol=:tfidf,
              tol::T=T(1e-15),
-             κ::Int=2,
-             β::Float64=0.75) where T<:AbstractFloat
+             κ::Int=BM25_KAPPA,
+             β::Float64=BM25_BETA) where T<:AbstractFloat
     LSAModel(dtm, k=k, stats=stats, κ=κ, β=β, tol=tol)
 end
 
@@ -166,8 +166,8 @@ function lsa(crps::Corpus,
              k::Int=length(crps),
              stats::Symbol=:tfidf,
              tol::T=T(1e-15),
-             κ::Int=2,
-             β::Float64=0.75) where T<:AbstractFloat
+             κ::Int=BM25_KAPPA,
+             β::Float64=BM25_BETA) where T<:AbstractFloat
     if isempty(crps.lexicon)
         update_lexicon!(crps)
     end

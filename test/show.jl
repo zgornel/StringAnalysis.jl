@@ -25,6 +25,9 @@
     m = DocumentTermMatrix(crps);
     Test.@test try show(buf,m); true
                catch; false end
+    c = CooMatrix(crps);
+    Test.@test try show(buf,c); true
+               catch; false end
     # Stemmer
     s = Stemmer("english")
     Test.@test try show(buf,s); true

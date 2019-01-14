@@ -9,16 +9,17 @@ StringAnalysis is a package for working with strings and text. It is a hard-fork
 
 ## What is new?
 This package brings several changes over `TextAnalysis.jl`:
- - Simpler API (less exported methods)
- - Improved test coverage
- - Parametrized many of the objects i.e. `DocumentTermMatrix`, `AbstractDocument` etc
- - Extended `DocumentMetadata` with new fields
- - `prepare` function for preprocessing `AbstractString`s
- - Many of the repetitive functions are now automatically generated (see [metadata.jl](https://github.com/zgornel/StringAnalysis.jl/blob/master/src/metadata.jl), [preprocessing.jl](https://github.com/zgornel/StringAnalysis.jl/blob/master/src/preprocessing.jl))
- - Re-factored the text preprocessing API
+ - Added the [Okapi BM25](https://en.wikipedia.org/wiki/Okapi_BM25) statistic
+ - Added dimensionality reduction with [Sparse random projections](https://en.wikipedia.org/wiki/Random_projection)
+ - Added co-occurence matrix
  - Improved latent semantic analysis (LSA)
- - `each_dtv`, `each_hash_dtv` iterators support vector element type specification
- - Added [Okapi BM25](https://en.wikipedia.org/wiki/Okapi_BM25) statistic
+ - Re-factored text preprocessing API (`prepare` and `strip_<things>` methods)
+ - Element type specification for `each_dtv`, `each_hash_dtv`, `DocumentTermMatrix`
+ - Extended `DocumentMetadata` fields
+ - Simpler API (less exported methods)
+ - Parametrized many of the objects i.e. `DocumentTermMatrix`, `AbstractDocument` etc
+ - Many of the repetitive functions are now automatically generated (see [metadata.jl](https://github.com/zgornel/StringAnalysis.jl/blob/master/src/metadata.jl), [preprocessing.jl](https://github.com/zgornel/StringAnalysis.jl/blob/master/src/preprocessing.jl))
+ - Improved test coverage
  - Many bugfixes and small extensions
 
 ## Installation

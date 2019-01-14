@@ -68,7 +68,7 @@ DocumentTermMatrix{T}(crps::Corpus, lex::AbstractDict) where T<:Real =
     DocumentTermMatrix{T}(crps, sort(collect(keys(lex))))
 
 DocumentTermMatrix(crps::Corpus, lex::AbstractDict) =
-    DocumentTermMatrix{DEFAULT_DTM_TYPE}(crps, sort(collect(keys(lex))))
+    DocumentTermMatrix{DEFAULT_DTM_TYPE}(crps, lex)
 
 DocumentTermMatrix{T}(crps::Corpus) where T<:Real = begin
     isempty(lexicon(crps)) && update_lexicon!(crps)

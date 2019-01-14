@@ -17,3 +17,5 @@ const DEFAULT_DTM_TYPE = Int  # can be anything <:Real
 const DEFAULT_NGRAM_COMPLEXITY = 1  # default ngram complexity
 const DEFAULT_CORPUS_SPARSITY = 0.05  # if a term is present in less docs of a corpus than this percent, it is sparse
 const DEFAULT_DOC_SPARSITY = 0.05  # if a term is present less than this percent in a document, it is sparse
+const BM25_KAPPA = 2  # default value for BM25 κ parameter
+const BM25_BETA = 0.75  # default value for BM25 β parameter

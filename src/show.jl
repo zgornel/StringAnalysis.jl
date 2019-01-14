@@ -5,7 +5,12 @@ show(io::IO, crps::Corpus) = print(io, "A Corpus with $(length(crps.documents)) 
 
 show(io::IO, dtm::DocumentTermMatrix{T}) where T = begin
     n, p = size(dtm.dtm)
-    println("A $(n)x$(p) DocumentTermMatrix{$T}")
+    println(io, "A $(n)x$(p) DocumentTermMatrix{$T}")
+end
+
+show(io::IO, coom::CooMatrix{T}) where T = begin
+    n, p = size(coom.coom)
+    println(io, "A $(n)x$(p) CooMatrix{$T}")
 end
 
 titleize(str::AbstractString) = begin

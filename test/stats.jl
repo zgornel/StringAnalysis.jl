@@ -49,6 +49,9 @@
     @test typeof(myweights) <: Matrix
     @test eltype(myweights) == typeof(1.0)
 
+    @test_throws MethodError tf!(DocumentTermMatrix(crps))
+    @test tf!(DocumentTermMatrix{T}(crps)) isa SparseMatrixCSC{T, Int}
+
     # TF-IDF
     # Terms are in alphabetical ordering
     correctweights = T.([1.19724  0.0       0.0      0.691224  0.57735
@@ -80,6 +83,9 @@
     @test typeof(myweights) <: Matrix
     @test eltype(myweights) == typeof(1.0)
 
+    @test_throws MethodError tf_idf!(DocumentTermMatrix(crps))
+    @test tf_idf!(DocumentTermMatrix{T}(crps)) isa SparseMatrixCSC{T, Int}
+
     # Terms are in alphabetical ordering
     correctweights = T.([1.08029  0.0       0.0      0.685309  0.542113
                          0.0      0.637042  1.10885  0.0       0.654905
@@ -108,4 +114,7 @@
     @test approx_eq(T.(myweights), correctweights, tol=max_tol)
     @test typeof(myweights) <: Matrix
     @test eltype(myweights) == typeof(1.0)
+
+    @test_throws MethodError bm_25!(DocumentTermMatrix(crps))
+    @test bm_25!(DocumentTermMatrix{T}(crps)) isa SparseMatrixCSC{T, Int}
 end
