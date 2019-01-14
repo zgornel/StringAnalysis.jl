@@ -21,7 +21,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "What is new?",
     "category": "section",
-    "text": "This package brings several changes over TextAnalysis.jl:Simpler API (less exported methods)\nImproved test coverage\nParametrized many of the objects i.e. DocumentTermMatrix, AbstractDocument etc\nExtended DocumentMetadata with new fields\nprepare function for preprocessing AbstractStrings\nMany of the repetitive functions are now automatically generated (see metadata.jl, preprocessing.jl)\nRe-factored the text preprocessing API\nImproved latent semantic analysis (LSA)\neach_dtv, each_hash_dtv iterators support vector element type specification\nAdded Okapi BM25 statistic\nMany bugfixes and small extensions"
+    "text": "This package brings several changes over TextAnalysis.jl:Added the Okapi BM25 statistic\nAdded dimensionality reduction with Sparse random projections\nAdded co-occurence matrix\nImproved latent semantic analysis (LSA)\nRe-factored text preprocessing API (prepare and strip_<things> methods)\nElement type specification for each_dtv, each_hash_dtv, DocumentTermMatrix\nExtended DocumentMetadata fields\nSimpler API (less exported methods)\nParametrized many of the objects i.e. DocumentTermMatrix, AbstractDocument etc\nMany of the repetitive functions are now automatically generated (see metadata.jl, preprocessing.jl)\nImproved test coverage\nMany bugfixes and small extensions"
 },
 
 {
@@ -145,6 +145,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "examples/#Co-occurrence-Matrix-(COOM)-1",
+    "page": "Usage examples",
+    "title": "Co-occurrence Matrix (COOM)",
+    "category": "section",
+    "text": "Another type of matrix that can be created is the co-occurence matrix (COOM) of the document or corpus. The elements of the matrix indicate how many times two words co-occur in a (sliding) word window of a given size. The COOM can be calculated for objects of type Corpus, AbstractDocument and AbstractString and the constructor supports specification of the window size, whether the counts should be normalized (to the distance between words in the window) as well as specific terms for which co-occurrences in the document should be calculated.Remarks:The sliding window used to count co-occurrences does not take into consideration sentence stops however, it does with documents i.e. does not span across documents\nThe co-occurrence matrices of the documents in a corpus are summed up when calculating the matrix for an entire corpus.\nThe co-occurrence matrix always has elements that are subtypes of AbstractFloat and cannot be calculated for NGramDocumentsC = CooMatrix(crps, window=1, normalize=false)  # fails\nsmallcrps = Corpus([sd, td])\nC = CooMatrix(smallcrps, window=1, normalize=false)  # worksThe actual size of the sliding window is 2 * window + 1, with the keyword argument window specifying how many words to consider to the left and right of the center oneFor a simple document, one should first preprocess the document and subsequently calculate the matrix:some_document = \"This is a document. In the document, there are two sentences.\";\nfiltered_document = prepare(some_document, strip_whitespace|strip_case|strip_punctuation)\nC = CooMatrix{Float32}(some_document, window=3)  # word distances matter\nMatrix(coom(C))One can also calculate the COOM corresponding to a reduced lexicon. The resulting matrix will be proportional to the size of the new lexicon and more sparse if the window size is small.C = CooMatrix(smallcrps, [\"this\", \"is\", \"a\"], window=1, normalize=false)\nC.column_indices\nMatrix(coom(C))"
+},
+
+{
     "location": "examples/#Dimensionality-reduction-1",
     "page": "Usage examples",
     "title": "Dimensionality reduction",
@@ -193,6 +201,22 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "api/#StringAnalysis.CooMatrix",
+    "page": "API Reference",
+    "title": "StringAnalysis.CooMatrix",
+    "category": "type",
+    "text": "Basic Co-occurrence Matrix (COOM) type.\n\nFields\n\ncoomm::SparseMatriCSC{T,Int} the actual COOM; elements represent\n\nco-occurrences of two terms within a given window\n\nterms::Vector{String} a list of terms that represent the lexicon of\n\nthe document or corpus\n\ncolumn_indices::Dict{String, Int} a map between the terms and the\n\ncolumns of the co-occurrence matrix\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#StringAnalysis.CooMatrix-Union{Tuple{T}, Tuple{Corpus,Array{String,1}}} where T<:AbstractFloat",
+    "page": "API Reference",
+    "title": "StringAnalysis.CooMatrix",
+    "category": "method",
+    "text": "CooMatrix{T}(crps::Corpus [,terms] [;window::Int=5, normalize::Bool=true])\n\nAuxiliary constructor(s) of the CooMatrix type. The type T has to be a subtype of AbstractFloat. The constructor(s) requires a corpus crps and a terms structure representing the lexicon of the corpus. The latter can be a Vector{String}, an AbstractDict (where the keys are the lexicon) or can be omitted, in which case the lexicon field of the corpus is used.\n\n\n\n\n\n"
+},
+
+{
     "location": "api/#StringAnalysis.DocumentTermMatrix",
     "page": "API Reference",
     "title": "StringAnalysis.DocumentTermMatrix",
@@ -230,6 +254,22 @@ var documenterSearchIndex = {"docs": [
     "title": "StringAnalysis.TextHashFunction",
     "category": "type",
     "text": "TextHashFunction(hash_function::Function, cardinality::Int)\n\nThe basic structure for performing text hashing: uses the hash_function to generate feature vectors of length cardinality.\n\nDetails\n\nThe hash trick is the use a hash function instead of a lexicon to determine the columns of a DocumentTermMatrix-like encoding of the data. To produce a DTM for a Corpus for which we do not have an existing lexicon, we need someway to map the terms from each document into column indices. We use the now standard \"Hash Trick\" in which we hash strings and then reduce the resulting integers modulo N, which defines the numbers of columns we want our DTM to have. This amounts to doing a non-linear dimensionality reduction with low probability that similar terms hash to the same dimension.\n\nTo make things easier, we wrap Julia\'s hash functions in a new type, TextHashFunction, which maintains information about the desired cardinality of the hashes.\n\nReferences:\n\nThe \"Hash Trick\" wiki page\nMoody, John 1989\n\nExamples\n\njulia> doc = StringDocument(\"this is a text\")\n       thf = TextHashFunction(hash, 13)\n       hash_dtv(doc, thf, Float16)\n13-element Array{Float16,1}:\n 1.0\n 1.0\n 0.0\n 0.0\n 0.0\n 0.0\n 0.0\n 2.0\n 0.0\n 0.0\n 0.0\n 0.0\n 0.0\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#StringAnalysis.coom-Tuple{CooMatrix}",
+    "page": "API Reference",
+    "title": "StringAnalysis.coom",
+    "category": "method",
+    "text": "coom(c::CooMatrix)\n\nAccess the co-occurrence matrix field coom of a CooMatrix c.\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#StringAnalysis.coom-Union{Tuple{Any}, Tuple{T}, Tuple{Any,Type{T}}} where T<:AbstractFloat",
+    "page": "API Reference",
+    "title": "StringAnalysis.coom",
+    "category": "method",
+    "text": "coom(entity, eltype::Type{T}=DEFAULT_FLOAT_TYPE [;window::Int=5])\n\nAccess the co-occurrence matrix of the CooMatrix associated with the entity. The CooMatrix{T} will first have to be created in order for the actual matrix to be accessed.\n\n\n\n\n\n"
 },
 
 {
@@ -542,6 +582,14 @@ var documenterSearchIndex = {"docs": [
     "title": "Base.summary",
     "category": "method",
     "text": "summary(crps)\n\nShows information about the corpus crps.\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#StringAnalysis.coo_matrix-Union{Tuple{T}, Tuple{Type{T},Array{#s12,1} where #s12<:AbstractString,Dict{#s51,Int64} where #s51<:AbstractString,Int64}, Tuple{Type{T},Array{#s52,1} where #s52<:AbstractString,Dict{#s53,Int64} where #s53<:AbstractString,Int64,Bool}} where T<:AbstractFloat",
+    "page": "API Reference",
+    "title": "StringAnalysis.coo_matrix",
+    "category": "method",
+    "text": "coo_matrix(::Type{T}, doc::Vector{AbstractString}, vocab::Dict{AbstractString, Int}, window::Int, normalize::Bool)\n\nBasic low-level function that calculates the co-occurence matrix of a document. Returns a sparse co-occurence matrix sized n × n where n = length(vocab) with elements of type T. The document doc is represented by a vector of its terms (in order). The keywordswindowandnormalize` indicate the size of the sliding word window in which co-occurrences are counted and whether to normalize of not the counts by the distance between word positions.\n\nExamples\n\njulia> using StringAnalysis\n       doc = StringDocument(\"This is a text about an apple. There are many texts about apples.\")\n       docv = tokenize(text(doc))\n	   vocab = Dict(\"This\"=>1, \"is\"=>2, \"apple.\"=>3)\n	   StringAnalysis.coo_matrix(Float16, docv, vocab, 5, true)\n3×3 SparseArrays.SparseMatrixCSC{Float16,Int64} with 4 stored entries:\n  [2, 1]  =  2.0\n  [1, 2]  =  2.0\n  [3, 2]  =  0.3999\n  [2, 3]  =  0.3999\n\n\n\n\n\n"
 },
 
 {
