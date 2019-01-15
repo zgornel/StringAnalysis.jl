@@ -19,7 +19,7 @@
 #                     by Corneliu Cofaru, 2018
 
 """
-A Julia library for working with text hard-forked from TextAnalysis.jl.
+A Julia library for working with text, hard-forked from TextAnalysis.jl.
 """
 module StringAnalysis
     # Using

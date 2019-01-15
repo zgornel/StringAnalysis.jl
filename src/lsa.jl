@@ -13,9 +13,7 @@ convertible to type `T`.
   * `vocab_hash::Dict{S,H}` a word to index in word embeddings matrix mapping
   * `Σinv::A` inverse of the singular value matrix
   * `Vᵀ::A` transpose of the word embedding matrix
-  * `stats::Symbol` the statistical measure to use for word importances in documents
-Available values are: `:tf` (term frequency), `:tfidf` (default, term frequency -
-inverse document frequency) and `:bm25` (Okapi BM25)
+  * `stats::Symbol` the statistical measure to use for word importances in documents. Available values are: `:count` (term count), `:tf` (term frequency), `:tfidf` (default, term frequency-inverse document frequency) and `:bm25` (Okapi BM25)
   * `idf::Vector{T}` inverse document frequencies for the words in the vocabulary
   * `nwords::T` averge number of words in a document
   * `κ::Int` the `κ` parameter of the BM25 statistic
@@ -245,14 +243,16 @@ embed_document(lm::LSAModel{S,T,A,H}, doc::Vector{S2}) where {S,T,A,H,S2<:Abstra
 function embed_document(lm::LSAModel{S,T,A,H}, dtv::AbstractVector{T}) where {S,T,A,H}
     words_in_document = sum(dtv)
     # Calculate document vector
-    tf = sqrt.(dtv ./ max(words_in_document, one(T)))
-    if lm.stats == :tf
-        v = tf
+    if lm.stats == :count
+        v = dtv
+    elseif lm.stats == :tf
+        v = sqrt.(dtv ./ max(words_in_document, one(T)))
     elseif lm.stats == :tfidf
-        v = tf .* lm.idf
+        v = sqrt.(dtv ./ max(words_in_document, one(T))) .* lm.idf
     elseif lm.stats == :bm25
         k = T(lm.κ)
         b = T(lm.β)
+        tf = sqrt.(dtv ./ max(words_in_document, one(T)))
         v = lm.idf .* ((k + 1) .* tf) ./
                        (k * (one(T) - b + b * words_in_document/lm.nwords) .+ tf)
     end
@@ -266,7 +266,9 @@ end
 function embed_document(lm::LSAModel{S,T,A,H}, dtm::DocumentTermMatrix{T}) where {S,T,A,H}
     n = size(dtm.dtm,1)
     k = size(lm.Vᵀ, 1)
-    if lm.stats == :tf
+    if lm.stats == :count
+        X = dtm.dtm
+    elseif lm.stats == :tf
         X = tf(dtm)
     elseif lm.stats == :tfidf
         X = tf_idf(dtm)

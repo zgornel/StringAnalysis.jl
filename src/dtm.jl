@@ -31,7 +31,7 @@ end
 Auxiliary constructor(s) of the `DocumentTermMatrix` type. The type `T` has to be
 a subtype of `Real`. The constructor(s) requires a corpus `crps` and
 a `terms` structure representing the lexicon of the corpus. The latter
-can be a `Vector{String}`, an `AbstractDict` where the keys are the lexicon or can
+can be a `Vector{String}`, an `AbstractDict` where the keys are the lexicon, or can
 be missing, in which case the `lexicon` field of the corpus is used.
 """
 function DocumentTermMatrix{T}(crps::Corpus, terms::Vector{String}) where T<:Real

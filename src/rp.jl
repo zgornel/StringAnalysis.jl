@@ -13,9 +13,7 @@ based on the effects of the
   * `vocab::Vector{S}` a vector with all the words in the corpus
   * `vocab_hash::Dict{S,H}` a word to index in the random projection maatrix mapping
   * `R::A` the random projection matrix
-  * `stats::Symbol` the statistical measure to use for word importances in documents.
-  Available values are: `:tf` (term frequency), `:tfidf` (default, term frequency -
-  inverse document frequency) and `:bm25` (Okapi BM25)
+  * `stats::Symbol` the statistical measure to use for word importances in documents. Available values are: `:count` (term count), `:tf` (term frequency), `:tfidf` (default, term frequency-inverse document frequency) and `:bm25` (Okapi BM25)
   * `idf::Vector{T}` inverse document frequencies for the words in the vocabulary
   * `nwords::T` averge number of words in a document
   * `κ::Int` the `κ` parameter of the BM25 statistic
@@ -77,28 +75,40 @@ Builds a `m`×`k` sparse random projection matrix with elements of type `T` and
 a non-zero element frequency of `density`. `m` and `k` are the input and output
 dimensionalities.
 
+# Matrix Probabilities
 If we note `s = 1 / density`, the components of the random matrix are drawn from:
 - `-sqrt(s) / sqrt(k)` with probability `1/2s`
 - `0` with probability `1 - 1/s`
 - `+sqrt(s) / sqrt(k)`   with probability `1/2s`
+
+# No projection hack
+If `k<=0` no projection is performed and the function returns an identity matrix
+sized `m`×`m` with elements of type `T`. This is useful if one does not want to
+embed documents but rather calculate term frequencies, BM25 and other statistical
+indicators (similar to `dtv`).
 """
 function random_projection_matrix(m::Int, k::Int, eltype::Type{T}, density::Float64
                                  ) where T<:AbstractFloat
-      R = spzeros(T, k, m)
-      s = 1/density
-      is_pos = 0.0
-      is_neg = 0.0
-      v = sqrt(s/k)
-      pmin = 1/(2*s)
-      for j in 1:m
-          for i in 1:k
-              p = rand()
-              sign = 1.0 * (p < pmin) - 1.0 * (p > 1 - pmin)
-              R[i,j] = sign * v
-          end
-      end
-      return R
-  end
+    if k <= 0
+        # No projection, return the identity matrix
+        R = spdiagm(0 => ones(T, m))
+    else
+        R = spzeros(T, k, m)
+        s = 1/density
+        is_pos = 0.0
+        is_neg = 0.0
+        v = sqrt(s/k)
+        pmin = 1/(2*s)
+        for j in 1:m
+            for i in 1:k
+                p = rand()
+                sign = 1.0 * (p < pmin) - 1.0 * (p > 1 - pmin)
+                R[i,j] = sign * v
+            end
+        end
+    end
+    return R
+end
 
 
 function Base.show(io::IO, rpm::RPModel{S,T,A,H}) where {S,T,A,H}
@@ -214,14 +224,16 @@ embed_document(rpm::RPModel{S,T,A,H}, doc::Vector{S2}) where {S,T,A,H,S2<:Abstra
 function embed_document(rpm::RPModel{S,T,A,H}, dtv::Vector{T}) where {S,T,A,H}
     words_in_document = sum(dtv)
     # Calculate document vector
-    tf = sqrt.(dtv ./ max(words_in_document, one(T)))
-    if rpm.stats == :tf
-        v = tf
+    if rpm.stats == :count
+        v = dtv
+    elseif rpm.stats == :tf
+        v = sqrt.(dtv ./ max(words_in_document, one(T)))
     elseif rpm.stats == :tfidf
-        v = tf .* rpm.idf
+        v = sqrt.(dtv ./ max(words_in_document, one(T))) .* rpm.idf
     elseif rpm.stats == :bm25
         k = T(rpm.κ)
         b = T(rpm.β)
+        tf = sqrt.(dtv ./ max(words_in_document, one(T)))
         v = rpm.idf .* ((k + 1) .* tf) ./
                        (k * (one(T) - b + b * words_in_document/rpm.nwords) .+ tf)
     end
@@ -234,7 +246,9 @@ end
 function embed_document(rpm::RPModel{S,T,A,H}, dtm::DocumentTermMatrix{T}) where {S,T,A,H}
     n = size(dtm.dtm,1)
     k = size(rpm.R, 1)
-    if rpm.stats == :tf
+    if rpm.stats == :count
+        X = dtm.dtm
+    elseif rpm.stats == :tf
         X = tf(dtm)
     elseif rpm.stats == :tfidf
         X = tf_idf(dtm)

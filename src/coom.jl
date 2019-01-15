@@ -65,12 +65,12 @@ end
 
 
 """
-    CooMatrix{T}(crps::Corpus [,terms] [;window::Int=5, normalize::Bool=true])
+    CooMatrix{T}(crps::Corpus [,terms] [;window=5, normalize=true])
 
 Auxiliary constructor(s) of the `CooMatrix` type. The type `T` has to be
 a subtype of `AbstractFloat`. The constructor(s) requires a corpus `crps` and
 a `terms` structure representing the lexicon of the corpus. The latter
-can be a `Vector{String}`, an `AbstractDict` (where the keys are the lexicon)
+can be a `Vector{String}`, an `AbstractDict` where the keys are the lexicon,
 or can be omitted, in which case the `lexicon` field of the corpus is used.
 """
 function CooMatrix{T}(crps::Corpus,
@@ -140,7 +140,7 @@ Access the co-occurrence matrix field `coom` of a `CooMatrix` `c`.
 coom(c::CooMatrix) = c.coom
 
 """
-    coom(entity, eltype::Type{T}=DEFAULT_FLOAT_TYPE [;window::Int=5])
+    coom(entity, eltype=DEFAULT_FLOAT_TYPE [;window=5])
 
 Access the co-occurrence matrix of the `CooMatrix` associated
 with the `entity`. The `CooMatrix{T}` will first have to
