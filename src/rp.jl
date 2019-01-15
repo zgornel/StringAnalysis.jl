@@ -13,9 +13,7 @@ based on the effects of the
   * `vocab::Vector{S}` a vector with all the words in the corpus
   * `vocab_hash::Dict{S,H}` a word to index in the random projection maatrix mapping
   * `R::A` the random projection matrix
-  * `stats::Symbol` the statistical measure to use for word importances in documents.
-  Available values are: `:tf` (term frequency), `:tfidf` (default, term frequency -
-  inverse document frequency) and `:bm25` (Okapi BM25)
+  * `stats::Symbol` the statistical measure to use for word importances in documents. Available values are: `:count` (term count), `:tf` (term frequency), `:tfidf` (default, term frequency-inverse document frequency) and `:bm25` (Okapi BM25)
   * `idf::Vector{T}` inverse document frequencies for the words in the vocabulary
   * `nwords::T` averge number of words in a document
   * `κ::Int` the `κ` parameter of the BM25 statistic
@@ -214,14 +212,16 @@ embed_document(rpm::RPModel{S,T,A,H}, doc::Vector{S2}) where {S,T,A,H,S2<:Abstra
 function embed_document(rpm::RPModel{S,T,A,H}, dtv::Vector{T}) where {S,T,A,H}
     words_in_document = sum(dtv)
     # Calculate document vector
-    tf = sqrt.(dtv ./ max(words_in_document, one(T)))
-    if rpm.stats == :tf
-        v = tf
+    if rpm.stats == :count
+        v = dtv
+    elseif rpm.stats == :tf
+        v = sqrt.(dtv ./ max(words_in_document, one(T)))
     elseif rpm.stats == :tfidf
-        v = tf .* rpm.idf
+        v = sqrt.(dtv ./ max(words_in_document, one(T))) .* rpm.idf
     elseif rpm.stats == :bm25
         k = T(rpm.κ)
         b = T(rpm.β)
+        tf = sqrt.(dtv ./ max(words_in_document, one(T)))
         v = rpm.idf .* ((k + 1) .* tf) ./
                        (k * (one(T) - b + b * words_in_document/rpm.nwords) .+ tf)
     end
@@ -234,7 +234,9 @@ end
 function embed_document(rpm::RPModel{S,T,A,H}, dtm::DocumentTermMatrix{T}) where {S,T,A,H}
     n = size(dtm.dtm,1)
     k = size(rpm.R, 1)
-    if rpm.stats == :tf
+    if rpm.stats == :count
+        X = dtm.dtm
+    elseif rpm.stats == :tf
         X = tf(dtm)
     elseif rpm.stats == :tfidf
         X = tf_idf(dtm)

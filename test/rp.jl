@@ -16,7 +16,7 @@
     # Retrieval
     query = StringDocument("Apples and an exotic fruit.")
     for k in [1, 3]
-        for stats in [:tf, :tfidf, :bm25]
+        for stats in [:count, :tf, :tfidf, :bm25]
             for T in [Float16, Float32, Float64]
                 dtm = DocumentTermMatrix{T}(crps, lex)
                 model = rp(dtm, k=k, stats=stats)
