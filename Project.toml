@@ -1,7 +1,7 @@
 name = "StringAnalysis"
 uuid = "f2e5b97c-ed87-11e8-3fa8-a300efcc83e4"
 authors = ["Corneliu Cofaru <cornel@oxoaresearch.com>"]
-version = "0.3.0"
+version = "0.3.1"
 
 [deps]
 BinaryProvider = "b99e7846-7c00-51b0-8f62-c81ae34c0232"

@@ -1,5 +1,11 @@
 ## StringAnalysis Release Notes
 
+v0.3.1
+------
+ - Added :count option to LSA, RP models
+ - No projection hack for RP models
+ - More documentation
+
 v0.3.0
 ------
  - Added Co-occurrence matrix
