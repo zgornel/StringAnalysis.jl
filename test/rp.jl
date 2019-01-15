@@ -15,14 +15,18 @@
     n = length(crps)
     # Retrieval
     query = StringDocument("Apples and an exotic fruit.")
-    for k in [1, 3]
+    for k in [0, 1, 3]
         for stats in [:count, :tf, :tfidf, :bm25]
             for T in [Float16, Float32, Float64]
                 dtm = DocumentTermMatrix{T}(crps, lex)
                 model = rp(dtm, k=k, stats=stats)
                 @test model isa RPModel{String, T, SparseMatrixCSC{T,Int}, Int}
                 @test size(model.R, 2) == m
-                @test size(model.R, 1) == k
+                if k > 0
+                    @test size(model.R, 1) == k
+                else
+                    @test size(model.R, 1) == m  # no projection occurs
+                end
                 idxs, corrs = cosine(model, dtm, query)
                 @test length(idxs) == length(corrs) == length(crps)
                 sim = similarity(model, crps[rand(1:n)], query)

@@ -255,6 +255,14 @@ new_model = load_rp_model(file, Float64)  # change element type
 rm(file)
 ```
 
+### No projection hack
+As previously noted, before projection, the DTV is calculated according to the value of the `stats` keyword argument value.  The vector can composed of term counts, frequencies and so on and is more generic than the output of the `dtv` function which yields only term counts. It is useful to be able to calculate and output these vectors without projecting them into the lower dimensional space. This can be achieved by simply providing a negative or zero value to the model parameter `k`. In the background, the random projection matrix of the model is replaced by the identity matrix.
+```@repl index
+model = RPModel(M, k=0, stats=:bm25)
+embed_document(model, crps[1])  # normalized BM25 document vector
+embed_document(model, crps)*embed_document(model, crps[1])  # intra-document similarity
+```
+
 ## Semantic Analysis
 
 The semantic analysis of a corpus relates to the task of building structures that approximate the concepts present in its documents. It does not necessarily involve prior semantic understanding of the documents [(Wikipedia)](https://en.wikipedia.org/wiki/Semantic_analysis_(machine_learning)).
