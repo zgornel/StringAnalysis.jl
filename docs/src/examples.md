@@ -49,12 +49,12 @@ docs = [sd, nd, td]
 crps = Corpus(docs)
 crps.documents
 ```
-The corpus can be 'standardized' to hold the same type of document.
+The corpus can be 'standardized' to hold the same type of document,
 ```@repl index
 standardize!(crps, NGramDocument{String})
 crps.documents
 ```
-however, the corpus has to created from an `AbstractDocument` document vector for the standardization to work (`AbstractDocument{T}` vectors are converted to a `Union` of all documents types parametrized by `T` during `Corpus` construction):
+however, the corpus has to be created from an `AbstractDocument` document vector for the standardization to work (`AbstractDocument{T}` vectors are converted to a `Union` of all documents types parametrized by `T` during `Corpus` construction):
 ```@repl index
 doc1 = StringDocument("one");
 doc2 = StringDocument("two");
@@ -82,12 +82,12 @@ ngrams(doc4)
 ```
 
 ## The lexicon and inverse index
-The `Corpus` object offers the ability of creating a [lexicon](https://en.wikipedia.org/wiki/Lexicon) and an [inverse index](https://en.wikipedia.org/wiki/Inverted_index) for the documents present. These are not created when the Corpus is created
+The `Corpus` object offers the ability of creating a [lexicon](https://en.wikipedia.org/wiki/Lexicon) and an [inverse index](https://en.wikipedia.org/wiki/Inverted_index) for the documents present. These are not automatically created when the Corpus is created,
 ```@repl index
 crps.lexicon
 crps.inverse_index
 ```
-but instead have to be explicitly created:
+but instead have to be explicitly built:
 ```@repl index
 update_lexicon!(crps)
 crps.lexicon
@@ -96,7 +96,7 @@ crps.inverse_index
 ```
 
 ## Preprocessing
-The text preprocessing mainly consists of the `prepare` and `prepare!` functions and preprocessing flags which start mostly with `strip_` except for `stem_words`. The preprocessing function `prepare` works on `AbstractDocument`, `Corpus` and `AbstractString` types, returning new objects; `prepare!` works only on `AbstractDocument`s and `Corpus` as the strings are immutable.
+The text preprocessing mainly consists of the `prepare` and `prepare!` functions and preprocessing flags which start mostly with `strip_` except for `stem_words`. The preprocessing function `prepare` works on `AbstractDocument`, `Corpus` and `AbstractString` types, returning new objects; `prepare!` works only on `AbstractDocument`s and `Corpus` as strings are immutable.
 ```@repl index
 str="This is a text containing words, some more words, a bit of punctuation and 1 number...";
 sd = StringDocument(str);
@@ -107,7 +107,7 @@ text(sd)
 ```
 More extensive preprocessing examples can be viewed in `test/preprocessing.jl`.
 
-One can strip parts of languages i.e. prepositions, articles in languages other than English (support provided from [Languages.jl](https://github.com/JuliaText/Languages.jl)):
+One can strip parts of speech i.e. prepositions, articles, in languages other than English (support provided from [Languages.jl](https://github.com/JuliaText/Languages.jl)):
 ```@repl index
 using Languages
 it = StringDocument("Quest'e un piccolo esempio di come si puo fare l'analisi");
@@ -119,7 +119,7 @@ it.text
 ## Features
 
 ### Document Term Matrix (DTM)
-If a lexicon is present in the corpus, a [document term matrix (DTM)](https://en.wikipedia.org/wiki/Document-term_matrix) can be created. The DTM acts as a basis for word-document statistics, allowing for the representation of documents as numerical vectors. The DTM is created by calling the object constructor using as argument the corpus
+If a lexicon is present in the corpus, a [document term matrix (DTM)](https://en.wikipedia.org/wiki/Document-term_matrix) can be created. The DTM acts as a basis for word-document statistics, allowing for the representation of documents as numerical vectors. The DTM is created from a `Corpus` by calling the constructor
 ```@repl index
 M = DocumentTermMatrix(crps)
 typeof(M)
@@ -156,7 +156,7 @@ The default `Corpus` cardinality is specified by the constant `DEFAULT_CARDINALI
 ### TF, TF-IDF, BM25
 From the DTM, three more document-word statistics can be constructed: the [term frequency](https://en.wikipedia.org/wiki/Tf%E2%80%93idf#Term_frequency_2), the [tf-idf (term frequency - inverse document frequency)](https://en.wikipedia.org/wiki/Tf%E2%80%93idf#Term_frequency%E2%80%93Inverse_document_frequency) and [Okapi BM25](https://en.wikipedia.org/wiki/Okapi_BM25) using the `tf`, `tf!`, `tf_idf`, `tf_idf!`, `bm_25` and `bm_25!` functions respectively. Their usage is very similar yet there exist several approaches one can take to constructing the output.
 
-The following examples with use the term frequency i.e. `tf` and `tf!`. When calling the functions that end without a `!`, which do not require the specification of an output matrix, one does not control the output's element type. The default output type is defined by the constant `DEFAULT_FLOAT_TYPE = eltype(1.0)`:
+The following examples use the term frequency i.e. `tf` and `tf!` functions only. When calling the functions that end without a `!`, which do not require the specification of an output matrix, one does not control the output's element type. The default output type is defined by the constant `DEFAULT_FLOAT_TYPE = eltype(1.0)`:
 ```@repl index
 M = DocumentTermMatrix(crps);
 tfm = tf(M);
@@ -189,14 +189,14 @@ Matrix(tfm)
 ```
 
 ### Co-occurrence Matrix (COOM)
-Another type of matrix that can be created is the [co-occurence matrix (COOM)](https://en.wikipedia.org/wiki/Co-occurrence_matrix) of the document or corpus. The elements of the matrix indicate how many times two words co-occur in a (sliding) word window of a given size. The COOM can be calculated for objects of type `Corpus`, `AbstractDocument` and `AbstractString` and the constructor supports specification of the window size, whether the counts should be normalized (to the distance between words in the window) as well as specific terms for which co-occurrences in the document should be calculated.
+Another type of feature matrix that can be created is the [co-occurence matrix (COOM)](https://en.wikipedia.org/wiki/Co-occurrence_matrix) of the document or corpus. The elements of the matrix indicate how many times two words co-occur in a (sliding) word window of a given size. The COOM can be calculated for objects of type `Corpus`, `AbstractDocument` (with the exception of `NGramDocument` since order is word order is lost) and `AbstractString`. The constructor supports specification of the window size, whether the counts should be normalized (to the distance between words in the window) as well as specific terms for which co-occurrences in the document should be calculated.
 
 **Remarks**:
   - The sliding window used to count co-occurrences does not take into consideration sentence stops however, it does with documents i.e. does not span across documents
-  - The co-occurrence matrices of the documents in a corpus are summed up when calculating the matrix for an entire corpus.
+  - The co-occurrence matrices of the documents in a corpus are summed up when calculating the matrix for an entire corpus
   - The co-occurrence matrix always has elements that are subtypes of `AbstractFloat` and cannot be calculated for `NGramDocument`s
 ```@repl index
-C = CooMatrix(crps, window=1, normalize=false)  # fails
+C = CooMatrix(crps, window=1, normalize=false)  # fails, documents are NGramDocument
 smallcrps = Corpus([sd, td])
 C = CooMatrix(smallcrps, window=1, normalize=false)  # works
 ```
