@@ -14,13 +14,13 @@
     n = length(crps)
     # Retrieval
     query = StringDocument("Apples and an exotic fruit.")
-    for k in [1, 3]
+    for k in [1, 3, 100]
         for stats in [:count, :tf, :tfidf, :bm25]
             for T in [Float32, Float64]
                 dtm = DocumentTermMatrix{T}(crps, lex)
                 model = lsa(dtm, k=k, stats=stats)
                 @test model isa LSAModel{String, T, SparseMatrixCSC{T,Int}, Int}
-                @test size(model.Σinv, 1) == k
+                @test size(model.Σinv, 1) == min(k, n)
                 idxs, corrs = cosine(model, dtm, query)
                 @test length(idxs) == length(corrs) == length(crps)
                 sim = similarity(model, crps[rand(1:n)], query)

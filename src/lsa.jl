@@ -94,13 +94,12 @@ function LSAModel(dtm::DocumentTermMatrix{T};
                   β::Float64=BM25_BETA
                  ) where T<:AbstractFloat
     n, p = size(dtm.dtm)
+    k = clamp(k, 1, min(k, n))
     zeroval = zero(T)
     minval = T(tol)
     # Checks
     length(dtm.terms) == p ||
         throw(DimensionMismatch("Dimensions inside dtm are inconsistent."))
-    k > n &&
-        @warn "k can be at most $n; using k=$n"
     if !(stats in [:count, :tf, :tfidf, :bm25])
         @warn "stats has to be either :tf, :tfidf or :bm25; defaulting to :tfidf"
         stats = :tfidf
