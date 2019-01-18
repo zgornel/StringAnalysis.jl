@@ -49,7 +49,7 @@
     @test eltype(U) == T
     @test eltype(embed_document(model, crps[1])) == T
     for i in 1:n
-        @test all(U[i,:] .≈ embed_document(model, crps[i]))
+        @test all(U[:,i] .≈ embed_document(model, crps[i]))
     end
     # Index, Similarity
     idx = 2

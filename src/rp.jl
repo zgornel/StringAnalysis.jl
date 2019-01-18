@@ -42,22 +42,22 @@ function RPModel(dtm::DocumentTermMatrix{T};
                  κ::Int=BM25_KAPPA,
                  β::Float64=BM25_BETA
                 ) where T<:AbstractFloat
-    n, m = size(dtm.dtm)
+    m, n = size(dtm.dtm)
     zeroval = zero(T)
     # Checks
-    length(dtm.terms) == m ||
+    length(dtm.terms) != m &&
         throw(DimensionMismatch("Dimensions inside dtm are inconsistent."))
     if !(stats in [:count, :tf, :tfidf, :bm25])
         @warn "stats has to be either :tf, :tfidf or :bm25; defaulting to :tfidf"
         stats = :tfidf
     end
     # Calculate inverse document frequency, mean document size
-    documents_containing_term = vec(sum(dtm.dtm .> 0, dims=1)) .+ one(T)
+    documents_containing_term = vec(sum(dtm.dtm .> 0, dims=2)) .+ one(T)
     idf = log.(n ./ documents_containing_term) .+ one(T)
-    nwords = mean(sum(dtm.dtm, dims=2))
-    R = random_projection_matrix(m, k, T, density)
+    nwords = mean(sum(dtm.dtm, dims=1))
+    R = random_projection_matrix(k, m, T, density)
     # Return the model
-    return RPModel(dtm.terms, dtm.column_indices, R,
+    return RPModel(dtm.terms, dtm.row_indices, R,
                    stats, idf, nwords, κ, β)
 end
 
@@ -69,10 +69,10 @@ end
 
 
 """
-    random_projection_matrix(m::Int, k::Int, eltype::Type{T<:AbstractFloat}, density::Float64)
+    random_projection_matrix(k::Int, m::Int, eltype::Type{T<:AbstractFloat}, density::Float64)
 
-Builds a `m`×`k` sparse random projection matrix with elements of type `T` and
-a non-zero element frequency of `density`. `m` and `k` are the input and output
+Builds a `k`×`m` sparse random projection matrix with elements of type `T` and
+a non-zero element frequency of `density`. `k` and `m` are the output and input
 dimensionalities.
 
 # Matrix Probabilities
@@ -87,7 +87,7 @@ sized `m`×`m` with elements of type `T`. This is useful if one does not want to
 embed documents but rather calculate term frequencies, BM25 and other statistical
 indicators (similar to `dtv`).
 """
-function random_projection_matrix(m::Int, k::Int, eltype::Type{T}, density::Float64
+function random_projection_matrix(k::Int, m::Int, eltype::Type{T}, density::Float64
                                  ) where T<:AbstractFloat
     if k <= 0
         # No projection, return the identity matrix
@@ -99,7 +99,7 @@ function random_projection_matrix(m::Int, k::Int, eltype::Type{T}, density::Floa
         is_neg = 0.0
         v = sqrt(s/k)
         pmin = 1/(2*s)
-        for j in 1:m
+        @inbounds for j in 1:m
             for i in 1:k
                 p = rand()
                 sign = 1.0 * (p < pmin) - 1.0 * (p > 1 - pmin)
@@ -126,7 +126,7 @@ with `m` words in the lexicon. The model does not store the corpus or DTM docume
 just the projection matrix. Use `?RPModel` for more details.
 """
 function rp(dtm::DocumentTermMatrix{T};
-            k::Int=size(dtm.dtm, 2),
+            k::Int=size(dtm.dtm, 1),
             density::Float64=1/sqrt(k),
             stats::Symbol=:tfidf,
             κ::Int=BM25_KAPPA,
@@ -255,8 +255,8 @@ function embed_document(rpm::RPModel{S,T,A,H}, dtm::DocumentTermMatrix{T}) where
     elseif rpm.stats == :bm25
         X = bm_25(dtm, κ=rpm.κ, β=rpm.β)
     end
-    U = X * rpm.R'
-    U ./= (sqrt.(sum(U.^2, dims=2)) .+ eps(T))
+    U = rpm.R * X
+    U ./= (sqrt.(sum(U.^2, dims=1)) .+ eps(T))
     return U
 end
 

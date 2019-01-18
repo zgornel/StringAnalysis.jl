@@ -14,7 +14,7 @@
     n = length(crps)
     # Retrieval
     query = StringDocument("Apples and an exotic fruit.")
-    for k in [1, 3, 100]
+    for k in [1, 6]
         for stats in [:count, :tf, :tfidf, :bm25]
             for T in [Float32, Float64]
                 dtm = DocumentTermMatrix{T}(crps, lex)
@@ -39,17 +39,17 @@
     @test size(model) == (length(crps.lexicon), K)
     # Document, corpus embedding
     dtm = DocumentTermMatrix{T}(crps, lex)
-    U = Matrix(embed_document(model, crps))
-    @test eltype(U) == T
+    V = Matrix(embed_document(model, crps))
+    @test eltype(V) == T
     @test eltype(embed_document(model, crps[1])) == T
     for i in 1:n
-        @test all(U[i,:] .≈ embed_document(model, crps[i]))
+        @test all(V[:,i] .≈ embed_document(model, crps[i]))
     end
     # Index, Similarity
     idx = 2
     word = model.vocab[idx]
     @test index(model, word) == model.vocab_hash[word]
-    @test get_vector(model, word) == model.Vᵀ[:, idx]
+    @test get_vector(model, word) == model.Uᵀ[:, idx]
     @test similarity(model, crps[1], crps[2]) isa T
     @test similarity(model, crps[1], crps[2]) == similarity(model, crps[2], crps[1])
     @test_throws ErrorException LSAModel(DocumentTermMatrix{Int}(crps), k=K)
@@ -69,7 +69,7 @@
     # Model 1
     loaded_model_1 = load_lsa_model(file, Float64, sparse=true)
     @test loaded_model_1 isa LSAModel{String, Float64, SparseMatrixCSC{Float64, Int}, Int}
-    @test all(loaded_model_1.Vᵀ .≈ sparse(model.Vᵀ))
+    @test all(loaded_model_1.Uᵀ .≈ sparse(model.Uᵀ))
     @test all(loaded_model_1.Σinv .≈ sparse(model.Σinv))
     @test loaded_model_1.vocab == model.vocab
     @test loaded_model_1.vocab_hash == model.vocab_hash
@@ -82,7 +82,7 @@
     # Model 2
     loaded_model_2 = load_lsa_model(file, Float32, sparse=false)
     @test loaded_model_2 isa LSAModel{String, Float32, Matrix{Float32}, Int}
-    @test all(loaded_model_2.Vᵀ .≈ model.Vᵀ)
+    @test all(loaded_model_2.Uᵀ .≈ model.Uᵀ)
     @test all(loaded_model_2.Σinv .≈ model.Σinv)
     @test loaded_model_2.vocab == model.vocab
     @test loaded_model_2.vocab_hash == model.vocab_hash

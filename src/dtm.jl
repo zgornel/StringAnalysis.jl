@@ -7,7 +7,7 @@ and columns represent documents
   * `terms::Vector{String}` a list of terms that represent the lexicon of
 the corpus associated with the DTM
   * `row_indices::Dict{String, Int}` a map between the `terms` and the
-columns of the `dtm`
+rows of the `dtm`
 """
 mutable struct DocumentTermMatrix{T}
     dtm::SparseMatrixCSC{T, Int}
