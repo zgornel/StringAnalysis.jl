@@ -24,7 +24,7 @@ function tf!(dtm::SparseMatrixCSC{T}, tf::SparseMatrixCSC{F}
     # TF tells us what proportion of a document is defined by a term
     words_in_documents = sum(dtm, dims=1)
     p, n = size(dtm)
-    for i = 1:n
+    @inbounds for i = 1:n
        for j in nzrange(dtm, i)
           tfvals[j] = sqrt.(dtmvals[j] / max(words_in_documents[i], one(T)))
        end
@@ -51,12 +51,12 @@ function tf_idf!(dtm::AbstractMatrix{T}, tfidf::AbstractMatrix{F}
     @assert size(dtm) == size(tfidf)
     p, n = size(dtm)
     # TF tells us what proportion of a document is defined by a term
-    tf!(dtm, tfidf)
     # IDF tells us how rare a term is in the corpus
     documents_containing_term = vec(sum(dtm .> 0, dims=2)) .+ one(T)
     idf = log.(n ./ documents_containing_term) .+ one(F)
     # TF-IDF is the product of TF and IDF
-    tfidf = tfidf .* idf # each idf element gets multiplied with rows of tdidf
+    tf!(dtm, tfidf)
+    tfidf .*= idf # each idf element gets multiplied with rows of tdidf
     return tfidf
 end
 
@@ -108,13 +108,13 @@ function bm_25!(dtm::AbstractMatrix{T},
     p, n = size(dtm)
     oneval = one(F)
     # TF tells us what proportion of a document is defined by a term
-    tf!(dtm, bm25)
     words_in_documents = F.(sum(dtm, dims=1))
     ln = words_in_documents./mean(words_in_documents)
     # IDF tells us how rare a term is in the corpus
     documents_containing_term = vec(sum(dtm .> 0, dims=2)) .+ one(T)
     idf = log.(n ./ documents_containing_term) .+ oneval
     # BM25 is the product of IDF and a fudged TF
+    tf!(dtm, bm25)
     @inbounds @simd for i in 1:n
         for j in 1:p
             bm25[j, i] = idf[j] *

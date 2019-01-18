@@ -40,13 +40,13 @@
     @test approx_eq(myweights, correctweights, tol=max_tol)
     @test typeof(myweights) <: Matrix
 
-    myweights = float(dtm(m));
+    myweights = float(dtm(crps));
     tf!(myweights)
     @test approx_eq(T.(myweights), correctweights, tol=max_tol)
     @test typeof(myweights) <: SparseMatrixCSC
     @test eltype(myweights) == typeof(1.0)
 
-    myweights = float(Matrix(dtm(m)));
+    myweights = float(Matrix(dtm(crps)));
     tf!(myweights)
     @test approx_eq(T.(myweights), correctweights, tol=max_tol)
     @test typeof(myweights) <: Matrix
@@ -75,13 +75,13 @@
     @test approx_eq(myweights, correctweights, tol=max_tol)
     @test typeof(myweights) <: Matrix
 
-    myweights = float(dtm(m));
+    myweights = float(dtm(crps));
     tf_idf!(myweights)
     @test approx_eq(T.(myweights), correctweights, tol=max_tol)
     @test typeof(myweights) <: SparseMatrixCSC
     @test eltype(myweights) == typeof(1.0)
 
-    myweights = float(Matrix(dtm(m)));
+    myweights = float(Matrix(dtm(crps)));
     tf_idf!(myweights)
     @test approx_eq(T.(myweights), correctweights, tol=max_tol)
     @test typeof(myweights) <: Matrix
@@ -108,13 +108,13 @@
     @test approx_eq(myweights, correctweights, tol=max_tol)
     @test typeof(myweights) <: Matrix
 
-    myweights = float(dtm(m));
+    myweights = float(dtm(crps));
     bm_25!(myweights)
     @test approx_eq(T.(myweights), correctweights, tol=max_tol)
     @test typeof(myweights) <: SparseMatrixCSC
     @test eltype(myweights) == typeof(1.0)
 
-    myweights = float(Matrix(dtm(m)));
+    myweights = float(Matrix(dtm(crps)));
     bm_25!(myweights)
     @test approx_eq(T.(myweights), correctweights, tol=max_tol)
     @test typeof(myweights) <: Matrix
