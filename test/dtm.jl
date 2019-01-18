@@ -46,30 +46,26 @@ end
     dtm1sp = sparse(dtm(crps))
     hash_dtm(crps)
 
-    @test tdm(crps) == tdm(m) == tdm(m) == dtm(m)'
-
-    hash_tdm(crps)
-
     # construct a DocumentTermMatrix from a crps and a custom terms vector
     terms = ["And", "notincrps"]
     m = DocumentTermMatrix(crps,terms)
-    @test size(dtm(m),1) == length(terms)
+    @test size(dtm(m),2) == length(terms)
     @test terms == m.terms
-    @test size(dtm(m),2) == length(crps)
+    @test size(dtm(m),1) == length(crps)
 
     # construct a DocumentTermMatrix from a crps and a custom lexicon
     lex = Dict("And"=>1, "notincrps"=>4)
     m = DocumentTermMatrix(crps,lex)
-    @test size(dtm(m),1) == length(keys(lex))
-    @test size(dtm(m),1) == length(m.terms)
-    @test size(dtm(m),2) == length(crps)
+    @test size(dtm(m),2) == length(keys(lex))
+    @test size(dtm(m),2) == length(m.terms)
+    @test size(dtm(m),1) == length(crps)
 
     # construct a DocumentTermMatrix from a dtm and terms vector
     terms = m.terms
     m2 = DocumentTermMatrix(dtm1,terms)
-    @test m.column_indices == m2.column_indices
+    @test m.row_indices == m2.row_indices
     m2 = DocumentTermMatrix(dtm1sp,terms)
-    @test m.column_indices == m2.column_indices
+    @test m.row_indices == m2.row_indices
 end
 
 @testset "DTM: Iteration, Indexing" begin
@@ -85,7 +81,7 @@ end
     # Iteration iterface tests
     i = 1
     for v in each_dtv(crps)
-        @test v == m.dtm[i, 1:end]
+        @test v == m.dtm[1:end,i]
         i+= 1
     end
     i = 1
@@ -95,10 +91,9 @@ end
     end
     # Indexing into the DTM
     word = "This"
-    @test m[word] == m.dtm[:, m.column_indices[word]]
+    @test m[word] == m.dtm[m.row_indices[word],:]
     i = 1; j = 2; ii = 1:2
     @test m[i] == m.dtm[i]
     @test m[i,j] == m.dtm[i,j]
     @test m[ii] == m.dtm[ii]
-
 end

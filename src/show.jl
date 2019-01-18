@@ -4,8 +4,8 @@ show(io::IO, d::AbstractDocument) = print(io, "A $(typeof(d))")
 show(io::IO, crps::Corpus) = print(io, "A Corpus with $(length(crps.documents)) documents")
 
 show(io::IO, dtm::DocumentTermMatrix{T}) where T = begin
-    n, p = size(dtm.dtm)
-    println(io, "A $(n)x$(p) DocumentTermMatrix{$T}")
+    p, n = size(dtm.dtm)
+    println(io, "A $(p)x$(n) DocumentTermMatrix{$T}")
 end
 
 show(io::IO, coom::CooMatrix{T}) where T = begin

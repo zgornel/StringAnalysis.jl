@@ -1,6 +1,6 @@
 ![Alt text](https://github.com/zgornel/StringAnalysis.jl/blob/master/docs/src/assets/logo.png)
 
-This is a hard fork of the [TextAnalysis.jl](https://github.com/JuliaText/TextAnalysis.jl) package, designed to provide a richer, faster and more orthogonal interface.
+This is a hard fork of the [TextAnalysis.jl](https://github.com/JuliaText/TextAnalysis.jl) package, designed to provide a richer, faster and orthogonal API.
 
 [![License](http://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)](LICENSE.md)
 [![Build Status](https://travis-ci.org/zgornel/StringAnalysis.jl.svg?branch=master)](https://travis-ci.org/zgornel/StringAnalysis.jl)

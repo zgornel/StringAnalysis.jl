@@ -133,6 +133,18 @@ Matrix(M)
 ```
 It is important to note that the type parameter of the DTM object can be specified (also in the `dtm` function) but not specifically required. This can be useful in some cases for reducing memory requirements. The default element type of the DTM is specified by the constant `DEFAULT_DTM_TYPE` present in `src/defaults.jl`.
 
+!!! note
+
+    From version `v0.3.2`, the columns of the document-term matrix represent document vectors.
+    This convention holds accross the package where whenever multiple documents are represented.
+    This represents a breaking change from previous versions and [TextAnalysis.jl](https://github.com/JuliaText/TextAnalysis.jl) and may
+    break code if not taken into account.
+
+One can verify the DTM dimensions with:
+```@repl index
+@assert size(dtm(crps)) == (length(lexicon(crps)), length(crps))  # O.K.
+```
+
 ### Document Term Vectors (DTVs)
 The individual rows of the DTM can also be generated iteratively whether a lexicon is present or not. If a lexicon is present, the `each_dtv` iterator allows the generation of the document vectors along with the control of the vector element type:
 ```@repl index
@@ -260,7 +272,7 @@ As previously noted, before projection, the DTV is calculated according to the v
 ```@repl index
 model = RPModel(M, k=0, stats=:bm25)
 embed_document(model, crps[1])  # normalized BM25 document vector
-embed_document(model, crps)*embed_document(model, crps[1])  # intra-document similarity
+embed_document(model, crps)'*embed_document(model, crps[1])  # intra-document similarity
 ```
 
 ## Semantic Analysis
@@ -296,7 +308,7 @@ embed_document(lm, query)
 ```
 embed the corpus,
 ```@repl index
-U = embed_document(lm, crps)
+V = Matrix(embed_document(lm, crps))  # `Matrix` looks nicer ;)
 ```
 search for matching documents,
 ```@repl index
@@ -307,9 +319,9 @@ end
 ```
 or check for structure within the data
 ```@repl index
-V = lm.Vᵀ';
-Matrix(U*U')  # document to document similarity
-Matrix(V*V')  # term to term similarity
+U = Matrix(lm.Uᵀ);
+V'*V  # document to document similarity
+U'*U  # term to term similarity
 ```
 LSA models can be saved/loaded to/from disk using a text format similar to the random projection model one.
 ```@repl index

@@ -36,7 +36,7 @@ Perform [Latent Dirichlet allocation](https://en.wikipedia.org/wiki/Latent_Diric
 """
 function lda(dtm::DocumentTermMatrix, ntopics::Int, iteration::Int, alpha::Float64, beta::Float64)
 
-    number_of_documents, number_of_words = size(dtm.dtm)
+    number_of_words, number_of_documents = size(dtm.dtm)
     docs = Vector{Lda.TopicBasedDocument}(undef, number_of_documents)
     topics = Vector{Lda.Topic}(undef, ntopics)
     for i in 1:ntopics
@@ -46,7 +46,7 @@ function lda(dtm::DocumentTermMatrix, ntopics::Int, iteration::Int, alpha::Float
     for i in 1:number_of_documents
         topic_base_document = Lda.TopicBasedDocument(ntopics)
         for wordid in 1:number_of_words
-            for _ in 1:dtm.dtm[i,wordid]
+            for _ in 1:dtm.dtm[wordid,i]
                 topicid = rand(1:ntopics)
                 update_target_topic = topics[topicid]
                 update_target_topic.count += 1

@@ -12,7 +12,7 @@ convertible to type `T`.
   * `vocab::Vector{S}` a vector with all the words in the corpus
   * `vocab_hash::Dict{S,H}` a word to index in word embeddings matrix mapping
   * `Σinv::A` inverse of the singular value matrix
-  * `Vᵀ::A` transpose of the word embedding matrix
+  * `Uᵀ::A` transpose of the word embedding matrix
   * `stats::Symbol` the statistical measure to use for word importances in documents. Available values are: `:count` (term count), `:tf` (term frequency), `:tfidf` (default, term frequency-inverse document frequency) and `:bm25` (Okapi BM25)
   * `idf::Vector{T}` inverse document frequencies for the words in the vocabulary
   * `nwords::T` averge number of words in a document
@@ -20,14 +20,15 @@ convertible to type `T`.
   * `β::Float64` the `β` parameter of the BM25 statistic
   * `tol::T` minimum size of the vector components (default `T(1e-15)`)
 
-# SVD matrices `U`, `Σinv` and `Vᵀ`:
-  If `X` is a `m`×`n` document-term-matrix with `m` documents and `n` words so that
-`X[i,j]` represents a statistical indicator of the importance of term `j` in document `i`
+# SVD matrices `U`, `Σinv` and `V`:
+  If `X` is a `m`×`n` document-term-matrix with `n` documents and `m` words so that
+`X[i,j]` represents a statistical indicator of the importance of term `i` in document `j`
 then:
   * `U, Σ, V = svd(X)`
   * `Σinv = inv(Σ)`
-  * `Vᵀ = V'`
-  The matrix `U` is not actually stored in the model.
+  * `Uᵀ = U'`
+  * `X ≈ U * Σ * V'`
+  The matrix `V` of document embeddings is not actually stored in the model.
 
 # Examples
 ```
@@ -69,9 +70,9 @@ Query: "Apples and an exotic fruit."
 """
 struct LSAModel{S<:AbstractString, T<:AbstractFloat, A<:AbstractMatrix{T}, H<:Integer}
     vocab::Vector{S}        # vocabulary
-    vocab_hash::Dict{S,H}   # term to column index in V
+    vocab_hash::Dict{S,H}   # term to column index in U
     Σinv::A                 # inverse of Σ
-    Vᵀ::A                   # word vectors (transpose of V)
+    Uᵀ::A                   # word vectors (transpose of U)
     stats::Symbol           # term/document importance
     idf::Vector{T}          # inverse document frequencies
     nwords::T               # average words/document in corpus
@@ -87,28 +88,27 @@ function LSAModel(dtm::DocumentTermMatrix{T}; kwargs...) where T<:Integer
 end
 
 function LSAModel(dtm::DocumentTermMatrix{T};
-                  k::Int=size(dtm.dtm, 1),
+                  k::Int=size(dtm.dtm, 2),
                   stats::Symbol=:tfidf,
                   tol::T=T(1e-15),
                   κ::Int=BM25_KAPPA,
                   β::Float64=BM25_BETA
                  ) where T<:AbstractFloat
-    n, p = size(dtm.dtm)
+    p, n = size(dtm.dtm)
+    k = clamp(k, 1, min(k, n))
     zeroval = zero(T)
     minval = T(tol)
     # Checks
-    length(dtm.terms) == p ||
+    length(dtm.terms) != p &&
         throw(DimensionMismatch("Dimensions inside dtm are inconsistent."))
-    k > n &&
-        @warn "k can be at most $n; using k=$n"
     if !(stats in [:count, :tf, :tfidf, :bm25])
         @warn "stats has to be either :tf, :tfidf or :bm25; defaulting to :tfidf"
         stats = :tfidf
     end
     # Calculate inverse document frequency, mean document size
-    documents_containing_term = vec(sum(dtm.dtm .> 0, dims=1)) .+ one(T)
+    documents_containing_term = vec(sum(dtm.dtm .> 0, dims=2)) .+ one(T)
     idf = log.(n ./ documents_containing_term) .+ one(T)
-    nwords = mean(sum(dtm.dtm, dims=2))
+    nwords = mean(sum(dtm.dtm, dims=1))
     # Get X
     if stats == :count
         X = dtm.dtm
@@ -120,24 +120,24 @@ function LSAModel(dtm::DocumentTermMatrix{T};
         X = bm_25(dtm.dtm, κ=κ, β=β)
     end
     # Decompose document-word statistic
-    _, Σ, V = tsvd(X, k)
+    U, Σ, _ = tsvd(X, k)
     # Build model components
     Σinv = diagm(0 => 1 ./ Σ)
     Σinv[abs.(Σinv) .< minval] .= zeroval
-    V = V'
-    V[abs.(V).< minval] .= zeroval
+    U = U'
+    U[abs.(U).< minval] .= zeroval
     # Note: explicit type annotation ensures type stability
     Σinv::SparseMatrixCSC{T,Int} = SparseMatrixCSC{T, Int}(Σinv)
-    V = SparseMatrixCSC{T, Int}(V)
+    U = SparseMatrixCSC{T, Int}(U)
     # Return the model
-    return LSAModel(dtm.terms, dtm.column_indices,
-                    Σinv, V,
+    return LSAModel(dtm.terms, dtm.row_indices,
+                    Σinv, U,
                     stats, idf, nwords, κ, β, minval)
 end
 
 
 function Base.show(io::IO, lm::LSAModel{S,T,A,H}) where {S,T,A,H}
-    len_vecs, num_terms = size(lm.Vᵀ)
+    len_vecs, num_terms = size(lm.Uᵀ)
     print(io, "LSA Model ($(lm.stats)), $(num_terms) terms, " *
           "dimensionality $(len_vecs), $(T) vectors")
 end
@@ -151,7 +151,7 @@ Use `?LSAModel` for more details. Vector components smaller than `tol` will be
 zeroed out.
 """
 function lsa(dtm::DocumentTermMatrix{T};
-             k::Int=size(dtm.dtm, 1),
+             k::Int=size(dtm.dtm, 2),
              stats::Symbol=:tfidf,
              tol::T=T(1e-15),
              κ::Int=BM25_KAPPA,
@@ -195,7 +195,7 @@ in_vocabulary(lm::LSAModel, word::AbstractString) = word in lm.vocab
 
 Return a tuple containin input and output dimensionalities of the LSA model `lm`.
 """
-size(lm::LSAModel) = size(lm.Vᵀ,2), size(lm.Σinv,1)
+size(lm::LSAModel) = size(lm.Uᵀ,2), size(lm.Σinv,1)
 
 
 """
@@ -217,7 +217,7 @@ function get_vector(lm::LSAModel{S,T,A,H}, word) where {S,T,A,H}
     if idx == 0
         return default
     else
-        return lm.Vᵀ[:, idx]
+        return lm.Uᵀ[:, idx]
     end
 end
 
@@ -257,7 +257,7 @@ function embed_document(lm::LSAModel{S,T,A,H}, dtv::AbstractVector{T}) where {S,
                        (k * (one(T) - b + b * words_in_document/lm.nwords) .+ tf)
     end
     # Embed
-    d̂ = lm.Σinv * lm.Vᵀ * v         # embed
+    d̂ = lm.Σinv * lm.Uᵀ * v         # embed
     d̂ = d̂ ./ (norm(d̂,2) .+ eps(T))  # normalize
     d̂[abs.(d̂) .< lm.tol] .= zero(T) # zero small elements
     return d̂
@@ -265,7 +265,7 @@ end
 
 function embed_document(lm::LSAModel{S,T,A,H}, dtm::DocumentTermMatrix{T}) where {S,T,A,H}
     n = size(dtm.dtm,1)
-    k = size(lm.Vᵀ, 1)
+    k = size(lm.Uᵀ, 1)
     if lm.stats == :count
         X = dtm.dtm
     elseif lm.stats == :tf
@@ -275,10 +275,10 @@ function embed_document(lm::LSAModel{S,T,A,H}, dtm::DocumentTermMatrix{T}) where
     elseif lm.stats == :bm25
         X = bm_25(dtm, κ=lm.κ, β=lm.β)
     end
-    U = X * lm.Vᵀ' * lm.Σinv
-    U ./= (sqrt.(sum(U.^2, dims=2)) .+ eps(T))
-    U[abs.(U) .< lm.tol] .= zero(T)
-    return U
+    V = lm.Σinv * lm.Uᵀ * X
+    V ./= (sqrt.(sum(V.^2, dims=1)) .+ eps(T))
+    V[abs.(V) .< lm.tol] .= zero(T)
+    return V
 end
 
 function embed_document(lm::LSAModel{S,T,A,H}, crps::Corpus) where {S,T,A,H}
@@ -311,7 +311,7 @@ The vector representations of `docs` and `doc` are obtained with the
 `model` which can be either a `LSAModel` or `RPModel`.
 """
 function cosine(model, docs, doc, n=10)
-    metrics = embed_document(model, docs) * embed_document(model, doc)
+    metrics = embed_document(model, docs)' * embed_document(model, doc)
     n = min(n, length(metrics))
     topn_positions = sortperm(metrics[:], rev = true)[1:n]
     topn_metrics = metrics[topn_positions]
@@ -337,7 +337,7 @@ end
 Saves an LSA model `lm` to disc in file `filename`.
 """
 function save_lsa_model(lm::LSAModel{S,T,A,H}, filename::AbstractString) where {S,T,A,H}
-    k, nwords = size(lm.Vᵀ)
+    k, nwords = size(lm.Uᵀ)
     open(filename, "w") do fid
         println(fid, "LSA Model saved at $(Dates.now())")
         println(fid, "$nwords $k")  # number of documents, words, k
@@ -351,7 +351,7 @@ function save_lsa_model(lm::LSAModel{S,T,A,H}, filename::AbstractString) where {
         writedlm(fid, diag(lm.Σinv)', " ")
         # Word embeddings
         idxs = [lm.vocab_hash[word] for word in lm.vocab]
-        writedlm(fid, [lm.vocab lm.Vᵀ[:, idxs]'], " ")
+        writedlm(fid, [lm.vocab lm.Uᵀ[:, idxs]'], " ")
     end
 end
 
@@ -368,7 +368,7 @@ function load_lsa_model(filename::AbstractString, ::Type{T}=DEFAULT_FLOAT_TYPE;
     # Matrix type for LSA model
     A = ifelse(sparse, SparseMatrixCSC{T, Int}, Matrix{T})
     # Define parsed variables local to outer scope of do statement
-    local vocab, vocab_hash, Σinv, Vᵀ, stats, idf, nwords, κ, β, tol
+    local vocab, vocab_hash, Σinv, Uᵀ, stats, idf, nwords, κ, β, tol
     open(filename, "r") do fid
         readline(fid)  # first line, header
         line = readline(fid)
@@ -377,10 +377,10 @@ function load_lsa_model(filename::AbstractString, ::Type{T}=DEFAULT_FLOAT_TYPE;
         vocab = Vector{String}(undef, vocab_size)
         vocab_hash = Dict{String, Int}()
         if sparse
-            Vᵀ = SparseMatrixCSC{T, Int}(UniformScaling(0), k, vocab_size)
+            Uᵀ = SparseMatrixCSC{T, Int}(UniformScaling(0), k, vocab_size)
             Σinv = spzeros(T, k, k)
         else
-            Vᵀ = Matrix{T}(undef, k, vocab_size)
+            Uᵀ = Matrix{T}(undef, k, vocab_size)
             Σinv = zeros(T, k, k)
         end
         # Start parsing the rest of the file
@@ -398,9 +398,9 @@ function load_lsa_model(filename::AbstractString, ::Type{T}=DEFAULT_FLOAT_TYPE;
             vector = map(x-> parse(T, x), parts[2:end])
             vocab[i] = word
             push!(vocab_hash, word=>i)
-            Vᵀ[:, i] = vector
+            Uᵀ[:, i] = vector
         end
     end
-    return LSAModel{String, T, A, Int}(vocab, vocab_hash, Σinv, Vᵀ,
+    return LSAModel{String, T, A, Int}(vocab, vocab_hash, Σinv, Uᵀ,
                                        stats, idf, nwords, κ, β, tol)
 end

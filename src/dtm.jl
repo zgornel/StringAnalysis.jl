@@ -2,28 +2,41 @@
 Basic Document-Term-Matrix (DTM) type.
 
 # Fields
-  * `dtm::SparseMatriCSC{T,Int}` the actual DTM; rows represent documents
-and columns represent terms
+  * `dtm::SparseMatriCSC{T,Int}` the actual DTM; rows represent terms
+and columns represent documents
   * `terms::Vector{String}` a list of terms that represent the lexicon of
 the corpus associated with the DTM
-  * `column_indices::Dict{String, Int}` a map between the `terms` and the
-columns of the `dtm`
+  * `row_indices::Dict{String, Int}` a map between the `terms` and the
+rows of the `dtm`
 """
 mutable struct DocumentTermMatrix{T}
     dtm::SparseMatrixCSC{T, Int}
     terms::Vector{String}
-    column_indices::Dict{String, Int}
+    row_indices::Dict{String, Int}
 end
 
-# Construct a DocumentTermMatrix from a Corpus
-# create col index lookup dictionary from a (sorted?) vector of terms
-function columnindices(terms::Vector{String})
-    column_indices = Dict{String, Int}()
+"""
+    rowindices(terms)
+
+Returns a dictionary that maps each term from the vector `terms`
+to a integer idex.
+"""
+function rowindices(terms::Vector{String})
+    row_indices = Dict{String, Int}()
     for (i, term) in enumerate(terms)
-        column_indices[term] = i
+        row_indices[term] = i
     end
-    return column_indices
+    return row_indices
 end
+
+"""
+    columnindices(terms)
+
+Identical to `rowindices`. Returns a dictionary that maps
+each term from the vector `terms` to a integer idex.
+"""
+columnindices = rowindices
+
 
 """
     DocumentTermMatrix{T}(crps::Corpus [,terms])
@@ -35,20 +48,20 @@ can be a `Vector{String}`, an `AbstractDict` where the keys are the lexicon, or 
 be missing, in which case the `lexicon` field of the corpus is used.
 """
 function DocumentTermMatrix{T}(crps::Corpus, terms::Vector{String}) where T<:Real
-    column_indices = columnindices(terms)
-    m = length(crps)
-    n = length(terms)
+    row_indices = rowindices(terms)
+    m = length(terms)
+    n = length(crps)
     rows = Vector{Int}(undef, 0)
     columns = Vector{Int}(undef, 0)
     values = Vector{T}(undef, 0)
     for (i, doc) in enumerate(crps)
         ngs = ngrams(doc)
         for ngram in keys(ngs)
-            j = get(column_indices, ngram, 0)
+            j = get(row_indices, ngram, 0)
             v = ngs[ngram]
             if j != 0
-                push!(rows, i)
-                push!(columns, j)
+                push!(columns, i)
+                push!(rows, j)
                 push!(values, v)
             end
         end
@@ -58,7 +71,7 @@ function DocumentTermMatrix{T}(crps::Corpus, terms::Vector{String}) where T<:Rea
     else
         dtm = spzeros(T, m, n)
     end
-    return DocumentTermMatrix(dtm, terms, column_indices)
+    return DocumentTermMatrix(dtm, terms, row_indices)
 end
 
 DocumentTermMatrix(crps::Corpus, terms::Vector{String}) =
@@ -82,7 +95,7 @@ end
 
 DocumentTermMatrix(dtm::SparseMatrixCSC{T, Int},
                    terms::Vector{String}) where T<:Real =
-    DocumentTermMatrix(dtm, terms, columnindices(terms))
+    DocumentTermMatrix(dtm, terms, rowindices(terms))
 
 
 """
@@ -103,12 +116,6 @@ dtm(crps::Corpus, eltype::Type{T}=DEFAULT_DTM_TYPE) where T<:Real =
     dtm(DocumentTermMatrix{T}(crps))
 
 
-# Term-document matrix
-tdm(crps::DocumentTermMatrix) = dtm(crps)' #'
-
-tdm(crps::Corpus) = dtm(crps)' #'
-
-
 # Produce the signature of a DTM entry for a document
 function dtm_entries(d::AbstractDocument,
                      lex::Dict{String, Int},
@@ -117,9 +124,9 @@ function dtm_entries(d::AbstractDocument,
     indices = Vector{Int}(undef, 0)
     values = Vector{T}(undef, 0)
     terms = sort(collect(keys(lex)))
-    column_indices = columnindices(terms)
+    row_indices = rowindices(terms)
     for ngram in keys(ngs)
-        j = get(column_indices, ngram, 0)
+        j = get(row_indices, ngram, 0)
         v = ngs[ngram]
         if j != 0
             push!(indices, j)
@@ -128,6 +135,7 @@ function dtm_entries(d::AbstractDocument,
     end
     return (indices, values)
 end
+
 
 """
     dtv(d::AbstractDocument, lex::Dict{String,Int}, eltype::Type{T}=DEFAULT_DTM_TYPE)
@@ -139,10 +147,10 @@ function dtv(d::AbstractDocument,
              lex::Dict{String, Int},
              eltype::Type{T}=DEFAULT_DTM_TYPE) where T<:Real
     p = length(keys(lex))
-    row = zeros(T, p)
+    column = zeros(T, p)
     indices, values = dtm_entries(d, lex)
-    row[indices] = values
-    return row
+    column[indices] = values
+    return column
 end
 
 """
@@ -203,19 +211,15 @@ function hash_dtm(crps::Corpus,
                   h::TextHashFunction,
                   eltype::Type{T}=DEFAULT_DTM_TYPE) where T<:Real
     n, p = length(crps), cardinality(h)
-    res = zeros(T, n, p)
+    res = zeros(T, p, n)
     for (i, doc) in enumerate(crps)
-        res[i, :] = hash_dtv(doc, h, eltype)
+        res[:, i] = hash_dtv(doc, h, eltype)
     end
     return res
 end
 
 hash_dtm(crps::Corpus, eltype::Type{T}=DEFAULT_DTM_TYPE) where T<:Real =
     hash_dtm(crps, hash_function(crps), eltype)
-
-hash_tdm(crps::Corpus, eltype::Type{T}=DEFAULT_DTM_TYPE) where T<:Real =
-    hash_dtm(crps, eltype)' #'
-
 
 
 # Produce entries for on-line analysis when DTM would not fit in memory
@@ -244,7 +248,7 @@ next(edt::EachDTV{U,S,T}, state::Int) where {U,S,T} =
 """
     each_dtv(crps::Corpus [; eltype::Type{U}=DEFAULT_DTM_TYPE])
 
-Iterates through the rows of the DTM of the corpus `crps` without
+Iterates through the columns of the DTM of the corpus `crps` without
 constructing it. Useful when the DTM would not fit in memory.
 `eltype` specifies the element type of the generated vectors.
 """
@@ -286,7 +290,7 @@ next(edt::EachHashDTV{U,S,T}, state::Int) where {U,S,T} =
 """
     each_hash_dtv(crps::Corpus [; eltype::Type{U}=DEFAULT_DTM_TYPE])
 
-Iterates through the rows of the hashed DTM of the corpus `crps` without
+Iterates through the columns of the hashed DTM of the corpus `crps` without
 constructing it. Useful when the DTM would not fit in memory.
 `eltype` specifies the element type of the generated vectors.
 """
@@ -304,7 +308,7 @@ Base.show(io::IO, edt::EachHashDTV{U,S,T}) where {U,S,T} =
 
 
 ## getindex() methods
-Base.getindex(dtm::DocumentTermMatrix, k::AbstractString) = dtm.dtm[:, dtm.column_indices[k]]
+Base.getindex(dtm::DocumentTermMatrix, k::AbstractString) = dtm.dtm[dtm.row_indices[k], :]
 
 Base.getindex(dtm::DocumentTermMatrix, i) = dtm.dtm[i]
 
