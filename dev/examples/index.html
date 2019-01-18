@@ -159,22 +159,26 @@ julia&gt; prepare!(it, strip_articles|strip_prepositions|strip_whitespace);
 
 julia&gt; it.text
 &quot;Quest&#39;e piccolo esempio come si puo fare analisi&quot;</code></pre><h2><a class="nav-anchor" id="Features-1" href="#Features-1">Features</a></h2><h3><a class="nav-anchor" id="Document-Term-Matrix-(DTM)-1" href="#Document-Term-Matrix-(DTM)-1">Document Term Matrix (DTM)</a></h3><p>If a lexicon is present in the corpus, a <a href="https://en.wikipedia.org/wiki/Document-term_matrix">document term matrix (DTM)</a> can be created. The DTM acts as a basis for word-document statistics, allowing for the representation of documents as numerical vectors. The DTM is created from a <code>Corpus</code> by calling the constructor</p><pre><code class="language-julia-repl">julia&gt; M = DocumentTermMatrix(crps)
-A 3x7 DocumentTermMatrix{Int64}
+A 7x3 DocumentTermMatrix{Int64}
 
 julia&gt; typeof(M)
 DocumentTermMatrix{Int64}
 
 julia&gt; M = DocumentTermMatrix{Int8}(crps)
-A 3x7 DocumentTermMatrix{Int8}
+A 7x3 DocumentTermMatrix{Int8}
 
 julia&gt; typeof(M)
 DocumentTermMatrix{Int8}</code></pre><p>or the <code>dtm</code> function</p><pre><code class="language-julia-repl">julia&gt; M = dtm(crps, Int8);
 
 julia&gt; Matrix(M)
-3×7 Array{Int8,2}:
- 1  1  1  0  1  1  0
- 1  1  1  1  0  1  0
- 1  1  1  0  0  1  1</code></pre><p>It is important to note that the type parameter of the DTM object can be specified (also in the <code>dtm</code> function) but not specifically required. This can be useful in some cases for reducing memory requirements. The default element type of the DTM is specified by the constant <code>DEFAULT_DTM_TYPE</code> present in <code>src/defaults.jl</code>.</p><h3><a class="nav-anchor" id="Document-Term-Vectors-(DTVs)-1" href="#Document-Term-Vectors-(DTVs)-1">Document Term Vectors (DTVs)</a></h3><p>The individual rows of the DTM can also be generated iteratively whether a lexicon is present or not. If a lexicon is present, the <code>each_dtv</code> iterator allows the generation of the document vectors along with the control of the vector element type:</p><pre><code class="language-julia-repl">julia&gt; for dv in each_dtv(crps, eltype=Int8)
+7×3 Array{Int8,2}:
+ 1  1  1
+ 1  1  1
+ 1  1  1
+ 0  1  0
+ 1  0  0
+ 1  1  1
+ 0  0  1</code></pre><p>It is important to note that the type parameter of the DTM object can be specified (also in the <code>dtm</code> function) but not specifically required. This can be useful in some cases for reducing memory requirements. The default element type of the DTM is specified by the constant <code>DEFAULT_DTM_TYPE</code> present in <code>src/defaults.jl</code>.</p><div class="admonition note"><div class="admonition-title">Note</div><div class="admonition-text"><p>From version <code>v0.3.2</code>, the columns of the document-term matrix represent document vectors. This convention holds accross the package where whenever multiple documents are represented. This represents a breaking change from previous versions and <a href="https://github.com/JuliaText/TextAnalysis.jl">TextAnalysis.jl</a> and may break code if not taken into account.</p></div></div><p>One can verify the DTM dimensions with:</p><pre><code class="language-julia-repl">julia&gt; @assert size(dtm(crps)) == (length(lexicon(crps)), length(crps))  # O.K.</code></pre><h3><a class="nav-anchor" id="Document-Term-Vectors-(DTVs)-1" href="#Document-Term-Vectors-(DTVs)-1">Document Term Vectors (DTVs)</a></h3><p>The individual rows of the DTM can also be generated iteratively whether a lexicon is present or not. If a lexicon is present, the <code>each_dtv</code> iterator allows the generation of the document vectors along with the control of the vector element type:</p><pre><code class="language-julia-repl">julia&gt; for dv in each_dtv(crps, eltype=Int8)
            @show dv
        end
 dv = Int8[1, 1, 1, 0, 1, 1, 0]
@@ -185,42 +189,56 @@ dv = Int8[1, 1, 1, 0, 0, 1, 1]</code></pre><p>Alternatively, the vectors can be 
 dv = Int8[0, 1, 2, 0, 2]
 dv = Int8[0, 1, 2, 0, 2]
 dv = Int8[1, 0, 2, 0, 2]</code></pre><p>One can construct a &#39;hashed&#39; version of the DTM as well:</p><pre><code class="language-julia-repl">julia&gt; hash_dtm(Corpus(documents(crps), cardinality=5), Int8)
-3×5 Array{Int8,2}:
- 0  1  2  0  2
- 0  1  2  0  2
- 1  0  2  0  2</code></pre><p>The default <code>Corpus</code> cardinality is specified by the constant <code>DEFAULT_CARDINALITY</code> present in <code>src/defaults.jl</code>.</p><h3><a class="nav-anchor" id="TF,-TF-IDF,-BM25-1" href="#TF,-TF-IDF,-BM25-1">TF, TF-IDF, BM25</a></h3><p>From the DTM, three more document-word statistics can be constructed: the <a href="https://en.wikipedia.org/wiki/Tf%E2%80%93idf#Term_frequency_2">term frequency</a>, the <a href="https://en.wikipedia.org/wiki/Tf%E2%80%93idf#Term_frequency%E2%80%93Inverse_document_frequency">tf-idf (term frequency - inverse document frequency)</a> and <a href="https://en.wikipedia.org/wiki/Okapi_BM25">Okapi BM25</a> using the <code>tf</code>, <code>tf!</code>, <code>tf_idf</code>, <code>tf_idf!</code>, <code>bm_25</code> and <code>bm_25!</code> functions respectively. Their usage is very similar yet there exist several approaches one can take to constructing the output.</p><p>The following examples use the term frequency i.e. <code>tf</code> and <code>tf!</code> functions only. When calling the functions that end without a <code>!</code>, which do not require the specification of an output matrix, one does not control the output&#39;s element type. The default output type is defined by the constant <code>DEFAULT_FLOAT_TYPE = eltype(1.0)</code>:</p><pre><code class="language-julia-repl">julia&gt; M = DocumentTermMatrix(crps);
+5×3 Array{Int8,2}:
+ 0  0  1
+ 1  1  0
+ 2  2  2
+ 0  0  0
+ 2  2  2</code></pre><p>The default <code>Corpus</code> cardinality is specified by the constant <code>DEFAULT_CARDINALITY</code> present in <code>src/defaults.jl</code>.</p><h3><a class="nav-anchor" id="TF,-TF-IDF,-BM25-1" href="#TF,-TF-IDF,-BM25-1">TF, TF-IDF, BM25</a></h3><p>From the DTM, three more document-word statistics can be constructed: the <a href="https://en.wikipedia.org/wiki/Tf%E2%80%93idf#Term_frequency_2">term frequency</a>, the <a href="https://en.wikipedia.org/wiki/Tf%E2%80%93idf#Term_frequency%E2%80%93Inverse_document_frequency">tf-idf (term frequency - inverse document frequency)</a> and <a href="https://en.wikipedia.org/wiki/Okapi_BM25">Okapi BM25</a> using the <code>tf</code>, <code>tf!</code>, <code>tf_idf</code>, <code>tf_idf!</code>, <code>bm_25</code> and <code>bm_25!</code> functions respectively. Their usage is very similar yet there exist several approaches one can take to constructing the output.</p><p>The following examples use the term frequency i.e. <code>tf</code> and <code>tf!</code> functions only. When calling the functions that end without a <code>!</code>, which do not require the specification of an output matrix, one does not control the output&#39;s element type. The default output type is defined by the constant <code>DEFAULT_FLOAT_TYPE = eltype(1.0)</code>:</p><pre><code class="language-julia-repl">julia&gt; M = DocumentTermMatrix(crps);
 
 julia&gt; tfm = tf(M);
 
 julia&gt; Matrix(tfm)
-3×7 Array{Float64,2}:
- 0.447214  0.447214  0.447214  0.0       0.447214  0.447214  0.0
- 0.447214  0.447214  0.447214  0.447214  0.0       0.447214  0.0
- 0.447214  0.447214  0.447214  0.0       0.0       0.447214  0.447214</code></pre><p>Control of the output matrix element type - which has to be a subtype of <code>AbstractFloat</code> - can be done only by using the in-place modification functions. One approach is to directly modify the DTM, provided that its elements are floating point numbers:</p><pre><code class="language-julia-repl">julia&gt; M = DocumentTermMatrix{Float16}(crps)
-A 3x7 DocumentTermMatrix{Float16}
+7×3 Array{Float64,2}:
+ 0.447214  0.447214  0.447214
+ 0.447214  0.447214  0.447214
+ 0.447214  0.447214  0.447214
+ 0.0       0.447214  0.0
+ 0.447214  0.0       0.0
+ 0.447214  0.447214  0.447214
+ 0.0       0.0       0.447214</code></pre><p>Control of the output matrix element type - which has to be a subtype of <code>AbstractFloat</code> - can be done only by using the in-place modification functions. One approach is to directly modify the DTM, provided that its elements are floating point numbers:</p><pre><code class="language-julia-repl">julia&gt; M = DocumentTermMatrix{Float16}(crps)
+A 7x3 DocumentTermMatrix{Float16}
 
 julia&gt; Matrix(M.dtm)
-3×7 Array{Float16,2}:
- 1.0  1.0  1.0  0.0  1.0  1.0  0.0
- 1.0  1.0  1.0  1.0  0.0  1.0  0.0
- 1.0  1.0  1.0  0.0  0.0  1.0  1.0
+7×3 Array{Float16,2}:
+ 1.0  1.0  1.0
+ 1.0  1.0  1.0
+ 1.0  1.0  1.0
+ 0.0  1.0  0.0
+ 1.0  0.0  0.0
+ 1.0  1.0  1.0
+ 0.0  0.0  1.0
 
 julia&gt; tf!(M.dtm);  # inplace modification
 
 julia&gt; Matrix(M.dtm)
-3×7 Array{Float16,2}:
- 0.4473  0.4473  0.4473  0.0     0.4473  0.4473  0.0
- 0.4473  0.4473  0.4473  0.4473  0.0     0.4473  0.0
- 0.4473  0.4473  0.4473  0.0     0.0     0.4473  0.4473
+7×3 Array{Float16,2}:
+ 0.4473  0.4473  0.4473
+ 0.4473  0.4473  0.4473
+ 0.4473  0.4473  0.4473
+ 0.0     0.4473  0.0
+ 0.4473  0.0     0.0
+ 0.4473  0.4473  0.4473
+ 0.0     0.0     0.4473
 
 julia&gt; M = DocumentTermMatrix(crps)  # Int elements
-A 3x7 DocumentTermMatrix{Int64}
+A 7x3 DocumentTermMatrix{Int64}
 
 julia&gt; tf!(M.dtm)  # fails because of Int elements
 ERROR: MethodError: no method matching tf!(::SparseArrays.SparseMatrixCSC{Int64,Int64}, ::SparseArrays.SparseMatrixCSC{Int64,Int64})
 Closest candidates are:
   tf!(::SparseArrays.SparseMatrixCSC{T&lt;:Real,Ti} where Ti&lt;:Integer, !Matched::SparseArrays.SparseMatrixCSC{F&lt;:AbstractFloat,Ti} where Ti&lt;:Integer) where {T&lt;:Real, F&lt;:AbstractFloat} at /home/travis/build/zgornel/StringAnalysis.jl/src/stats.jl:20
-  tf!(::AbstractArray{T&lt;:Real,2}) where T&lt;:Real at /home/travis/build/zgornel/StringAnalysis.jl/src/stats.jl:37
+  tf!(::AbstractArray{T&lt;:Real,2}) where T&lt;:Real at /home/travis/build/zgornel/StringAnalysis.jl/src/stats.jl:35
   tf!(::AbstractArray{T&lt;:Real,2}, !Matched::AbstractArray{F&lt;:AbstractFloat,2}) where {T&lt;:Real, F&lt;:AbstractFloat} at /home/travis/build/zgornel/StringAnalysis.jl/src/stats.jl:7</code></pre><p>or, to provide a matrix output:</p><pre><code class="language-julia-repl">julia&gt; rows, cols = size(M.dtm);
 
 julia&gt; tfm = zeros(Float16, rows, cols);
@@ -228,25 +246,33 @@ julia&gt; tfm = zeros(Float16, rows, cols);
 julia&gt; tf!(M.dtm, tfm);
 
 julia&gt; tfm
-3×7 Array{Float16,2}:
- 0.4473  0.4473  0.4473  0.0     0.4473  0.4473  0.0
- 0.4473  0.4473  0.4473  0.4473  0.0     0.4473  0.0
- 0.4473  0.4473  0.4473  0.0     0.0     0.4473  0.4473</code></pre><p>One could also provide a sparse matrix output however it is important to note that in this case, the output matrix non-zero values have to correspond to the DTM&#39;s non-zero values:</p><pre><code class="language-julia-repl">julia&gt; using SparseArrays
+7×3 Array{Float16,2}:
+ 0.4473  0.4473  0.4473
+ 0.4473  0.4473  0.4473
+ 0.4473  0.4473  0.4473
+ 0.0     0.4473  0.0
+ 0.4473  0.0     0.0
+ 0.4473  0.4473  0.4473
+ 0.0     0.0     0.4473</code></pre><p>One could also provide a sparse matrix output however it is important to note that in this case, the output matrix non-zero values have to correspond to the DTM&#39;s non-zero values:</p><pre><code class="language-julia-repl">julia&gt; using SparseArrays
 
 julia&gt; rows, cols = size(M.dtm);
 
 julia&gt; tfm = spzeros(Float16, rows, cols)
-3×7 SparseArrays.SparseMatrixCSC{Float16,Int64} with 0 stored entries
+7×3 SparseArrays.SparseMatrixCSC{Float16,Int64} with 0 stored entries
 
 julia&gt; tfm[M.dtm .!= 0] .= 123;  # create explicitly non-zeros
 
 julia&gt; tf!(M.dtm, tfm);
 
 julia&gt; Matrix(tfm)
-3×7 Array{Float16,2}:
- 0.4473  0.4473  0.4473  0.0     0.4473  0.4473  0.0
- 0.4473  0.4473  0.4473  0.4473  0.0     0.4473  0.0
- 0.4473  0.4473  0.4473  0.0     0.0     0.4473  0.4473</code></pre><h3><a class="nav-anchor" id="Co-occurrence-Matrix-(COOM)-1" href="#Co-occurrence-Matrix-(COOM)-1">Co-occurrence Matrix (COOM)</a></h3><p>Another type of feature matrix that can be created is the <a href="https://en.wikipedia.org/wiki/Co-occurrence_matrix">co-occurence matrix (COOM)</a> of the document or corpus. The elements of the matrix indicate how many times two words co-occur in a (sliding) word window of a given size. The COOM can be calculated for objects of type <code>Corpus</code>, <code>AbstractDocument</code> (with the exception of <code>NGramDocument</code> since order is word order is lost) and <code>AbstractString</code>. The constructor supports specification of the window size, whether the counts should be normalized (to the distance between words in the window) as well as specific terms for which co-occurrences in the document should be calculated.</p><p><strong>Remarks</strong>:</p><ul><li>The sliding window used to count co-occurrences does not take into consideration sentence stops however, it does with documents i.e. does not span across documents</li><li>The co-occurrence matrices of the documents in a corpus are summed up when calculating the matrix for an entire corpus</li><li>The co-occurrence matrix always has elements that are subtypes of <code>AbstractFloat</code> and cannot be calculated for <code>NGramDocument</code>s</li></ul><pre><code class="language-julia-repl">julia&gt; C = CooMatrix(crps, window=1, normalize=false)  # fails, documents are NGramDocument
+7×3 Array{Float16,2}:
+ 0.4473  0.4473  0.4473
+ 0.4473  0.4473  0.4473
+ 0.4473  0.4473  0.4473
+ 0.0     0.4473  0.0
+ 0.4473  0.0     0.0
+ 0.4473  0.4473  0.4473
+ 0.0     0.0     0.4473</code></pre><h3><a class="nav-anchor" id="Co-occurrence-Matrix-(COOM)-1" href="#Co-occurrence-Matrix-(COOM)-1">Co-occurrence Matrix (COOM)</a></h3><p>Another type of feature matrix that can be created is the <a href="https://en.wikipedia.org/wiki/Co-occurrence_matrix">co-occurence matrix (COOM)</a> of the document or corpus. The elements of the matrix indicate how many times two words co-occur in a (sliding) word window of a given size. The COOM can be calculated for objects of type <code>Corpus</code>, <code>AbstractDocument</code> (with the exception of <code>NGramDocument</code> since order is word order is lost) and <code>AbstractString</code>. The constructor supports specification of the window size, whether the counts should be normalized (to the distance between words in the window) as well as specific terms for which co-occurrences in the document should be calculated.</p><p><strong>Remarks</strong>:</p><ul><li>The sliding window used to count co-occurrences does not take into consideration sentence stops however, it does with documents i.e. does not span across documents</li><li>The co-occurrence matrices of the documents in a corpus are summed up when calculating the matrix for an entire corpus</li><li>The co-occurrence matrix always has elements that are subtypes of <code>AbstractFloat</code> and cannot be calculated for <code>NGramDocument</code>s</li></ul><pre><code class="language-julia-repl">julia&gt; C = CooMatrix(crps, window=1, normalize=false)  # fails, documents are NGramDocument
 ERROR: The tokens of an NGramDocument cannot be reconstructed
 
 julia&gt; smallcrps = Corpus([sd, td])
@@ -293,11 +319,11 @@ julia&gt; Matrix(coom(C))
 julia&gt; density = 0.2;  # percentage of non-zero elements
 
 julia&gt; R = StringAnalysis.random_projection_matrix(m, k, T, density)
-2×10 SparseArrays.SparseMatrixCSC{Float32,Int64} with 3 stored entries:
-  [2 ,  8]  =  -1.58114
-  [1 ,  9]  =  1.58114
-  [2 ,  9]  =  -1.58114</code></pre><p>Building a random projection model from a <code>DocumentTermMatrix</code> or <code>Corpus</code> is straightforward</p><pre><code class="language-julia-repl">julia&gt; M = DocumentTermMatrix{Float32}(crps)
-A 3x7 DocumentTermMatrix{Float32}
+10×2 SparseArrays.SparseMatrixCSC{Float32,Int64} with 3 stored entries:
+  [9 ,  1]  =  -0.707107
+  [3 ,  2]  =  0.707107
+  [5 ,  2]  =  -0.707107</code></pre><p>Building a random projection model from a <code>DocumentTermMatrix</code> or <code>Corpus</code> is straightforward</p><pre><code class="language-julia-repl">julia&gt; M = DocumentTermMatrix{Float32}(crps)
+A 7x3 DocumentTermMatrix{Float32}
 
 julia&gt; model = RPModel(M, k=2, density=0.5, stats=:tf)
 Random Projection Model (tf), 7 terms, dimensionality 2, Float32 vectors
@@ -308,38 +334,51 @@ A StringDocument{String}
 
 julia&gt; embed_document(model, doc)
 2-element Array{Float32,1}:
- -0.44721353
  -0.89442706
+  0.44721353
 
 julia&gt; embed_document(model2, doc)
 17-element Array{Float32,1}:
-  0.0
-  0.3779644
- -0.3779644
- -0.3779644
-  0.0
- -0.3779644
-  0.3779644
-  0.3779644
+  0.49999988
   0.0
   0.0
   0.0
   0.0
+ -0.49999988
   0.0
   0.0
   0.0
-  0.3779644
+  0.49999988
+  0.0
+  0.0
+  0.0
+  0.0
+  0.0
+  0.49999988
   0.0</code></pre><p>Embedding a DTM or corpus can be done in a similar way:</p><pre><code class="language-julia-repl">julia&gt; Matrix(embed_document(model, M))
-3×2 Array{Float32,2}:
- -0.707107  -0.707107
- -0.5547    -0.83205
- -0.5547    -0.83205
+2×3 Array{Float32,2}:
+ -0.894427  -1.0  -0.447214
+  0.447214   0.0   0.894427
 
 julia&gt; Matrix(embed_document(model2, crps))
-3×17 Array{Float32,2}:
- 0.0  0.303729  -0.303729  -0.303729  …  0.0  0.0  0.0  0.0  0.303729  0.0
- 0.0  0.377964  -0.377964  -0.377964     0.0  0.0  0.0  0.0  0.377964  0.0
- 0.0  0.303729  -0.303729  -0.303729     0.0  0.0  0.0  0.0  0.303729  0.0</code></pre><p>Random projection models can be saved/loaded to/from disk using a text format.</p><pre><code class="language-julia-repl">julia&gt; file = &quot;model.txt&quot;
+17×3 Array{Float32,2}:
+  0.291282   0.749568   0.35594
+  0.0        0.0        0.0
+  0.0        0.0        0.0
+  0.0        0.0        0.0
+  0.0        0.0        0.0
+ -0.291282  -0.252118  -0.35594
+  0.0        0.0        0.0
+  0.574725   0.0        0.0
+  0.0        0.0        0.0
+  0.291282   0.252118   0.35594
+  0.574725  -0.49745    0.0
+  0.0        0.0        0.0
+  0.0        0.0       -0.702301
+  0.0        0.0        0.0
+  0.0        0.0        0.0
+  0.291282   0.252118   0.35594
+  0.0        0.0        0.0</code></pre><p>Random projection models can be saved/loaded to/from disk using a text format.</p><pre><code class="language-julia-repl">julia&gt; file = &quot;model.txt&quot;
 &quot;model.txt&quot;
 
 julia&gt; model
@@ -348,7 +387,7 @@ Random Projection Model (tf), 7 terms, dimensionality 2, Float32 vectors
 julia&gt; save_rp_model(model, file)  # model saved
 
 julia&gt; print(join(readlines(file)[1:5], &quot;\n&quot;))  # first five lines
-Random Projection Model saved at 2019-01-15T19:57:50.766
+Random Projection Model saved at 2019-01-18T15:12:35.37
 7 2
 tf
 0.71231794 0.71231794 0.71231794 1.4054651 1.4054651 0.71231794 1.4054651
@@ -369,7 +408,7 @@ julia&gt; embed_document(model, crps[1])  # normalized BM25 document vector
  0.35594013
  0.0
 
-julia&gt; embed_document(model, crps)*embed_document(model, crps[1])  # intra-document similarity
+julia&gt; embed_document(model, crps)&#39;*embed_document(model, crps[1])  # intra-document similarity
 3-element Array{Float32,1}:
  0.9999999
  0.50677353
@@ -392,71 +431,55 @@ LSA Model (tfidf), 38 terms, dimensionality 4, Float32 vectors</code></pre><p>On
 
 julia&gt; embed_document(lm, query)
 4-element Array{Float32,1}:
-  0.73225194
- -0.14379036
-  0.31717476
-  0.58526134</code></pre><p>embed the corpus,</p><pre><code class="language-julia-repl">julia&gt; U = embed_document(lm, crps)
-5×4 SparseArrays.SparseMatrixCSC{Float32,Int64} with 20 stored entries:
-  [1, 1]  =  0.735059
-  [2, 1]  =  0.822173
-  [3, 1]  =  0.361583
-  [4, 1]  =  0.369556
-  [5, 1]  =  0.267474
-  [1, 2]  =  0.12794
-  [2, 2]  =  -0.281847
-  [3, 2]  =  -0.155932
-  [4, 2]  =  -0.312649
-  [5, 2]  =  0.92502
-  [1, 3]  =  0.0854177
-  [2, 3]  =  0.393248
-  [3, 3]  =  0.432529
-  [4, 3]  =  -0.844546
-  [5, 3]  =  -0.165552
-  [1, 4]  =  0.660321
-  [2, 4]  =  0.299916
-  [3, 4]  =  -0.811086
-  [4, 4]  =  -0.228956
-  [5, 4]  =  -0.213045</code></pre><p>search for matching documents,</p><pre><code class="language-julia-repl">julia&gt; idxs, corrs = cosine(lm, crps, query);
+  0.7322509
+ -0.1438004
+  0.31717324
+ -0.58526105</code></pre><p>embed the corpus,</p><pre><code class="language-julia-repl">julia&gt; V = Matrix(embed_document(lm, crps))  # `Matrix` looks nicer ;)
+4×5 Array{Float32,2}:
+  0.735059    0.82217    0.361583   0.369556   0.267474
+  0.127931   -0.281858  -0.155938  -0.31265    0.925019
+  0.0854161   0.393246   0.432529  -0.844546  -0.165555
+ -0.660323   -0.299915   0.811085   0.228956   0.213045</code></pre><p>search for matching documents,</p><pre><code class="language-julia-repl">julia&gt; idxs, corrs = cosine(lm, crps, query);
 
 julia&gt; for (idx, corr) in zip(idxs, corrs)
            println(&quot;$corr -&gt; \&quot;$(crps[idx].text)\&quot;&quot;);
        end
-0.94282216 -&gt; &quot;Pears and apples are good but not exotic  An apple a day keeps the doctor away &quot;
-0.9334042 -&gt; &quot;This is a text about an apple  There are many texts about apples &quot;
--0.050319046 -&gt; &quot;Fruits are good for you &quot;
--0.08630374 -&gt; &quot;This phrase has nothing to do with the others &quot;
--0.11434652 -&gt; &quot;Simple text  little info inside&quot;</code></pre><p>or check for structure within the data</p><pre><code class="language-julia-repl">julia&gt; V = lm.Vᵀ&#39;;
+0.9428223 -&gt; &quot;Pears and apples are good but not exotic  An apple a day keeps the doctor away &quot;
+0.93340385 -&gt; &quot;This is a text about an apple  There are many texts about apples &quot;
+-0.05031675 -&gt; &quot;Fruits are good for you &quot;
+-0.086299226 -&gt; &quot;This phrase has nothing to do with the others &quot;
+-0.11435646 -&gt; &quot;Simple text  little info inside&quot;</code></pre><p>or check for structure within the data</p><pre><code class="language-julia-repl">julia&gt; U = Matrix(lm.Uᵀ);
 
-julia&gt; Matrix(U*U&#39;)  # document to document similarity
+julia&gt; V&#39;*V  # document to document similarity
 5×5 Array{Float32,2}:
-  1.0          0.799917    -0.252797     0.00832167   0.160137
-  0.799917     1.0          0.268066    -0.00882566  -0.169803
- -0.252797     0.268066     1.0          0.00278924   0.0536653
-  0.00832167  -0.00882566   0.00278924   1.0         -0.00176519
-  0.160137    -0.169803     0.0536653   -0.00176519   1.0
+  1.0          0.799916    -0.252798     0.00832534   0.160128
+  0.799916     1.0          0.268068    -0.00882081  -0.169814
+ -0.252798     0.268068     1.0          0.00279084   0.0536584
+  0.00832534  -0.00882081   0.00279084   1.0         -0.00176435
+  0.160128    -0.169814     0.0536584   -0.00176435   1.0
 
-julia&gt; Matrix(V*V&#39;)  # term to term similarity
+julia&gt; U&#39;*U  # term to term similarity
 38×38 Array{Float32,2}:
-  0.0338667    0.0144173    0.0338667   …  -0.00553181    0.0144173
-  0.0144173    0.229302     0.0144173       0.00245703    0.229302
-  0.0338667    0.0144173    0.0338667      -0.00553181    0.0144173
- -0.0191156    0.0165085   -0.0191156       0.000449998   0.0165085
-  0.0316602   -0.0412213    0.0316602      -0.00542771   -0.0412213
-  0.0205999   -0.0305622    0.0205999   …   0.0920075    -0.0305622
-  0.0516622   -0.0211326    0.0516622      -0.00864062   -0.0211326
-  0.0447743   -0.0582958    0.0447743      -0.00767595   -0.0582958
-  0.0316602   -0.0412213    0.0316602      -0.00542771   -0.0412213
-  0.0338667    0.0144173    0.0338667      -0.00553181    0.0144173
+  0.0338669    0.0144176    0.0338669   …  -0.00553153    0.0144176
+  0.0144176    0.229302     0.0144176       0.00245726    0.229302
+  0.0338669    0.0144176    0.0338669      -0.00553153    0.0144176
+ -0.0191165    0.0165072   -0.0191165       0.000450208   0.0165072
+  0.0316602   -0.0412214    0.0316602      -0.00542747   -0.0412214
+  0.0206002   -0.0305621    0.0206002   …   0.0920075    -0.0305621
+  0.0516623   -0.0211324    0.0516623      -0.0086402    -0.0211324
+  0.0447743   -0.0582959    0.0447743      -0.0076756    -0.0582959
+  0.0316602   -0.0412214    0.0316602      -0.00542747   -0.0412215
+  0.0338669    0.0144176    0.0338669      -0.00553153    0.0144176
   ⋮                                     ⋱
- -0.00553181   0.00245703  -0.00553181      0.122128      0.00245703
- -0.00553181   0.00245703  -0.00553181  …   0.122128      0.00245703
- -0.00553181   0.00245703  -0.00553181      0.122128      0.00245703
-  0.0098903   -0.0194839    0.0098903      -0.00392449   -0.0194839
-  0.0316602   -0.0412213    0.0316602      -0.00542771   -0.0412213
-  0.0223396    0.0133039    0.0223396       0.0919254     0.0133039
- -0.00553181   0.00245703  -0.00553181  …   0.122128      0.00245703
- -0.00553181   0.00245703  -0.00553181      0.122128      0.00245703
-  0.0144173    0.229302     0.0144173       0.00245703    0.229302</code></pre><p>LSA models can be saved/loaded to/from disk using a text format similar to the random projection model one.</p><pre><code class="language-julia-repl">julia&gt; file = &quot;model.txt&quot;
+ -0.00553153   0.00245727  -0.00553153      0.122127      0.00245726
+ -0.00553153   0.00245727  -0.00553153  …   0.122127      0.00245726
+ -0.00553153   0.00245726  -0.00553153      0.122127      0.00245725
+  0.0098896   -0.019485     0.0098896      -0.00392413   -0.019485
+  0.0316602   -0.0412214    0.0316602      -0.00542747   -0.0412214
+  0.0223399    0.0133043    0.0223399       0.0919254     0.0133043
+ -0.00553153   0.00245727  -0.00553153  …   0.122127      0.00245725
+ -0.00553153   0.00245726  -0.00553153      0.122127      0.00245725
+  0.0144176    0.229302     0.0144176       0.00245725    0.229302</code></pre><p>LSA models can be saved/loaded to/from disk using a text format similar to the random projection model one.</p><pre><code class="language-julia-repl">julia&gt; file = &quot;model.txt&quot;
 &quot;model.txt&quot;
 
 julia&gt; lm
@@ -465,7 +488,7 @@ LSA Model (tfidf), 38 terms, dimensionality 4, Float32 vectors
 julia&gt; save_lsa_model(lm, file)  # model saved
 
 julia&gt; print(join(readlines(file)[1:5], &quot;\n&quot;))  # first five lines
-LSA Model saved at 2019-01-15T19:57:57.495
+LSA Model saved at 2019-01-18T15:12:42.367
 38 4
 tfidf
 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.5108256 1.5108256 1.9162908 1.9162908 1.9162908 1.5108256 1.5108256 1.2231436 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.5108256 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.5108256 1.9162908 1.5108256 1.9162908 1.9162908 1.9162908

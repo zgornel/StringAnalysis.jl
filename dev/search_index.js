@@ -13,7 +13,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "Introduction",
     "category": "section",
-    "text": "StringAnalysis is a package for working with strings and text. It is a hard-fork from TextAnalysis.jl designed to provide a more powerful, faster and orthogonal API."
+    "text": "StringAnalysis is a package for working with strings and text. It is a hard-fork from TextAnalysis.jl designed to provide a richer, faster and orthogonal API."
 },
 
 {
@@ -21,7 +21,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Introduction",
     "title": "What is new?",
     "category": "section",
-    "text": "This package brings several changes over TextAnalysis.jl:Added the Okapi BM25 statistic\nAdded dimensionality reduction with Sparse random projections\nAdded co-occurence matrix\nImproved latent semantic analysis (LSA)\nRe-factored text preprocessing API (prepare and strip_<things> methods)\nElement type specification for each_dtv, each_hash_dtv, DocumentTermMatrix\nExtended DocumentMetadata fields\nSimpler API (less exported methods)\nParametrized many of the objects i.e. DocumentTermMatrix, AbstractDocument etc\nMany of the repetitive functions are now automatically generated (see metadata.jl, preprocessing.jl)\nImproved test coverage\nMany bugfixes and small extensions"
+    "text": "This package brings several changes over TextAnalysis.jl:Added the Okapi BM25 statistic\nAdded dimensionality reduction with sparse random projections\nAdded co-occurence matrix\nImproved latent semantic analysis\nRe-factored text preprocessing API\nDTM and similar have documents as columns\nParametrized many of the objects (DocumentTermMatrix, AbstractDocuments)\nElement type specification for each_dtv, each_hash_dtv\nExtended DocumentMetadata fields\nSimpler API i.e. less exported methods\nMany of the repetitive functions are now automatically generated (see metadata.jl, preprocessing.jl)\nImproved test coverage\nMany bugfixes and small extensions"
 },
 
 {
@@ -125,7 +125,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Usage examples",
     "title": "Document Term Matrix (DTM)",
     "category": "section",
-    "text": "If a lexicon is present in the corpus, a document term matrix (DTM) can be created. The DTM acts as a basis for word-document statistics, allowing for the representation of documents as numerical vectors. The DTM is created from a Corpus by calling the constructorM = DocumentTermMatrix(crps)\ntypeof(M)\nM = DocumentTermMatrix{Int8}(crps)\ntypeof(M)or the dtm functionM = dtm(crps, Int8);\nMatrix(M)It is important to note that the type parameter of the DTM object can be specified (also in the dtm function) but not specifically required. This can be useful in some cases for reducing memory requirements. The default element type of the DTM is specified by the constant DEFAULT_DTM_TYPE present in src/defaults.jl."
+    "text": "If a lexicon is present in the corpus, a document term matrix (DTM) can be created. The DTM acts as a basis for word-document statistics, allowing for the representation of documents as numerical vectors. The DTM is created from a Corpus by calling the constructorM = DocumentTermMatrix(crps)\ntypeof(M)\nM = DocumentTermMatrix{Int8}(crps)\ntypeof(M)or the dtm functionM = dtm(crps, Int8);\nMatrix(M)It is important to note that the type parameter of the DTM object can be specified (also in the dtm function) but not specifically required. This can be useful in some cases for reducing memory requirements. The default element type of the DTM is specified by the constant DEFAULT_DTM_TYPE present in src/defaults.jl.note: Note\nFrom version v0.3.2, the columns of the document-term matrix represent document vectors. This convention holds accross the package where whenever multiple documents are represented. This represents a breaking change from previous versions and TextAnalysis.jl and may break code if not taken into account.One can verify the DTM dimensions with:@assert size(dtm(crps)) == (length(lexicon(crps)), length(crps))  # O.K."
 },
 
 {
@@ -173,7 +173,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Usage examples",
     "title": "No projection hack",
     "category": "section",
-    "text": "As previously noted, before projection, the DTV is calculated according to the value of the stats keyword argument value.  The vector can composed of term counts, frequencies and so on and is more generic than the output of the dtv function which yields only term counts. It is useful to be able to calculate and output these vectors without projecting them into the lower dimensional space. This can be achieved by simply providing a negative or zero value to the model parameter k. In the background, the random projection matrix of the model is replaced by the identity matrix.model = RPModel(M, k=0, stats=:bm25)\nembed_document(model, crps[1])  # normalized BM25 document vector\nembed_document(model, crps)*embed_document(model, crps[1])  # intra-document similarity"
+    "text": "As previously noted, before projection, the DTV is calculated according to the value of the stats keyword argument value.  The vector can composed of term counts, frequencies and so on and is more generic than the output of the dtv function which yields only term counts. It is useful to be able to calculate and output these vectors without projecting them into the lower dimensional space. This can be achieved by simply providing a negative or zero value to the model parameter k. In the background, the random projection matrix of the model is replaced by the identity matrix.model = RPModel(M, k=0, stats=:bm25)\nembed_document(model, crps[1])  # normalized BM25 document vector\nembed_document(model, crps)\'*embed_document(model, crps[1])  # intra-document similarity"
 },
 
 {
@@ -189,7 +189,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Usage examples",
     "title": "Latent Semantic Analysis (LSA)",
     "category": "section",
-    "text": "The following example gives a straightforward usage example of LSA. It is geared towards information retrieval (LSI) as it focuses on document comparison and embedding. We assume a number of documents,doc1 = StringDocument(\"This is a text about an apple. There are many texts about apples.\");\ndoc2 = StringDocument(\"Pears and apples are good but not exotic. An apple a day keeps the doctor away.\");\ndoc3 = StringDocument(\"Fruits are good for you.\");\ndoc4 = StringDocument(\"This phrase has nothing to do with the others...\");\ndoc5 = StringDocument(\"Simple text, little info inside\");and create the corpus and its DTM:crps = Corpus(AbstractDocument[doc1, doc2, doc3, doc4, doc5]);\nprepare!(crps, strip_punctuation);\nupdate_lexicon!(crps);\nM = DocumentTermMatrix{Float32}(crps, sort(collect(keys(crps.lexicon))));Building an LSA model is straightforward:lm = LSAModel(M, k=4, stats=:tfidf)Once the model is created, it can be used to either embed documents,query = StringDocument(\"Apples and an exotic fruit.\");\nembed_document(lm, query)embed the corpus,U = embed_document(lm, crps)search for matching documents,idxs, corrs = cosine(lm, crps, query);\nfor (idx, corr) in zip(idxs, corrs)\n    println(\"$corr -> \\\"$(crps[idx].text)\\\"\");\nendor check for structure within the dataV = lm.Vᵀ\';\nMatrix(U*U\')  # document to document similarity\nMatrix(V*V\')  # term to term similarityLSA models can be saved/loaded to/from disk using a text format similar to the random projection model one.file = \"model.txt\"\nlm\nsave_lsa_model(lm, file)  # model saved\nprint(join(readlines(file)[1:5], \"\\n\"))  # first five lines\nnew_model = load_lsa_model(file, Float64)  # change element type\nrm(file)"
+    "text": "The following example gives a straightforward usage example of LSA. It is geared towards information retrieval (LSI) as it focuses on document comparison and embedding. We assume a number of documents,doc1 = StringDocument(\"This is a text about an apple. There are many texts about apples.\");\ndoc2 = StringDocument(\"Pears and apples are good but not exotic. An apple a day keeps the doctor away.\");\ndoc3 = StringDocument(\"Fruits are good for you.\");\ndoc4 = StringDocument(\"This phrase has nothing to do with the others...\");\ndoc5 = StringDocument(\"Simple text, little info inside\");and create the corpus and its DTM:crps = Corpus(AbstractDocument[doc1, doc2, doc3, doc4, doc5]);\nprepare!(crps, strip_punctuation);\nupdate_lexicon!(crps);\nM = DocumentTermMatrix{Float32}(crps, sort(collect(keys(crps.lexicon))));Building an LSA model is straightforward:lm = LSAModel(M, k=4, stats=:tfidf)Once the model is created, it can be used to either embed documents,query = StringDocument(\"Apples and an exotic fruit.\");\nembed_document(lm, query)embed the corpus,V = Matrix(embed_document(lm, crps))  # `Matrix` looks nicer ;)search for matching documents,idxs, corrs = cosine(lm, crps, query);\nfor (idx, corr) in zip(idxs, corrs)\n    println(\"$corr -> \\\"$(crps[idx].text)\\\"\");\nendor check for structure within the dataU = Matrix(lm.Uᵀ);\nV\'*V  # document to document similarity\nU\'*U  # term to term similarityLSA models can be saved/loaded to/from disk using a text format similar to the random projection model one.file = \"model.txt\"\nlm\nsave_lsa_model(lm, file)  # model saved\nprint(join(readlines(file)[1:5], \"\\n\"))  # first five lines\nnew_model = load_lsa_model(file, Float64)  # change element type\nrm(file)"
 },
 
 {
@@ -229,7 +229,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.DocumentTermMatrix",
     "category": "type",
-    "text": "Basic Document-Term-Matrix (DTM) type.\n\nFields\n\ndtm::SparseMatriCSC{T,Int} the actual DTM; rows represent documents\n\nand columns represent terms\n\nterms::Vector{String} a list of terms that represent the lexicon of\n\nthe corpus associated with the DTM\n\ncolumn_indices::Dict{String, Int} a map between the terms and the\n\ncolumns of the dtm\n\n\n\n\n\n"
+    "text": "Basic Document-Term-Matrix (DTM) type.\n\nFields\n\ndtm::SparseMatriCSC{T,Int} the actual DTM; rows represent terms\n\nand columns represent documents\n\nterms::Vector{String} a list of terms that represent the lexicon of\n\nthe corpus associated with the DTM\n\nrow_indices::Dict{String, Int} a map between the terms and the\n\nrows of the dtm\n\n\n\n\n\n"
 },
 
 {
@@ -245,7 +245,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.LSAModel",
     "category": "type",
-    "text": "LSAModel{S<:AbstractString, T<:AbstractFloat, A<:AbstractMatrix{T}, H<:Integer}\n\nLSA (latent semantic analysis) model. It constructs from a document term matrix (dtm) a model that can be used to embed documents in a latent semantic space pertaining to the data. The model requires that the document term matrix be a DocumentTermMatrix{T<:AbstractFloat} because the elements of the matrices resulted from the SVD operation are floating point numbers and these have to match or be convertible to type T.\n\nFields\n\nvocab::Vector{S} a vector with all the words in the corpus\nvocab_hash::Dict{S,H} a word to index in word embeddings matrix mapping\nΣinv::A inverse of the singular value matrix\nVᵀ::A transpose of the word embedding matrix\nstats::Symbol the statistical measure to use for word importances in documents. Available values are: :count (term count), :tf (term frequency), :tfidf (default, term frequency-inverse document frequency) and :bm25 (Okapi BM25)\nidf::Vector{T} inverse document frequencies for the words in the vocabulary\nnwords::T averge number of words in a document\nκ::Int the κ parameter of the BM25 statistic\nβ::Float64 the β parameter of the BM25 statistic\ntol::T minimum size of the vector components (default T(1e-15))\n\nSVD matrices U, Σinv and Vᵀ:\n\nIf X is a m×n document-term-matrix with m documents and n words so that X[i,j] represents a statistical indicator of the importance of term j in document i then:\n\nU, Σ, V = svd(X)\nΣinv = inv(Σ)\nVᵀ = V\'\n\nThe matrix U is not actually stored in the model.\n\nExamples\n\njulia> using StringAnalysis\n\n       doc1 = StringDocument(\"This is a text about an apple. There are many texts about apples.\")\n       doc2 = StringDocument(\"Pears and apples are good but not exotic. An apple a day keeps the doctor away.\")\n       doc3 = StringDocument(\"Fruits are good for you.\")\n       doc4 = StringDocument(\"This phrase has nothing to do with the others...\")\n       doc5 = StringDocument(\"Simple text, little info inside\")\n\n       crps = Corpus(AbstractDocument[doc1, doc2, doc3, doc4, doc5])\n       prepare!(crps, strip_punctuation)\n       update_lexicon!(crps)\n       dtm = DocumentTermMatrix{Float32}(crps, sort(collect(keys(crps.lexicon))))\n\n       ### Build LSA Model ###\n       lsa_model = LSAModel(dtm, k=3, stats=:tf)\n\n       query = StringDocument(\"Apples and an exotic fruit.\")\n       idxs, corrs = cosine(lsa_model, crps, query)\n\n       println(\"Query: \"$(query.text)\"\")\n       for (idx, corr) in zip(idxs, corrs)\n           println(\"$corr -> \"$(crps[idx].text)\"\")\n       end\nQuery: \"Apples and an exotic fruit.\"\n0.9746108 -> \"Pears and apples are good but not exotic  An apple a day keeps the doctor away \"\n0.870703 -> \"This is a text about an apple  There are many texts about apples \"\n0.7122063 -> \"Fruits are good for you \"\n0.22725986 -> \"This phrase has nothing to do with the others \"\n0.076901935 -> \"Simple text  little info inside \"\n\nReferences:\n\nThe LSA wiki page\nDeerwester et al. 1990\n\n\n\n\n\n"
+    "text": "LSAModel{S<:AbstractString, T<:AbstractFloat, A<:AbstractMatrix{T}, H<:Integer}\n\nLSA (latent semantic analysis) model. It constructs from a document term matrix (dtm) a model that can be used to embed documents in a latent semantic space pertaining to the data. The model requires that the document term matrix be a DocumentTermMatrix{T<:AbstractFloat} because the elements of the matrices resulted from the SVD operation are floating point numbers and these have to match or be convertible to type T.\n\nFields\n\nvocab::Vector{S} a vector with all the words in the corpus\nvocab_hash::Dict{S,H} a word to index in word embeddings matrix mapping\nΣinv::A inverse of the singular value matrix\nUᵀ::A transpose of the word embedding matrix\nstats::Symbol the statistical measure to use for word importances in documents. Available values are: :count (term count), :tf (term frequency), :tfidf (default, term frequency-inverse document frequency) and :bm25 (Okapi BM25)\nidf::Vector{T} inverse document frequencies for the words in the vocabulary\nnwords::T averge number of words in a document\nκ::Int the κ parameter of the BM25 statistic\nβ::Float64 the β parameter of the BM25 statistic\ntol::T minimum size of the vector components (default T(1e-15))\n\nSVD matrices U, Σinv and V:\n\nIf X is a m×n document-term-matrix with n documents and m words so that X[i,j] represents a statistical indicator of the importance of term i in document j then:\n\nU, Σ, V = svd(X)\nΣinv = inv(Σ)\nUᵀ = U\'\nX ≈ U * Σ * V\'\n\nThe matrix V of document embeddings is not actually stored in the model.\n\nExamples\n\njulia> using StringAnalysis\n\n       doc1 = StringDocument(\"This is a text about an apple. There are many texts about apples.\")\n       doc2 = StringDocument(\"Pears and apples are good but not exotic. An apple a day keeps the doctor away.\")\n       doc3 = StringDocument(\"Fruits are good for you.\")\n       doc4 = StringDocument(\"This phrase has nothing to do with the others...\")\n       doc5 = StringDocument(\"Simple text, little info inside\")\n\n       crps = Corpus(AbstractDocument[doc1, doc2, doc3, doc4, doc5])\n       prepare!(crps, strip_punctuation)\n       update_lexicon!(crps)\n       dtm = DocumentTermMatrix{Float32}(crps, sort(collect(keys(crps.lexicon))))\n\n       ### Build LSA Model ###\n       lsa_model = LSAModel(dtm, k=3, stats=:tf)\n\n       query = StringDocument(\"Apples and an exotic fruit.\")\n       idxs, corrs = cosine(lsa_model, crps, query)\n\n       println(\"Query: \"$(query.text)\"\")\n       for (idx, corr) in zip(idxs, corrs)\n           println(\"$corr -> \"$(crps[idx].text)\"\")\n       end\nQuery: \"Apples and an exotic fruit.\"\n0.9746108 -> \"Pears and apples are good but not exotic  An apple a day keeps the doctor away \"\n0.870703 -> \"This is a text about an apple  There are many texts about apples \"\n0.7122063 -> \"Fruits are good for you \"\n0.22725986 -> \"This phrase has nothing to do with the others \"\n0.076901935 -> \"Simple text  little info inside \"\n\nReferences:\n\nThe LSA wiki page\nDeerwester et al. 1990\n\n\n\n\n\n"
 },
 
 {
@@ -325,7 +325,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.each_dtv",
     "category": "method",
-    "text": "each_dtv(crps::Corpus [; eltype::Type{U}=DEFAULT_DTM_TYPE])\n\nIterates through the rows of the DTM of the corpus crps without constructing it. Useful when the DTM would not fit in memory. eltype specifies the element type of the generated vectors.\n\n\n\n\n\n"
+    "text": "each_dtv(crps::Corpus [; eltype::Type{U}=DEFAULT_DTM_TYPE])\n\nIterates through the columns of the DTM of the corpus crps without constructing it. Useful when the DTM would not fit in memory. eltype specifies the element type of the generated vectors.\n\n\n\n\n\n"
 },
 
 {
@@ -333,7 +333,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.each_hash_dtv",
     "category": "method",
-    "text": "each_hash_dtv(crps::Corpus [; eltype::Type{U}=DEFAULT_DTM_TYPE])\n\nIterates through the rows of the hashed DTM of the corpus crps without constructing it. Useful when the DTM would not fit in memory. eltype specifies the element type of the generated vectors.\n\n\n\n\n\n"
+    "text": "each_hash_dtv(crps::Corpus [; eltype::Type{U}=DEFAULT_DTM_TYPE])\n\nIterates through the columns of the hashed DTM of the corpus crps without constructing it. Useful when the DTM would not fit in memory. eltype specifies the element type of the generated vectors.\n\n\n\n\n\n"
 },
 
 {
@@ -593,6 +593,14 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "api/#StringAnalysis.columnindices",
+    "page": "API Reference",
+    "title": "StringAnalysis.columnindices",
+    "category": "function",
+    "text": "columnindices(terms)\n\nIdentical to rowindices. Returns a dictionary that maps each term from the vector terms to a integer idex.\n\n\n\n\n\n"
+},
+
+{
     "location": "api/#StringAnalysis.coo_matrix-Union{Tuple{T}, Tuple{Type{T},Array{#s12,1} where #s12<:AbstractString,Dict{#s51,Int64} where #s51<:AbstractString,Int64}, Tuple{Type{T},Array{#s52,1} where #s52<:AbstractString,Dict{#s53,Int64} where #s53<:AbstractString,Int64,Bool}} where T<:AbstractFloat",
     "page": "API Reference",
     "title": "StringAnalysis.coo_matrix",
@@ -613,7 +621,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.random_projection_matrix",
     "category": "method",
-    "text": "random_projection_matrix(m::Int, k::Int, eltype::Type{T<:AbstractFloat}, density::Float64)\n\nBuilds a m×k sparse random projection matrix with elements of type T and a non-zero element frequency of density. m and k are the input and output dimensionalities.\n\nMatrix Probabilities\n\nIf we note s = 1 / density, the components of the random matrix are drawn from:\n\n-sqrt(s) / sqrt(k) with probability 1/2s\n0 with probability 1 - 1/s\n+sqrt(s) / sqrt(k)   with probability 1/2s\n\nNo projection hack\n\nIf k<=0 no projection is performed and the function returns an identity matrix sized m×m with elements of type T. This is useful if one does not want to embed documents but rather calculate term frequencies, BM25 and other statistical indicators (similar to dtv).\n\n\n\n\n\n"
+    "text": "random_projection_matrix(k::Int, m::Int, eltype::Type{T<:AbstractFloat}, density::Float64)\n\nBuilds a k×m sparse random projection matrix with elements of type T and a non-zero element frequency of density. k and m are the output and input dimensionalities.\n\nMatrix Probabilities\n\nIf we note s = 1 / density, the components of the random matrix are drawn from:\n\n-sqrt(s) / sqrt(k) with probability 1/2s\n0 with probability 1 - 1/s\n+sqrt(s) / sqrt(k)   with probability 1/2s\n\nNo projection hack\n\nIf k<=0 no projection is performed and the function returns an identity matrix sized m×m with elements of type T. This is useful if one does not want to embed documents but rather calculate term frequencies, BM25 and other statistical indicators (similar to dtv).\n\n\n\n\n\n"
 },
 
 {
@@ -630,6 +638,14 @@ var documenterSearchIndex = {"docs": [
     "title": "StringAnalysis.remove_patterns",
     "category": "method",
     "text": "remove_patterns(s, rex)\n\nRemoves from the string s the text matching the pattern described by the regular expression rex.\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#StringAnalysis.rowindices-Tuple{Array{String,1}}",
+    "page": "API Reference",
+    "title": "StringAnalysis.rowindices",
+    "category": "method",
+    "text": "rowindices(terms)\n\nReturns a dictionary that maps each term from the vector terms to a integer idex.\n\n\n\n\n\n"
 },
 
 {
