@@ -1,8 +1,13 @@
 ## StringAnalysis Release Notes
 
+v0.3.2
+------
+ - DTM document vectors are columns
+ - Bugfixes
+
 v0.3.1
 ------
- - Added :count option to LSA, RP models
+ - Added `:count` option to LSA, RP models
  - No projection hack for RP models
  - More documentation
 
