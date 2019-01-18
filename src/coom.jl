@@ -14,8 +14,8 @@ of not the counts by the distance between word positions.
 julia> using StringAnalysis
        doc = StringDocument("This is a text about an apple. There are many texts about apples.")
        docv = tokenize(text(doc))
-	   vocab = Dict("This"=>1, "is"=>2, "apple."=>3)
-	   StringAnalysis.coo_matrix(Float16, docv, vocab, 5, true)
+       vocab = Dict("This"=>1, "is"=>2, "apple."=>3)
+       StringAnalysis.coo_matrix(Float16, docv, vocab, 5, true)
 3×3 SparseArrays.SparseMatrixCSC{Float16,Int64} with 4 stored entries:
   [2, 1]  =  2.0
   [1, 2]  =  2.0
@@ -24,10 +24,10 @@ julia> using StringAnalysis
 ```
 """
 function coo_matrix(::Type{T},
-                     doc::Vector{<:AbstractString},
-                     vocab::Dict{<:AbstractString, Int},
-                     window::Int,
-                     normalize::Bool=true) where T<:AbstractFloat
+                    doc::Vector{<:AbstractString},
+                    vocab::Dict{<:AbstractString, Int},
+                    window::Int,
+                    normalize::Bool=true) where T<:AbstractFloat
     n = length(vocab)
     m = length(doc)
     coom = spzeros(T, n, n)
@@ -78,12 +78,12 @@ function CooMatrix{T}(crps::Corpus,
                       window::Int=5,
                       normalize::Bool=true) where T<:AbstractFloat
     column_indices = columnindices(terms)
-	n = length(terms)
+    n = length(terms)
     coom = spzeros(T, n, n)
-	for doc in crps
+    for doc in crps
         docv = tokens(doc)
         coom .+= coo_matrix(T, docv, column_indices, window, normalize)
-	end
+    end
     return CooMatrix{T}(coom, terms, column_indices)
 end
 
@@ -147,5 +147,5 @@ with the `entity`. The `CooMatrix{T}` will first have to
 be created in order for the actual matrix to be accessed.
 """
 coom(entity, eltype::Type{T}=DEFAULT_FLOAT_TYPE;
-     window::Int=5, normalize::Bool=true) where T<:AbstractFloat =
+        window::Int=5, normalize::Bool=true) where T<:AbstractFloat =
     coom(CooMatrix{T}(entity, window=window, normalize=normalize))
