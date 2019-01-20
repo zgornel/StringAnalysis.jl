@@ -1,6 +1,6 @@
 # All Document types share a common metadata profile using DocumentMetadata
 mutable struct DocumentMetadata
-    language
+    language::Languages.Language
     name::String
     author::String
     timestamp::String
