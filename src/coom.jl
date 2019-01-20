@@ -36,9 +36,11 @@ function coo_matrix(::Type{T},
         @inbounds for j in max(1, i-window):min(m, i+window)
             wtoken = doc[j]
             nm = T(ifelse(normalize, abs(i-j), 1))
-            if i!=j && haskey(vocab, token) && haskey(vocab, wtoken)
-                coom[vocab[token], vocab[wtoken]] += one(T)/nm
-                coom[vocab[wtoken], vocab[token]] += one(T)/nm
+            row = get(vocab, token, nothing)
+            col = get(vocab, wtoken, nothing)
+            if i!=j && row != nothing && col != nothing
+                coom[row, col] += one(T)/nm
+                coom[col, row] = coom[row, col]
             end
         end
     end
@@ -140,7 +142,7 @@ Access the co-occurrence matrix field `coom` of a `CooMatrix` `c`.
 coom(c::CooMatrix) = c.coom
 
 """
-    coom(entity, eltype=DEFAULT_FLOAT_TYPE [;window=5])
+    coom(entity, eltype=DEFAULT_FLOAT_TYPE [;window=5, normalize=true])
 
 Access the co-occurrence matrix of the `CooMatrix` associated
 with the `entity`. The `CooMatrix{T}` will first have to
