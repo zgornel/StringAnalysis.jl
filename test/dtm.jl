@@ -46,6 +46,13 @@ end
     dtm1sp = sparse(dtm(crps))
     hash_dtm(crps)
 
+    # Regex dtv
+    doc = "a..b"
+    lex = Dict("aaa"=>1, "aaab"=>2, "accb"=>3, "bbb"=>4)
+    v = dtv_regex(doc, lex, Float32)
+    v2 = dtv_regex(NGramDocument(doc), lex, Float32)
+    @test v == v2 == Float32[0, 1, 1, 0]
+
     # construct a DocumentTermMatrix from a crps and a custom terms vector
     terms = ["And", "notincrps"]
     m = DocumentTermMatrix(crps,terms)

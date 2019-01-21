@@ -117,9 +117,7 @@ dtm(crps::Corpus, eltype::Type{T}=DEFAULT_DTM_TYPE) where T<:Real =
 
 
 # Produce the signature of a DTM entry for a document
-function dtm_entries(d::AbstractDocument,
-                     lex::Dict{String, Int},
-                     eltype::Type{T}=DEFAULT_DTM_TYPE) where T<:Real
+function dtm_entries(d, lex::Dict{String, Int}, eltype::Type{T}=DEFAULT_DTM_TYPE) where T<:Real
     ngs = ngrams(d)
     indices = Vector{Int}(undef, 0)
     values = Vector{T}(undef, 0)
@@ -138,14 +136,12 @@ end
 
 
 """
-    dtv(d::AbstractDocument, lex::Dict{String,Int}, eltype::Type{T}=DEFAULT_DTM_TYPE)
+    dtv(d, lex::Dict{String,Int}, eltype::Type{T}=DEFAULT_DTM_TYPE)
 
 Creates a document-term-vector with elements of type `T` for document `d`
-using the lexicon `lex`.
+using the lexicon `lex`. `d` can be an `AbstractString` or an `AbstractDocument`.
 """
-function dtv(d::AbstractDocument,
-             lex::Dict{String, Int},
-             eltype::Type{T}=DEFAULT_DTM_TYPE) where T<:Real
+function dtv(d, lex::Dict{String, Int}, eltype::Type{T}=DEFAULT_DTM_TYPE) where T<:Real
     p = length(keys(lex))
     column = zeros(T, p)
     indices, values = dtm_entries(d, lex)
@@ -171,8 +167,54 @@ function dtv(crps::Corpus,
     end
 end
 
-function dtv(d::AbstractDocument)
+function dtv(d)
     error("Cannot construct a DTV without a pre-existing lexicon")
+end
+
+
+# Document is a list of regular expressions in text form
+function dtm_regex_entries(d, lex::Dict{String, Int}, eltype::Type{T}=DEFAULT_DTM_TYPE) where T<:Real
+    ngs = ngrams(d)
+    patterns = Regex.(keys(ngs))
+    indices = Vector{Int}(undef, 0)
+    terms = sort(collect(keys(lex)))
+    row_indices = rowindices(terms)
+    for pattern in patterns
+        for term in terms
+            if occursin(pattern, term)
+                j = row_indices[term]
+                push!(indices, j)
+            end
+        end
+    end
+    values = ones(T, length(indices))
+    return (indices, values)
+end
+
+
+"""
+    dtv_regex(d, lex::Dict{String,Int}, eltype::Type{T}=DEFAULT_DTM_TYPE)
+
+Creates a document-term-vector with elements of type `T` for document `d`
+using the lexicon `lex`. The tokens of document `d` are assumed to be regular
+expressions in text format. `d` can be an `AbstractString` or an `AbstractDocument`.
+
+# Examples
+```
+julia> dtv_regex(NGramDocument("a..b"), Dict("aaa"=>1, "aaab"=>2, "accb"=>3, "bbb"=>4), Float32)
+4-element Array{Float32,1}:
+ 0.0
+ 1.0
+ 1.0
+ 0.0
+```
+"""
+function dtv_regex(d, lex::Dict{String, Int}, eltype::Type{T}=DEFAULT_DTM_TYPE) where T<:Real
+    p = length(keys(lex))
+    column = zeros(T, p)
+    indices, values = dtm_regex_entries(d, lex)
+    column[indices] = values
+    return column
 end
 
 
