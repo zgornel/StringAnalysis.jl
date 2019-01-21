@@ -50,9 +50,11 @@ mutable struct StringDocument{T<:AbstractString} <: AbstractDocument{T}
     metadata::DocumentMetadata
 end
 
-StringDocument{T}(txt::AbstractString) where T<:AbstractString = StringDocument(T(txt), DocumentMetadata())
+StringDocument{T}(txt::AbstractString) where T<:AbstractString =
+    StringDocument(T(txt), DocumentMetadata())
 
-StringDocument(txt::T) where T<:AbstractString = StringDocument{T}(txt, DocumentMetadata())
+StringDocument(txt::T) where T<:AbstractString =
+    StringDocument{T}(txt, DocumentMetadata())
 
 
 # TokenDocument type and constructors
@@ -67,12 +69,16 @@ TokenDocument(tkns::Vector{T}) where T <: AbstractString =
 TokenDocument{T}(tkns::Vector{S}) where {T<:AbstractString, S<:AbstractString} =
     TokenDocument{T}(T.(tkns), DocumentMetadata())
 
-TokenDocument{T}(txt::AbstractString, dm::DocumentMetadata=DocumentMetadata()
+TokenDocument{T}(txt::AbstractString,
+                 dm::DocumentMetadata=DocumentMetadata();
+                 method::Symbol=DEFAULT_TOKENIZER
                 ) where T<:AbstractString =
-    TokenDocument{T}(T.(tokenize(txt)), dm)
+    TokenDocument{T}(T.(tokenize(txt, method=method)), dm)
 
-TokenDocument(txt::AbstractString, dm::DocumentMetadata=DocumentMetadata()) =
-    TokenDocument(tokenize(txt), dm)
+TokenDocument(txt::AbstractString,
+              dm::DocumentMetadata=DocumentMetadata();
+              method::Symbol=DEFAULT_TOKENIZER) =
+    TokenDocument(tokenize(txt, method=method), dm)
 
 
 # NGramDocument type and constructors
@@ -88,14 +94,16 @@ NGramDocument(ng::Dict{T, Int}, n::Int=DEFAULT_NGRAM_COMPLEXITY
 
 NGramDocument{T}(txt::AbstractString,
                  dm::DocumentMetadata=DocumentMetadata(),
-                 n::Int=DEFAULT_NGRAM_COMPLEXITY) where T<:AbstractString =
-    NGramDocument(ngramize(dm.language, T.(tokenize(txt)), n), n, dm)
+                 n::Int=DEFAULT_NGRAM_COMPLEXITY;
+                 tokenizer::Symbol=DEFAULT_TOKENIZER
+                ) where T<:AbstractString =
+    NGramDocument(ngramize(dm.language, T.(tokenize(txt, method=tokenizer)), n), n, dm)
 
 NGramDocument(txt::AbstractString,
               dm::DocumentMetadata=DocumentMetadata(),
-              n::Int=DEFAULT_NGRAM_COMPLEXITY) =
-    NGramDocument(ngramize(dm.language, tokenize(txt), n), n, dm)
-
+              n::Int=DEFAULT_NGRAM_COMPLEXITY;
+              tokenizer::Symbol=DEFAULT_TOKENIZER)=
+    NGramDocument(ngramize(dm.language, tokenize(txt, method=tokenizer), n), n, dm)
 
 
 # Union type that refers to a generic, non-abstract document type
@@ -115,8 +123,11 @@ Document(tkns::Vector{T}) where {T <: AbstractString} = TokenDocument(tkns)
 Document(ng::Dict{String, Int}) = NGramDocument(ng)
 
 
+"""
+    text(d)
 
-# text() / text!(): Access to document text as a string
+Access the text of document `d` if possible.
+"""
 text(d::AbstractString) = d
 
 text(fd::FileDocument) = begin
@@ -134,6 +145,11 @@ end
 text(ngd::NGramDocument) =
     error("The text of an NGramDocument cannot be reconstructed")
 
+"""
+    text!(d, new_text)
+
+Replace the original text of document `d` with `new_text`.
+"""
 text!(sd::StringDocument{T}, new_text::T) where T<:AbstractString =
     (sd.text = new_text)
 
@@ -141,36 +157,67 @@ text!(d::AbstractDocument, new_text::AbstractString) =
     error("The text of a $(typeof(d)) cannot be edited")
 
 
-# tokens() / tokens!(): Access to document text as a token array
-tokens(d::AbstractString) = tokenize(d)
+"""
+    tokens(d [; method=DEFAULT_TOKENIZER])
 
-tokens(d::(Union{FileDocument, StringDocument})) = tokens(text(d))
+Access the tokens of document `d` as a token array. The `method` keyword
+argument specifies the type of tokenization to perform. Available
+options are `:slow` and `:fast`.
+"""
+tokens(d::AbstractString; method::Symbol=DEFAULT_TOKENIZER) =
+    tokenize(d, method=method)
 
-tokens(d::TokenDocument) = d.tokens
+tokens(d::(Union{FileDocument, StringDocument}); method::Symbol=DEFAULT_TOKENIZER) =
+    tokens(text(d), method=method)
 
-tokens(d::NGramDocument) =
+tokens(d::TokenDocument; method::Symbol=DEFAULT_TOKENIZER) = d.tokens
+
+tokens(d::NGramDocument; method::Symbol=DEFAULT_TOKENIZER) =
     error("The tokens of an NGramDocument cannot be reconstructed")
 
+
+"""
+    tokens!(d, new_tokens)
+
+Replace the original tokens of document `d` with `new_tokens`.
+"""
 tokens!(d::TokenDocument{T}, new_tokens::Vector{T}) where T<:AbstractString =
     (d.tokens = new_tokens)
 
 tokens!(d::AbstractDocument, new_tokens::Vector{T}) where T<:AbstractString =
     error("The tokens of a $(typeof(d)) cannot be directly edited")
 
-# ngrams() / ngrams!(): Access to document text as n-gram counts
-ngrams(d::AbstractString, n::Int=DEFAULT_NGRAM_COMPLEXITY) =
-    ngramize(DEFAULT_LANGUAGE, tokens(d), n)
 
-ngrams(d::NGramDocument) = d.ngrams
+"""
+    ngrams(d, n=DEFAULT_GRAM_COMPLEXITY [; tokenizer=DEFAULT_TOKENIZER])
 
-ngrams(d::AbstractDocument, n::Int=DEFAULT_NGRAM_COMPLEXITY) =
-    ngramize(language(d), tokens(d), n)
+Access the document text of `d` as n-gram counts. The ngrams contain
+at most `n` tokens which are obtained using `tokenizer`.
+"""
+ngrams(d::AbstractString,
+       n::Int=DEFAULT_NGRAM_COMPLEXITY;
+       tokenizer::Symbol=DEFAULT_TOKENIZER) =
+    ngramize(DEFAULT_LANGUAGE, tokens(d, method=tokenizer), n)
 
+ngrams(d::NGramDocument; tokenizer::Symbol=DEFAULT_TOKENIZER) = d.ngrams
+
+ngrams(d::AbstractDocument,
+       n::Int=DEFAULT_NGRAM_COMPLEXITY;
+       tokenizer::Symbol=DEFAULT_TOKENIZER) =
+    ngramize(language(d), tokens(d, method=tokenizer), n)
+
+
+"""
+    ngrams!(d, new_ngrams)
+
+Replace the original n-grams of document `d` with `new_ngrams`.
+"""
 ngrams!(d::NGramDocument{T}, new_ngrams::Dict{T, Int}) where T<:AbstractString =
     (d.ngrams = new_ngrams)
 
 ngrams!(d::AbstractDocument, new_ngrams::Dict) =
     error("The n-grams of $(typeof(d)) cannot be directly edited")
+
 
 # Length describes length of document in characters
 Base.length(d::NGramDocument) =

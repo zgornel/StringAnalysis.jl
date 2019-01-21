@@ -46,7 +46,7 @@ module StringAnalysis
     export Corpus, DirectoryCorpus, documents, standardize!,
            lexicon, update_lexicon!, lexical_frequency, lexicon_size,
            inverse_index, update_inverse_index!, index_size
-    export DocumentTermMatrix, dtv, each_dtv, dtm
+    export DocumentTermMatrix, dtm, dtv, dtv_regex, each_dtv
     export hash_dtv, each_hash_dtv, hash_dtm
     export TextHashFunction, index_hash, cardinality,
            hash_function, hash_function!
