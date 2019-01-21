@@ -206,6 +206,12 @@ ngrams(d::AbstractDocument,
        tokenizer::Symbol=DEFAULT_TOKENIZER) =
     ngramize(language(d), tokens(d, method=tokenizer), n)
 
+ngrams(d::Vector{S},
+       n::Int=DEFAULT_NGRAM_COMPLEXITY;
+       tokenizer::Symbol=DEFAULT_TOKENIZER) where S<:AbstractString =
+    ngramize(DEFAULT_LANGUAGE, d, n)
+
+
 
 """
     ngrams!(d, new_ngrams)

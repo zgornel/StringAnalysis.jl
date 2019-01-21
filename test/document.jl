@@ -50,6 +50,9 @@
     @test isa(ngd, NGramDocument)
     @test "To" in keys(ngrams(ngd))
 
+    txt = "to be or not to be"
+    @test ngrams(txt) == ngrams(split(txt))
+
     sd = StringDocument(hamlet_text)
     td = TokenDocument(hamlet_text)
     ngd = NGramDocument(hamlet_text)
