@@ -237,7 +237,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.DocumentTermMatrix",
     "category": "method",
-    "text": "DocumentTermMatrix{T}(crps::Corpus [,terms])\n\nAuxiliary constructor(s) of the DocumentTermMatrix type. The type T has to be a subtype of Real. The constructor(s) requires a corpus crps and a terms structure representing the lexicon of the corpus. The latter can be a Vector{String}, an AbstractDict where the keys are the lexicon, or can be missing, in which case the lexicon field of the corpus is used.\n\n\n\n\n\n"
+    "text": "DocumentTermMatrix{T}(crps::Corpus [,terms] [; tokenizer=DEFAULT_TOKENIZER])\n\nAuxiliary constructor(s) of the DocumentTermMatrix type. The type T has to be a subtype of Real. The constructor(s) requires a corpus crps and a terms structure representing the lexicon of the corpus. The latter can be a Vector{String}, an AbstractDict where the keys are the lexicon, or can be missing, in which case the lexicon field of the corpus is used.\n\n\n\n\n\n"
 },
 
 {
@@ -301,15 +301,15 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.dtm",
     "category": "method",
-    "text": "dtm(crps::Corpus, eltype::Type{T}=DEFAULT_DTM_TYPE)\n\nAccess the matrix of the DTM associated with the corpus crps. The DocumentTermMatrix{T} will first have to be created in order for the actual matrix to be accessed.\n\n\n\n\n\n"
+    "text": "dtm(crps::Corpus, eltype::Type{T}=DEFAULT_DTM_TYPE [; tokenizer=DEFAULT_TOKENIZER])\n\nAccess the matrix of the DTM associated with the corpus crps. The DocumentTermMatrix{T} will first have to be created in order for the actual matrix to be accessed.\n\n\n\n\n\n"
 },
 
 {
-    "location": "api/#StringAnalysis.dtv-Union{Tuple{T}, Tuple{AbstractDocument,Dict{String,Int64}}, Tuple{AbstractDocument,Dict{String,Int64},Type{T}}} where T<:Real",
+    "location": "api/#StringAnalysis.dtv-Union{Tuple{T}, Tuple{Any,Dict{String,Int64}}, Tuple{Any,Dict{String,Int64},Type{T}}} where T<:Real",
     "page": "API Reference",
     "title": "StringAnalysis.dtv",
     "category": "method",
-    "text": "dtv(d::AbstractDocument, lex::Dict{String,Int}, eltype::Type{T}=DEFAULT_DTM_TYPE)\n\nCreates a document-term-vector with elements of type T for document d using the lexicon lex.\n\n\n\n\n\n"
+    "text": "dtv(d, lex::Dict{String,Int}, eltype::Type{T}=DEFAULT_DTM_TYPE [; tokenizer=DEFAULT_TOKENIZER])\n\nCreates a document-term-vector with elements of type T for document d using the lexicon lex. d can be an AbstractString or an AbstractDocument.\n\n\n\n\n\n"
 },
 
 {
@@ -317,7 +317,15 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.dtv",
     "category": "method",
-    "text": "dtv(crps::Corpus, idx::Int, eltype::Type{T}=DEFAULT_DTM_TYPE)\n\nCreates a document-term-vector with elements of type T for document idx of the corpus crps.\n\n\n\n\n\n"
+    "text": "dtv(crps::Corpus, idx::Int, eltype::Type{T}=DEFAULT_DTM_TYPE [; tokenizer=DEFAULT_TOKENIZER])\n\nCreates a document-term-vector with elements of type T for document idx of the corpus crps.\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#StringAnalysis.dtv_regex-Union{Tuple{T}, Tuple{Any,Dict{String,Int64}}, Tuple{Any,Dict{String,Int64},Type{T}}} where T<:Real",
+    "page": "API Reference",
+    "title": "StringAnalysis.dtv_regex",
+    "category": "method",
+    "text": "dtv_regex(d, lex::Dict{String,Int}, eltype::Type{T}=DEFAULT_DTM_TYPE [; tokenizer=DEFAULT_TOKENIZER])\n\nCreates a document-term-vector with elements of type T for document d using the lexicon lex. The tokens of document d are assumed to be regular expressions in text format. d can be an AbstractString or an AbstractDocument.\n\nExamples\n\njulia> dtv_regex(NGramDocument(\"a..b\"), Dict(\"aaa\"=>1, \"aaab\"=>2, \"accb\"=>3, \"bbb\"=>4), Float32)\n4-element Array{Float32,1}:\n 0.0\n 1.0\n 1.0\n 0.0\n\n\n\n\n\n"
 },
 
 {
@@ -325,7 +333,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.each_dtv",
     "category": "method",
-    "text": "each_dtv(crps::Corpus [; eltype::Type{U}=DEFAULT_DTM_TYPE])\n\nIterates through the columns of the DTM of the corpus crps without constructing it. Useful when the DTM would not fit in memory. eltype specifies the element type of the generated vectors.\n\n\n\n\n\n"
+    "text": "each_dtv(crps::Corpus [; eltype::Type{U}=DEFAULT_DTM_TYPE, tokenizer=DEFAULT_TOKENIZER])\n\nIterates through the columns of the DTM of the corpus crps without constructing it. Useful when the DTM would not fit in memory. eltype specifies the element type of the generated vectors.\n\n\n\n\n\n"
 },
 
 {
@@ -333,7 +341,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.each_hash_dtv",
     "category": "method",
-    "text": "each_hash_dtv(crps::Corpus [; eltype::Type{U}=DEFAULT_DTM_TYPE])\n\nIterates through the columns of the hashed DTM of the corpus crps without constructing it. Useful when the DTM would not fit in memory. eltype specifies the element type of the generated vectors.\n\n\n\n\n\n"
+    "text": "each_hash_dtv(crps::Corpus [; eltype::Type{U}=DEFAULT_DTM_TYPE, tokenizer=DEFAULT_TOKENIZER])\n\nIterates through the columns of the hashed DTM of the corpus crps without constructing it. Useful when the DTM would not fit in memory. eltype specifies the element type of the generated vectors.\n\n\n\n\n\n"
 },
 
 {
@@ -357,7 +365,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.frequent_terms",
     "category": "function",
-    "text": "frequent_terms(crps::Corpus, alpha)\n\nReturns a vector with frequent terms among all documents. The parameter alpha indicates the sparsity threshold (a frequency <= alpha means sparse).\n\n\n\n\n\n"
+    "text": "frequent_terms(doc, alpha)\n\nReturns a vector with frequent terms in the document doc. The parameter alpha indicates the sparsity threshold (a frequency <= alpha means sparse).\n\n\n\n\n\n"
 },
 
 {
@@ -365,7 +373,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.frequent_terms",
     "category": "function",
-    "text": "frequent_terms(doc, alpha)\n\nReturns a vector with frequent terms in the document doc. The parameter alpha indicates the sparsity threshold (a frequency <= alpha means sparse).\n\n\n\n\n\n"
+    "text": "frequent_terms(crps::Corpus, alpha)\n\nReturns a vector with frequent terms among all documents. The parameter alpha indicates the sparsity threshold (a frequency <= alpha means sparse).\n\n\n\n\n\n"
 },
 
 {
@@ -389,15 +397,15 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.hash_dtm",
     "category": "method",
-    "text": "hash_dtm(crps::Corpus [,h::TextHashFunction], eltype::Type{T}=DEFAULT_DTM_TYPE)\n\nCreates a hashed DTM with elements of type T for corpus crps using the the hashing function h. If h is missing, the hash function of the Corpus is used.\n\n\n\n\n\n"
+    "text": "hash_dtm(crps::Corpus [,h::TextHashFunction], eltype::Type{T}=DEFAULT_DTM_TYPE [; tokenizer=DEFAULT_TOKENIZER])\n\nCreates a hashed DTM with elements of type T for corpus crps using the the hashing function h. If h is missing, the hash function of the Corpus is used.\n\n\n\n\n\n"
 },
 
 {
-    "location": "api/#StringAnalysis.hash_dtv-Union{Tuple{T}, Tuple{AbstractDocument,TextHashFunction}, Tuple{AbstractDocument,TextHashFunction,Type{T}}} where T<:Real",
+    "location": "api/#StringAnalysis.hash_dtv-Union{Tuple{T}, Tuple{Any,TextHashFunction}, Tuple{Any,TextHashFunction,Type{T}}} where T<:Real",
     "page": "API Reference",
     "title": "StringAnalysis.hash_dtv",
     "category": "method",
-    "text": "hash_dtv(d::AbstractDocument, h::TextHashFunction, eltype::Type{T}=DEFAULT_DTM_TYPE)\n\nCreates a hashed document-term-vector with elements of type T for document d using the hashing function h.\n\n\n\n\n\n"
+    "text": "hash_dtv(d, h::TextHashFunction, eltype::Type{T}=DEFAULT_DTM_TYPE [; tokenizer=DEFAULT_TOKENIZER])\n\nCreates a hashed document-term-vector with elements of type T for document d using the hashing function h. d can be an AbstractString or an AbstractDocument.\n\n\n\n\n\n"
 },
 
 {
@@ -465,6 +473,22 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "api/#StringAnalysis.ngrams",
+    "page": "API Reference",
+    "title": "StringAnalysis.ngrams",
+    "category": "function",
+    "text": "ngrams(d, n=DEFAULT_GRAM_COMPLEXITY [; tokenizer=DEFAULT_TOKENIZER])\n\nAccess the document text of d as n-gram counts. The ngrams contain at most n tokens which are obtained using tokenizer.\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#StringAnalysis.ngrams!-Union{Tuple{T}, Tuple{NGramDocument{T},Dict{T,Int64}}} where T<:AbstractString",
+    "page": "API Reference",
+    "title": "StringAnalysis.ngrams!",
+    "category": "method",
+    "text": "ngrams!(d, new_ngrams)\n\nReplace the original n-grams of document d with new_ngrams.\n\n\n\n\n\n"
+},
+
+{
     "location": "api/#StringAnalysis.rp-Union{Tuple{DocumentTermMatrix{T}}, Tuple{T}} where T<:AbstractFloat",
     "page": "API Reference",
     "title": "StringAnalysis.rp",
@@ -509,7 +533,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.sparse_terms",
     "category": "function",
-    "text": "sparse_terms(crps::Corpus, alpha)\n\nReturns a vector with rare terms among all documents. The parameter alpha indicates the sparsity threshold (a frequency <= alpha means sparse).\n\n\n\n\n\n"
+    "text": "sparse_terms(doc, alpha)\n\nReturns a vector with rare terms in the document doc. The parameter alpha indicates the sparsity threshold (a frequency <= alpha means sparse).\n\n\n\n\n\n"
 },
 
 {
@@ -517,7 +541,23 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.sparse_terms",
     "category": "function",
-    "text": "sparse_terms(doc, alpha)\n\nReturns a vector with rare terms in the document doc. The parameter alpha indicates the sparsity threshold (a frequency <= alpha means sparse).\n\n\n\n\n\n"
+    "text": "sparse_terms(crps::Corpus, alpha)\n\nReturns a vector with rare terms among all documents. The parameter alpha indicates the sparsity threshold (a frequency <= alpha means sparse).\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#StringAnalysis.text!-Union{Tuple{T}, Tuple{StringDocument{T},T}} where T<:AbstractString",
+    "page": "API Reference",
+    "title": "StringAnalysis.text!",
+    "category": "method",
+    "text": "text!(d, new_text)\n\nReplace the original text of document d with new_text.\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#StringAnalysis.text-Tuple{AbstractString}",
+    "page": "API Reference",
+    "title": "StringAnalysis.text",
+    "category": "method",
+    "text": "text(d)\n\nAccess the text of document d if possible.\n\n\n\n\n\n"
 },
 
 {
@@ -542,6 +582,22 @@ var documenterSearchIndex = {"docs": [
     "title": "StringAnalysis.tokenize_slow",
     "category": "method",
     "text": "tokenize_slow([lang,] s)\n\nSplits string s into tokens on whitespace using WordTokenizers.tokenize function to perform the tokenization. If a language lang is provided, it ignores it ;)\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#StringAnalysis.tokens!-Union{Tuple{T}, Tuple{TokenDocument{T},Array{T,1}}} where T<:AbstractString",
+    "page": "API Reference",
+    "title": "StringAnalysis.tokens!",
+    "category": "method",
+    "text": "tokens!(d, new_tokens)\n\nReplace the original tokens of document d with new_tokens.\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#StringAnalysis.tokens-Tuple{AbstractString}",
+    "page": "API Reference",
+    "title": "StringAnalysis.tokens",
+    "category": "method",
+    "text": "tokens(d [; method=DEFAULT_TOKENIZER])\n\nAccess the tokens of document d as a token array. The method keyword argument specifies the type of tokenization to perform. Available options are :slow and :fast.\n\n\n\n\n\n"
 },
 
 {
