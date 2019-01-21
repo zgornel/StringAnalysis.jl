@@ -33,14 +33,14 @@ end
 
     doc_idx = 1
     dtv(crps[doc_idx], lexicon(crps)) == dtv(crps, doc_idx)
-    try
-        dtv(crps[1])  # test failure
-        @test false
-    catch
-        @test true
-    end
-    hash_dtv(crps[1], TextHashFunction())
-    hash_dtv(crps[1])
+    @test_throws ErrorException dtv(crps[1])  # test failure
+
+    @test hash_dtv(text(crps[1]), TextHashFunction()) ==
+        hash_dtv(crps[1], TextHashFunction())
+    v = hash_dtv(text(crps[1]), cardinality=25)
+    @test v == hash_dtv(crps[1], cardinality=25)
+    @test v isa Vector{StringAnalysis.DEFAULT_DTM_TYPE}
+    @test length(v) == 25
 
     dtm1 = dtm(crps)
     dtm1sp = sparse(dtm(crps))
