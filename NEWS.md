@@ -3,6 +3,11 @@
 v0.3.2
 ------
  - DTM document vectors are columns
+ - Tokenizer can be specified in some methods
+ - Regex based DTV's
+ - Additional documentation
+ - svd fallback in LSA
+ - COOM performance improvement
  - Bugfixes
 
 v0.3.1
