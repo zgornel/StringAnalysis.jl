@@ -120,15 +120,22 @@ function LSAModel(dtm::DocumentTermMatrix{T};
         X = bm_25(dtm.dtm, κ=κ, β=β)
     end
     # Decompose document-word statistic
-    U, Σ, _ = tsvd(X, k)
+    local U₀::Matrix{T}, Σ::Vector{T}
+    try
+        U₀, Σ, _ = tsvd(X, k)
+    catch
+        # Try regular svd as a
+        # last resort
+        U₀, Σ, _ = svd(Matrix(X))
+        U₀ = U₀[:, 1:k]
+        Σ = Σ[1:k]
+    end
     # Build model components
     Σinv = diagm(0 => 1 ./ Σ)
     Σinv[abs.(Σinv) .< minval] .= zeroval
-    U = U'
-    U[abs.(U).< minval] .= zeroval
-    # Note: explicit type annotation ensures type stability
-    Σinv::SparseMatrixCSC{T,Int} = SparseMatrixCSC{T, Int}(Σinv)
-    U = SparseMatrixCSC{T, Int}(U)
+    Σinv::SparseMatrixCSC{T,Int} = SparseMatrixCSC{T, Int}(Σinv)  # type stability annotated
+    U₀[abs.(U₀).< minval] .= zeroval
+    U = SparseMatrixCSC{T, Int}(U₀')
     # Return the model
     return LSAModel(dtm.terms, dtm.row_indices,
                     Σinv, U,
