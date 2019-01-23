@@ -1,5 +1,5 @@
 name = "StringAnalysis"
-uuid = "f2e5b97c-ed87-11e8-3fa8-a300efcc83e4"
+uuid = "b66b7d2f-f536-51df-9f97-4dfb9d27c005"
 authors = ["Corneliu Cofaru <cornel@oxoaresearch.com>"]
 version = "0.3.2"
 
