@@ -29,6 +29,7 @@ module StringAnalysis
     using Statistics
     using Dates
     using DelimitedFiles
+    using DataStructures
     using TSVD
     using Languages
     using WordTokenizers

@@ -25,7 +25,7 @@ julia> using StringAnalysis
 """
 function coo_matrix(::Type{T},
                     doc::Vector{<:AbstractString},
-                    vocab::Dict{<:AbstractString, Int},
+                    vocab::OrderedDict{<:AbstractString, Int},
                     window::Int,
                     normalize::Bool=true) where T<:AbstractFloat
     n = length(vocab)
@@ -62,7 +62,7 @@ columns of the co-occurrence matrix
 mutable struct CooMatrix{T}
     coom::SparseMatrixCSC{T, Int}
     terms::Vector{String}
-    column_indices::Dict{String, Int}
+    column_indices::OrderedDict{String, Int}
 end
 
 
@@ -94,7 +94,7 @@ CooMatrix(crps::Corpus, terms::Vector{String}; window::Int=5, normalize::Bool=tr
 
 CooMatrix{T}(crps::Corpus, lex::AbstractDict; window::Int=5, normalize::Bool=true
             ) where T<:AbstractFloat =
-    CooMatrix{T}(crps, sort(collect(keys(lex))), window=window, normalize=normalize)
+    CooMatrix{T}(crps, collect(keys(lex)), window=window, normalize=normalize)
 
 CooMatrix(crps::Corpus, lex::AbstractDict; window::Int=5, normalize::Bool=true) =
     CooMatrix{DEFAULT_FLOAT_TYPE}(crps, lex, window=window, normalize=normalize)
@@ -126,7 +126,7 @@ CooMatrix(doc, terms::Vector{String}; window::Int=5, normalize::Bool=true
     CooMatrix{DEFAULT_FLOAT_TYPE}(doc, terms, window=window, normalize=normalize)
 
 function CooMatrix{T}(doc; window::Int=5, normalize::Bool=true) where T<:AbstractFloat
-    terms = sort(unique(String.(tokens(doc))))
+    terms = unique(String.(tokens(doc)))
     CooMatrix{T}(doc, terms, window=window, normalize=normalize)
 end
 

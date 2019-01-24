@@ -2,7 +2,7 @@
 mutable struct Corpus{S, T<:AbstractDocument{S}}
     documents::Vector{T}
     total_terms::Int
-    lexicon::Dict{S, Int}
+    lexicon::OrderedDict{S, Int}
     inverse_index::Dict{S, Vector{Int}}
     h::TextHashFunction
 end
@@ -15,7 +15,7 @@ Corpus(docs::Vector{T};
     Corpus(
         docs,
         0,
-        Dict{S, Int}(),
+        OrderedDict{S, Int}(),
         Dict{S, Vector{Int}}(),
         TextHashFunction(hash_function, cardinality)
     )
@@ -142,7 +142,7 @@ end
 
 function update_lexicon!(crps::Corpus)
     crps.total_terms = 0
-    crps.lexicon = Dict{String,Int}()
+    crps.lexicon = OrderedDict{String,Int}()
     for doc in crps
         update_lexicon!(crps, doc)
     end

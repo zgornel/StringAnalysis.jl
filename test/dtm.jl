@@ -48,7 +48,7 @@ end
 
     # Regex dtv
     doc = "a..b"
-    lex = Dict("aaa"=>1, "aaab"=>2, "accb"=>3, "bbb"=>4)
+    lex = OrderedDict("aaa"=>1, "aaab"=>2, "accb"=>3, "bbb"=>4)
     v = dtv_regex(doc, lex, Float32)
     v2 = dtv_regex(NGramDocument(doc), lex, Float32)
     @test v == v2 == Float32[0, 1, 1, 0]
@@ -61,7 +61,7 @@ end
     @test size(dtm(m),1) == length(crps)
 
     # construct a DocumentTermMatrix from a crps and a custom lexicon
-    lex = Dict("And"=>1, "notincrps"=>4)
+    lex = OrderedDict("And"=>1, "notincrps"=>4)
     m = DocumentTermMatrix(crps,lex)
     @test size(dtm(m),2) == length(keys(lex))
     @test size(dtm(m),2) == length(m.terms)

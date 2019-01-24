@@ -26,7 +26,7 @@ based on the effects of the
 """
 struct RPModel{S<:AbstractString, T<:AbstractFloat, A<:AbstractMatrix{T}, H<:Integer}
     vocab::Vector{S}        # vocabulary
-    vocab_hash::Dict{S,H}   # term to column index in V
+    vocab_hash::OrderedDict{S,H}   # term to column index in V
     R::A                    # projection matrix
     stats::Symbol           # term/document importance
     idf::Vector{T}          # inverse document frequencies
@@ -214,7 +214,7 @@ random projection model `rpm`. `doc` can be an `AbstractDocument`,
 """
 embed_document(rpm::RPModel{S,T,A,H}, doc::AbstractDocument) where {S,T,A,H} =
     # Hijack vocabulary hash to use as lexicon (only the keys needed)
-    embed_document(rpm, dtv(doc, rpm.vocab_hash, T))
+    embed_document(rpm, dtv(doc, rpm.vocab_hash, T, lex_is_row_indices=true))
 
 embed_document(rpm::RPModel{S,T,A,H}, doc::AbstractString) where {S,T,A,H} =
     embed_document(rpm, NGramDocument{S}(doc))

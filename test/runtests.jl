@@ -3,8 +3,9 @@ module TestStringAnalysis
 using Test
 using SparseArrays
 using LinearAlgebra
-using Languages
 using StringAnalysis
+using Languages
+using DataStructures
 
 println("Running tests:")
 include("tokenizer.jl")

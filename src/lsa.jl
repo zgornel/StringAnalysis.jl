@@ -43,7 +43,7 @@ julia> using StringAnalysis
        crps = Corpus(AbstractDocument[doc1, doc2, doc3, doc4, doc5])
        prepare!(crps, strip_punctuation)
        update_lexicon!(crps)
-       dtm = DocumentTermMatrix{Float32}(crps, sort(collect(keys(crps.lexicon))))
+       dtm = DocumentTermMatrix{Float32}(crps, collect(keys(crps.lexicon)))
 
        ### Build LSA Model ###
        lsa_model = LSAModel(dtm, k=3, stats=:tf)
@@ -70,7 +70,7 @@ Query: "Apples and an exotic fruit."
 """
 struct LSAModel{S<:AbstractString, T<:AbstractFloat, A<:AbstractMatrix{T}, H<:Integer}
     vocab::Vector{S}        # vocabulary
-    vocab_hash::Dict{S,H}   # term to column index in U
+    vocab_hash::OrderedDict{S,H}   # term to column index in U
     Σinv::A                 # inverse of Σ
     Uᵀ::A                   # word vectors (transpose of U)
     stats::Symbol           # term/document importance
@@ -237,7 +237,7 @@ Return the vector representation of `doc`, obtained using the LSA model `lm`.
 """
 embed_document(lm::LSAModel{S,T,A,H}, doc::AbstractDocument) where {S,T,A,H} =
     # Hijack vocabulary hash to use as lexicon (only the keys needed)
-    embed_document(lm, dtv(doc, lm.vocab_hash, T))
+    embed_document(lm, dtv(doc, lm.vocab_hash, T, lex_is_row_indices=true))
 
 embed_document(lm::LSAModel{S,T,A,H}, doc::AbstractString) where {S,T,A,H} =
     embed_document(lm, NGramDocument{S}(doc))
