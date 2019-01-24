@@ -295,7 +295,7 @@ and create the corpus and its DTM:
 crps = Corpus(AbstractDocument[doc1, doc2, doc3, doc4, doc5]);
 prepare!(crps, strip_punctuation);
 update_lexicon!(crps);
-M = DocumentTermMatrix{Float32}(crps, sort(collect(keys(crps.lexicon))));
+M = DocumentTermMatrix{Float32}(crps, collect(keys(crps.lexicon)));
 ```
 Building an LSA model is straightforward:
 ```@repl index
