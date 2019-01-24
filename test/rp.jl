@@ -24,8 +24,10 @@
                 @test size(model.R, 2) == m
                 if k > 0
                     @test size(model.R, 1) == k
+                    @test model.project
                 else
                     @test size(model.R, 1) == m  # no projection occurs
+                    @test !model.project
                 end
                 idxs, corrs = cosine(model, dtm, query)
                 @test length(idxs) == length(corrs) == length(crps)

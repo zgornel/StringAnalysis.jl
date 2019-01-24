@@ -18,6 +18,7 @@ based on the effects of the
   * `nwords::T` averge number of words in a document
   * `κ::Int` the `κ` parameter of the BM25 statistic
   * `β::Float64` the `β` parameter of the BM25 statistic
+  * `project::Bool` specifies whether the model actually performs the projection or not; it is false if the number of dimensions provided is zero or negative
 
 # References:
   * [Kaski 1998](http://www.academia.edu/371863/Dimensionality_Reduction_by_Random_Mapping_Fast_Similarity_Computation_for_Clustering)
@@ -33,6 +34,7 @@ struct RPModel{S<:AbstractString, T<:AbstractFloat, A<:AbstractMatrix{T}, H<:Int
     nwords::T               # average words/document in corpus
     κ::Int                  # κ parameter for Okapi BM25 (used if stats==:bm25)
     β::Float64              # β parameter for Okapi BM25 (used if stats==:bm25)
+    project::Bool
 end
 
 function RPModel(dtm::DocumentTermMatrix{T};
@@ -56,9 +58,10 @@ function RPModel(dtm::DocumentTermMatrix{T};
     idf = log.(n ./ documents_containing_term) .+ one(T)
     nwords = mean(sum(dtm.dtm, dims=1))
     R = random_projection_matrix(k, m, T, density)
+    project = ifelse(k > 0, true, false)
     # Return the model
     return RPModel(dtm.terms, dtm.row_indices, R,
-                   stats, idf, nwords, κ, β)
+                   stats, idf, nwords, κ, β, project)
 end
 
 function RPModel(dtm::DocumentTermMatrix{T}; kwargs...) where T<:Integer
@@ -117,7 +120,9 @@ end
 
 function Base.show(io::IO, rpm::RPModel{S,T,A,H}) where {S,T,A,H}
     len_vecs, num_terms = size(rpm.R)
-    print(io, "Random Projection Model ($(rpm.stats)), " *
+    str_proj = ifelse(rpm.project, "Random Projection model",
+                      "Identity Projection")
+    print(io, "$str_proj ($(rpm.stats)), " *
           "$(num_terms) terms, dimensionality $(len_vecs), $(T) vectors")
 end
 
@@ -242,7 +247,12 @@ function embed_document(rpm::RPModel{S,T,A,H}, dtv::Vector{T}) where {S,T,A,H}
                        (k * (one(T) - b + b * words_in_document/rpm.nwords) .+ tf)
     end
     # Embed
-    d̂ = rpm.R * v  # embed
+    local d̂
+    if rpm.project
+        d̂ = rpm.R * v  # embed
+    else
+        d̂ = v
+    end
     d̂ = d̂ ./ (norm(d̂,2) .+ eps(T))  # normalize
     return d̂
 end
@@ -259,7 +269,12 @@ function embed_document(rpm::RPModel{S,T,A,H}, dtm::DocumentTermMatrix{T}) where
     elseif rpm.stats == :bm25
         X = bm_25(dtm, κ=rpm.κ, β=rpm.β)
     end
-    U = rpm.R * X
+    local U
+    if rpm.project
+        U = rpm.R * X
+    else
+        U = X
+    end
     U ./= (sqrt.(sum(U.^2, dims=1)) .+ eps(T))
     return U
 end
@@ -282,6 +297,7 @@ function save_rp_model(rpm::RPModel{S,T,A,H}, filename::AbstractString) where {S
     open(filename, "w") do fid
         println(fid, "Random Projection Model saved at $(Dates.now())")
         println(fid, "$nwords $k")  # number of words, k
+        println(fid, rpm.project)
         println(fid, rpm.stats)
         writedlm(fid, rpm.idf', " ")
         println(fid, rpm.nwords)
@@ -309,7 +325,7 @@ function load_rp_model(filename::AbstractString, ::Type{T}=DEFAULT_FLOAT_TYPE;
     # Matrix type for random projection model
     A = ifelse(sparse, SparseMatrixCSC{T, Int}, Matrix{T})
     # Define parsed variables local to outer scope of do statement
-    local vocab, vocab_hash, R, stats, idf, nwords, κ, β
+    local vocab, vocab_hash, R, stats, idf, nwords, κ, β, project
     open(filename, "r") do fid
         readline(fid)  # first line, header
         line = readline(fid)
@@ -321,6 +337,7 @@ function load_rp_model(filename::AbstractString, ::Type{T}=DEFAULT_FLOAT_TYPE;
             R = zeros(T, k, vocab_size)
         end
         # Start parsing the rest of the file
+        project = parse(Bool, strip(readline(fid)))
         stats = Symbol(strip(readline(fid)))
         idf = map(x->parse(T, x), split(readline(fid), ' '))
         nwords = parse(T, readline(fid))
@@ -332,5 +349,5 @@ function load_rp_model(filename::AbstractString, ::Type{T}=DEFAULT_FLOAT_TYPE;
             R[i,:] = map(x->parse(T,x), split(readline(fid), ' '))
         end
     end
-    return RPModel{String, T, A, Int}(vocab, vocab_hash, R, stats, idf, nwords, κ, β)
+    return RPModel{String, T, A, Int}(vocab, vocab_hash, R, stats, idf, nwords, κ, β, project)
 end
