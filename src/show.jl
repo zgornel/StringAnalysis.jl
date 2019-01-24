@@ -19,10 +19,10 @@ end
 
 show(io::IO, md::DocumentMetadata) = begin
     printstyled(io, "$(md.id)", bold=true)
-    printstyled(io, "-[\"$(titleize(md.name))\"",
+    printstyled(io, " - \"$(titleize(md.name))\"",
                     " by $(titlecase(md.author)),",
                     " $(md.edition_year)",
-                    " ($(md.published_year))]")
+                    " ($(md.published_year))")
 end
 
 
