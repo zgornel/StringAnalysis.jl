@@ -10,7 +10,7 @@
     prepare!(crps, strip_punctuation)
     update_lexicon!(crps)
     update_inverse_index!(crps)
-    lex = sort(collect(keys(crps.lexicon)))
+    lex = collect(keys(crps.lexicon))
     m = length(lexicon(crps))
     n = length(crps)
     # Retrieval
@@ -41,7 +41,7 @@
     model = rp(crps, T, k=K)
     @test model isa RPModel{String, T, SparseMatrixCSC{T, Int}, Int}
     @test all(in_vocabulary(model, word) for word in keys(crps.lexicon))
-    @test vocabulary(model) == sort(collect(keys(crps.lexicon)))
+    @test vocabulary(model) == collect(keys(crps.lexicon))
     @test size(model) == (length(crps.lexicon), K)
     # Document, corpus embedding
     dtm = DocumentTermMatrix{T}(crps, lex)
@@ -62,7 +62,7 @@
     # Test saving and loading an random projection model
     T = Float32
     vocab = split("a random string")
-    vocab_hash = Dict("a"=>1, "random"=>2, "string"=>3)
+    vocab_hash = OrderedDict("a"=>1, "random"=>2, "string"=>3)
     k=2
     stats = :tf
     κ = 2

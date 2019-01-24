@@ -22,11 +22,11 @@
     # TF
     # Terms are in alphabetical ordering
     # (correctweights uses older rows are documents format, hence the transpose)
-    correctweights = sqrt.(T.(
-                        [0.5  0.0  0.0  1/6  1/3
-                         0.0  0.2  0.4  0.0  0.4
-                         0.0  0.0  0.0  0.0  0.0
-                         0.0  1/3  0.0  0.0  2/3]'))
+    correctweights = T.([0.408248  0.0       0.0  0.0;
+                         0.57735   0.632456  0.0  0.816497;
+                         0.707107  0.0       0.0  0.0;
+                         0.0       0.447214  0.0  0.57735;
+                         0.0       0.632456  0.0  0.0])
 
     myweights = tf(m)
     @test approx_eq(myweights, correctweights, tol=max_tol)
@@ -58,11 +58,11 @@
     # TF-IDF
     # Terms are in alphabetical ordering
     # (correctweights uses older rows are documents format, hence the transpose)
-    correctweights = T.([1.19724  0.0       0.0      0.691224  0.57735
-                         0.0      0.575869  1.07084  0.0       0.632456
-                         0.0      0.0       0.0      0.0       0.0
-                         0.0      0.743444  0.0      0.0       0.816497]')
-
+    correctweights = T.([0.691224  0.0       0.0  0.0;
+                         0.57735   0.632456  0.0  0.816497;
+                         1.19724   0.0       0.0  0.0;
+                         0.0       0.575869  0.0  0.743444;
+                         0.0       1.07084   0.0  0.0])
     myweights = tf_idf(m)
     @test approx_eq(myweights, correctweights, tol=max_tol)
 
@@ -92,10 +92,11 @@
 
     # Terms are in alphabetical ordering
     # (correctweights uses older rows are documents format, hence the transpose)
-    correctweights = T.([1.08029  0.0       0.0      0.685309  0.542113
-                         0.0      0.637042  1.10885  0.0       0.654905
-                         0.0      0.0       0.0      0.0       0.0
-                         0.0      0.69807   0.0      0.0       0.713275]')
+    correctweights = T.([0.685309  0.0       0.0  0.0;
+                         0.542113  0.654905  0.0  0.713275;
+                         1.08029   0.0       0.0  0.0;
+                         0.0       0.637042  0.0  0.69807;
+                         0.0       1.10885   0.0  0.0])
     myweights = bm_25(m)
     @test approx_eq(myweights, correctweights, tol=max_tol)
 
