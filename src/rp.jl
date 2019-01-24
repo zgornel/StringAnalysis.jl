@@ -91,9 +91,9 @@ function random_projection_matrix(k::Int, m::Int, eltype::Type{T}, density::Floa
                                  ) where T<:AbstractFloat
     if k <= 0
         # No projection, return the identity matrix
-        R = spdiagm(0 => ones(T, m))
+        R = diagm(0 => ones(T, m))
     else
-        R = spzeros(T, k, m)
+        R = zeros(T, k, m)
         s = 1/density
         is_pos = 0.0
         is_neg = 0.0
@@ -102,12 +102,15 @@ function random_projection_matrix(k::Int, m::Int, eltype::Type{T}, density::Floa
         @inbounds for j in 1:m
             for i in 1:k
                 p = rand()
-                sign = 1.0 * (p < pmin) - 1.0 * (p > 1 - pmin)
-                R[i,j] = sign * v
+                if p < pmin
+                    R[i,j] = v
+                elseif p > 1-pmin
+                    R[i,j] = -v
+                end
             end
         end
     end
-    return R
+    return sparse(R)
 end
 
 
