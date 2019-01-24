@@ -11,7 +11,7 @@ based on the effects of the
 
 # Fields
   * `vocab::Vector{S}` a vector with all the words in the corpus
-  * `vocab_hash::Dict{S,H}` a word to index in the random projection maatrix mapping
+  * `vocab_hash::OrderedDict{S,H}` a word to index in the random projection maatrix mapping
   * `R::A` the random projection matrix
   * `stats::Symbol` the statistical measure to use for word importances in documents. Available values are: `:count` (term count), `:tf` (term frequency), `:tfidf` (default, term frequency-inverse document frequency) and `:bm25` (Okapi BM25)
   * `idf::Vector{T}` inverse document frequencies for the words in the vocabulary
@@ -326,7 +326,7 @@ function load_rp_model(filename::AbstractString, ::Type{T}=DEFAULT_FLOAT_TYPE;
         κ = parse(Int, readline(fid))
         β = parse(Float64, readline(fid))
         vocab = Vector{String}(split(readline(fid),' '))
-        vocab_hash = Dict((v,i) for (i,v) in enumerate(vocab))
+        vocab_hash = OrderedDict((v,i) for (i,v) in enumerate(vocab))
         for i in 1:k
             R[i,:] = map(x->parse(T,x), split(readline(fid), ' '))
         end

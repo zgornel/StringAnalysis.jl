@@ -1,6 +1,6 @@
 # Co-occurence matrix
 """
-    coo_matrix(::Type{T}, doc::Vector{AbstractString}, vocab::Dict{AbstractString, Int}, window::Int, normalize::Bool)
+    coo_matrix(::Type{T}, doc::Vector{AbstractString}, vocab::OrderedDict{AbstractString, Int}, window::Int, normalize::Bool)
 
 Basic low-level function that calculates the co-occurence matrix of a document.
 Returns a sparse co-occurence matrix sized `n × n` where `n = length(vocab)`
@@ -14,7 +14,7 @@ of not the counts by the distance between word positions.
 julia> using StringAnalysis
        doc = StringDocument("This is a text about an apple. There are many texts about apples.")
        docv = tokenize(text(doc))
-       vocab = Dict("This"=>1, "is"=>2, "apple."=>3)
+       vocab = OrderedDict("This"=>1, "is"=>2, "apple."=>3)
        StringAnalysis.coo_matrix(Float16, docv, vocab, 5, true)
 3×3 SparseArrays.SparseMatrixCSC{Float16,Int64} with 4 stored entries:
   [2, 1]  =  2.0
@@ -56,7 +56,7 @@ Basic Co-occurrence Matrix (COOM) type.
 co-occurrences of two terms within a given window
   * `terms::Vector{String}` a list of terms that represent the lexicon of
 the document or corpus
-  * `column_indices::Dict{String, Int}` a map between the `terms` and the
+  * `column_indices::OrderedDict{String, Int}` a map between the `terms` and the
 columns of the co-occurrence matrix
 """
 mutable struct CooMatrix{T}

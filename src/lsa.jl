@@ -10,7 +10,7 @@ convertible to type `T`.
 
 # Fields
   * `vocab::Vector{S}` a vector with all the words in the corpus
-  * `vocab_hash::Dict{S,H}` a word to index in word embeddings matrix mapping
+  * `vocab_hash::OrderedDict{S,H}` a word to index in word embeddings matrix mapping
   * `Σinv::A` inverse of the singular value matrix
   * `Uᵀ::A` transpose of the word embedding matrix
   * `stats::Symbol` the statistical measure to use for word importances in documents. Available values are: `:count` (term count), `:tf` (term frequency), `:tfidf` (default, term frequency-inverse document frequency) and `:bm25` (Okapi BM25)
@@ -382,7 +382,7 @@ function load_lsa_model(filename::AbstractString, ::Type{T}=DEFAULT_FLOAT_TYPE;
         vocab_size, k = map(x -> parse(Int, x), split(line, ' '))
         # Preallocate
         vocab = Vector{String}(undef, vocab_size)
-        vocab_hash = Dict{String, Int}()
+        vocab_hash = OrderedDict{String, Int}()
         if sparse
             Uᵀ = SparseMatrixCSC{T, Int}(UniformScaling(0), k, vocab_size)
             Σinv = spzeros(T, k, k)
