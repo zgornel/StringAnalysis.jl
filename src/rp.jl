@@ -91,7 +91,8 @@ function random_projection_matrix(k::Int, m::Int, eltype::Type{T}, density::Floa
                                  ) where T<:AbstractFloat
     if k <= 0
         # No projection, return the identity matrix
-        R = diagm(0 => ones(T, m))
+        R = spdiagm(0 => ones(T, m))
+        return R
     else
         R = zeros(T, k, m)
         s = 1/density
@@ -109,8 +110,8 @@ function random_projection_matrix(k::Int, m::Int, eltype::Type{T}, density::Floa
                 end
             end
         end
+        return sparse(R)
     end
-    return sparse(R)
 end
 
 
