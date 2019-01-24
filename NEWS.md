@@ -1,5 +1,9 @@
 ## StringAnalysis Release Notes
 
+v0.3.3
+------
+ - Performance improvementss
+
 v0.3.2
 ------
  - DTM document vectors are columns
