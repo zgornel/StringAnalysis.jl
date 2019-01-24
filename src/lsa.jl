@@ -10,7 +10,7 @@ convertible to type `T`.
 
 # Fields
   * `vocab::Vector{S}` a vector with all the words in the corpus
-  * `vocab_hash::Dict{S,H}` a word to index in word embeddings matrix mapping
+  * `vocab_hash::OrderedDict{S,H}` a word to index in word embeddings matrix mapping
   * `Σinv::A` inverse of the singular value matrix
   * `Uᵀ::A` transpose of the word embedding matrix
   * `stats::Symbol` the statistical measure to use for word importances in documents. Available values are: `:count` (term count), `:tf` (term frequency), `:tfidf` (default, term frequency-inverse document frequency) and `:bm25` (Okapi BM25)
@@ -43,7 +43,7 @@ julia> using StringAnalysis
        crps = Corpus(AbstractDocument[doc1, doc2, doc3, doc4, doc5])
        prepare!(crps, strip_punctuation)
        update_lexicon!(crps)
-       dtm = DocumentTermMatrix{Float32}(crps, sort(collect(keys(crps.lexicon))))
+       dtm = DocumentTermMatrix{Float32}(crps, collect(keys(crps.lexicon)))
 
        ### Build LSA Model ###
        lsa_model = LSAModel(dtm, k=3, stats=:tf)
@@ -70,7 +70,7 @@ Query: "Apples and an exotic fruit."
 """
 struct LSAModel{S<:AbstractString, T<:AbstractFloat, A<:AbstractMatrix{T}, H<:Integer}
     vocab::Vector{S}        # vocabulary
-    vocab_hash::Dict{S,H}   # term to column index in U
+    vocab_hash::OrderedDict{S,H}   # term to column index in U
     Σinv::A                 # inverse of Σ
     Uᵀ::A                   # word vectors (transpose of U)
     stats::Symbol           # term/document importance
@@ -237,7 +237,7 @@ Return the vector representation of `doc`, obtained using the LSA model `lm`.
 """
 embed_document(lm::LSAModel{S,T,A,H}, doc::AbstractDocument) where {S,T,A,H} =
     # Hijack vocabulary hash to use as lexicon (only the keys needed)
-    embed_document(lm, dtv(doc, lm.vocab_hash, T))
+    embed_document(lm, dtv(doc, lm.vocab_hash, T, lex_is_row_indices=true))
 
 embed_document(lm::LSAModel{S,T,A,H}, doc::AbstractString) where {S,T,A,H} =
     embed_document(lm, NGramDocument{S}(doc))
@@ -382,7 +382,7 @@ function load_lsa_model(filename::AbstractString, ::Type{T}=DEFAULT_FLOAT_TYPE;
         vocab_size, k = map(x -> parse(Int, x), split(line, ' '))
         # Preallocate
         vocab = Vector{String}(undef, vocab_size)
-        vocab_hash = Dict{String, Int}()
+        vocab_hash = OrderedDict{String, Int}()
         if sparse
             Uᵀ = SparseMatrixCSC{T, Int}(UniformScaling(0), k, vocab_size)
             Σinv = spzeros(T, k, k)

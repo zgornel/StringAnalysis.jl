@@ -2,8 +2,8 @@
 mutable struct Corpus{S, T<:AbstractDocument{S}}
     documents::Vector{T}
     total_terms::Int
-    lexicon::Dict{S, Int}
-    inverse_index::Dict{S, Vector{Int}}
+    lexicon::OrderedDict{S, Int}
+    inverse_index::OrderedDict{S, Vector{Int}}
     h::TextHashFunction
 end
 
@@ -15,8 +15,8 @@ Corpus(docs::Vector{T};
     Corpus(
         docs,
         0,
-        Dict{S, Int}(),
-        Dict{S, Vector{Int}}(),
+        OrderedDict{S, Int}(),
+        OrderedDict{S, Vector{Int}}(),
         TextHashFunction(hash_function, cardinality)
     )
 
@@ -142,7 +142,7 @@ end
 
 function update_lexicon!(crps::Corpus)
     crps.total_terms = 0
-    crps.lexicon = Dict{String,Int}()
+    crps.lexicon = OrderedDict{String,Int}()
     for doc in crps
         update_lexicon!(crps, doc)
     end
@@ -160,11 +160,11 @@ lexical_frequency(crps::Corpus, term::AbstractString) =
 inverse_index(crps::Corpus) = crps.inverse_index
 
 function update_inverse_index!(crps::Corpus)
-    idx = Dict{String, Array{Int, 1}}()
+    idx = OrderedDict{String, Vector{Int}}()
     for i in 1:length(crps)
         doc = crps.documents[i]
         ngram_arr = isa(doc, NGramDocument) ? collect(keys(ngrams(doc))) : tokens(doc)
-        ngram_arr = convert(Array{String,1}, ngram_arr)
+        ngram_arr = convert(Vector{String}, ngram_arr)
         for ngram in ngram_arr
             if haskey(idx, ngram)
                 push!(idx[ngram], i)

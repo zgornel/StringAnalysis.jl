@@ -6,13 +6,13 @@ Basic Document-Term-Matrix (DTM) type.
 and columns represent documents
   * `terms::Vector{String}` a list of terms that represent the lexicon of
 the corpus associated with the DTM
-  * `row_indices::Dict{String, Int}` a map between the `terms` and the
+  * `row_indices::OrderedDict{String, Int}` a map between the `terms` and the
 rows of the `dtm`
 """
 mutable struct DocumentTermMatrix{T}
     dtm::SparseMatrixCSC{T, Int}
     terms::Vector{String}
-    row_indices::Dict{String, Int}
+    row_indices::OrderedDict{String, Int}
 end
 
 """
@@ -22,10 +22,8 @@ Returns a dictionary that maps each term from the vector `terms`
 to a integer idex.
 """
 function rowindices(terms::Vector{String})
-    row_indices = Dict{String, Int}()
-    for (i, term) in enumerate(terms)
-        row_indices[term] = i
-    end
+    row_indices = OrderedDict{String, Int}(
+                    term => i for (i,term) in enumerate(terms))
     return row_indices
 end
 
@@ -81,7 +79,7 @@ DocumentTermMatrix(crps::Corpus, terms::Vector{String}; tokenizer::Symbol=DEFAUL
 
 DocumentTermMatrix{T}(crps::Corpus, lex::AbstractDict; tokenizer::Symbol=DEFAULT_TOKENIZER
                      ) where T<:Real =
-    DocumentTermMatrix{T}(crps, sort(collect(keys(lex))), tokenizer=tokenizer)
+    DocumentTermMatrix{T}(crps, collect(keys(lex)), tokenizer=tokenizer)
 
 DocumentTermMatrix(crps::Corpus, lex::AbstractDict; tokenizer::Symbol=DEFAULT_TOKENIZER) =
     DocumentTermMatrix{DEFAULT_DTM_TYPE}(crps, lex, tokenizer=tokenizer)
@@ -120,13 +118,20 @@ dtm(crps::Corpus, eltype::Type{T}=DEFAULT_DTM_TYPE;
 
 
 # Produce the signature of a DTM entry for a document
-function dtm_entries(d, lex::Dict{String, Int}, eltype::Type{T}=DEFAULT_DTM_TYPE;
-                     tokenizer::Symbol=DEFAULT_TOKENIZER) where T<:Real
+function dtm_entries(d, lex::OrderedDict{String, Int},
+                     eltype::Type{T}=DEFAULT_DTM_TYPE;
+                     tokenizer::Symbol=DEFAULT_TOKENIZER,
+                     lex_is_row_indices::Bool=false) where T<:Real
     ngs = ngrams(d, tokenizer=tokenizer)
     indices = Vector{Int}(undef, 0)
     values = Vector{T}(undef, 0)
-    terms = sort(collect(keys(lex)))
-    row_indices = rowindices(terms)
+    local row_indices
+    if lex_is_row_indices
+        row_indices = lex
+    else
+        terms = collect(keys(lex))
+        row_indices = rowindices(terms)
+    end
     for ngram in keys(ngs)
         j = get(row_indices, ngram, 0)
         v = ngs[ngram]
@@ -140,16 +145,19 @@ end
 
 
 """
-    dtv(d, lex::Dict{String,Int}, eltype::Type{T}=DEFAULT_DTM_TYPE [; tokenizer=DEFAULT_TOKENIZER])
+    dtv(d, lex::OrderedDict{String,Int}, eltype::Type{T}=DEFAULT_DTM_TYPE [; tokenizer=DEFAULT_TOKENIZER])
 
 Creates a document-term-vector with elements of type `T` for document `d`
 using the lexicon `lex`. `d` can be an `AbstractString` or an `AbstractDocument`.
 """
-function dtv(d, lex::Dict{String, Int}, eltype::Type{T}=DEFAULT_DTM_TYPE;
-            tokenizer::Symbol=DEFAULT_TOKENIZER) where T<:Real
+function dtv(d, lex::OrderedDict{String, Int},
+             eltype::Type{T}=DEFAULT_DTM_TYPE;
+             tokenizer::Symbol=DEFAULT_TOKENIZER,
+             lex_is_row_indices::Bool=false) where T<:Real
     p = length(keys(lex))
     column = zeros(T, p)
-    indices, values = dtm_entries(d, lex, eltype, tokenizer=tokenizer)
+    indices, values = dtm_entries(d, lex, eltype, tokenizer=tokenizer,
+                                  lex_is_row_indices=lex_is_row_indices)
     column[indices] = values
     return column
 end
@@ -160,30 +168,40 @@ end
 Creates a document-term-vector with elements of type `T` for document `idx`
 of the corpus `crps`.
 """
-function dtv(crps::Corpus, idx::Int, eltype::Type{T}=DEFAULT_DTM_TYPE;
-            tokenizer::Symbol=DEFAULT_TOKENIZER) where T<:Real
+function dtv(crps::Corpus, idx::Int,
+             eltype::Type{T}=DEFAULT_DTM_TYPE;
+             tokenizer::Symbol=DEFAULT_TOKENIZER,
+             lex_is_row_indices::Bool=false) where T<:Real
     if isempty(crps.lexicon)
         error("Cannot construct a DTV without a pre-existing lexicon")
     elseif idx >= length(crps.documents) || idx < 1
         error("DTV requires the document index in [1,$(length(crps.documents))]")
     else
-        return dtv(crps.documents[idx], crps.lexicon, eltype, tokenizer=tokenizer)
+        return dtv(crps.documents[idx], crps.lexicon, eltype, tokenizer=tokenizer,
+                   lex_is_row_indices=lex_is_row_indices)
     end
 end
 
-function dtv(d; tokenizer::Symbol=DEFAULT_TOKENIZER)
+function dtv(d; tokenizer::Symbol=DEFAULT_TOKENIZER, lex_is_row_indices::Bool=false)
     throw(ErrorException("Cannot construct a DTV without a pre-existing lexicon"))
 end
 
 
 # Document is a list of regular expressions in text form
-function dtm_regex_entries(d, lex::Dict{String, Int}, eltype::Type{T}=DEFAULT_DTM_TYPE;
-                           tokenizer::Symbol=DEFAULT_TOKENIZER) where T<:Real
+function dtm_regex_entries(d, lex::OrderedDict{String, Int},
+                           eltype::Type{T}=DEFAULT_DTM_TYPE;
+                           tokenizer::Symbol=DEFAULT_TOKENIZER,
+                           lex_is_row_indices::Bool=false) where T<:Real
     ngs = ngrams(d, tokenizer=tokenizer)
     patterns = Regex.(keys(ngs))
     indices = Vector{Int}(undef, 0)
-    terms = sort(collect(keys(lex)))
-    row_indices = rowindices(terms)
+    terms = collect(keys(lex))
+    local row_indices
+    if lex_is_row_indices
+        row_indices = lex
+    else
+        row_indices = rowindices(terms)
+    end
     for pattern in patterns
         for term in terms
             if occursin(pattern, term)
@@ -198,7 +216,7 @@ end
 
 
 """
-    dtv_regex(d, lex::Dict{String,Int}, eltype::Type{T}=DEFAULT_DTM_TYPE [; tokenizer=DEFAULT_TOKENIZER])
+    dtv_regex(d, lex::OrderedDict{String,Int}, eltype::Type{T}=DEFAULT_DTM_TYPE [; tokenizer=DEFAULT_TOKENIZER])
 
 Creates a document-term-vector with elements of type `T` for document `d`
 using the lexicon `lex`. The tokens of document `d` are assumed to be regular
@@ -206,7 +224,7 @@ expressions in text format. `d` can be an `AbstractString` or an `AbstractDocume
 
 # Examples
 ```
-julia> dtv_regex(NGramDocument("a..b"), Dict("aaa"=>1, "aaab"=>2, "accb"=>3, "bbb"=>4), Float32)
+julia> dtv_regex(NGramDocument("a..b"), OrderedDict("aaa"=>1, "aaab"=>2, "accb"=>3, "bbb"=>4), Float32)
 4-element Array{Float32,1}:
  0.0
  1.0
@@ -214,11 +232,14 @@ julia> dtv_regex(NGramDocument("a..b"), Dict("aaa"=>1, "aaab"=>2, "accb"=>3, "bb
  0.0
 ```
 """
-function dtv_regex(d, lex::Dict{String, Int}, eltype::Type{T}=DEFAULT_DTM_TYPE;
-                   tokenizer::Symbol=DEFAULT_TOKENIZER) where T<:Real
+function dtv_regex(d, lex::OrderedDict{String, Int},
+                   eltype::Type{T}=DEFAULT_DTM_TYPE;
+                   tokenizer::Symbol=DEFAULT_TOKENIZER,
+                   lex_is_row_indices::Bool=false) where T<:Real
     p = length(keys(lex))
     column = zeros(T, p)
-    indices, values = dtm_regex_entries(d, lex, eltype, tokenizer=tokenizer)
+    indices, values = dtm_regex_entries(d, lex, eltype, tokenizer=tokenizer,
+                                        lex_is_row_indices=lex_is_row_indices)
     column[indices] = values
     return column
 end
@@ -274,17 +295,23 @@ hash_dtm(crps::Corpus, eltype::Type{T}=DEFAULT_DTM_TYPE;
 # Produce entries for on-line analysis when DTM would not fit in memory
 mutable struct EachDTV{U, S<:AbstractString, T<:AbstractDocument}
     corpus::Corpus{S,T}
+    row_indices::OrderedDict{String, Int}
     tokenizer::Symbol
-    function EachDTV{U,S,T}(corpus::Corpus{S,T}, tokenizer::Symbol=DEFAULT_TOKENIZER) where
+    function EachDTV{U,S,T}(corpus::Corpus{S,T},
+                            row_indices::OrderedDict{String, Int},
+                            tokenizer::Symbol=DEFAULT_TOKENIZER) where
             {U, S<:AbstractString, T<:AbstractDocument}
         isempty(lexicon(corpus)) && update_lexicon!(corpus)
         @assert tokenizer in [:slow, :fast] "Tokenizer has to be either :slow or :fast"
-        new(corpus, tokenizer)
+        new(corpus, row_indices, tokenizer)
     end
 end
 
-EachDTV{U}(crps::Corpus{S,T}; tokenizer::Symbol=DEFAULT_TOKENIZER) where {U,S,T} =
-    EachDTV{U,S,T}(crps, tokenizer)
+EachDTV{U}(crps::Corpus{S,T}; tokenizer::Symbol=DEFAULT_TOKENIZER) where {U,S,T} = begin
+    isempty(lexicon(crps)) && update_lexicon!(crps)
+    row_indices = rowindices(collect(keys(lexicon(crps))))
+    EachDTV{U,S,T}(crps, row_indices, tokenizer)
+end
 
 Base.iterate(edt::EachDTV, state=1) = begin
     if state > length(edt.corpus)
@@ -295,7 +322,8 @@ Base.iterate(edt::EachDTV, state=1) = begin
 end
 
 next(edt::EachDTV{U,S,T}, state::Int) where {U,S,T} =
-    (dtv(edt.corpus.documents[state], lexicon(edt.corpus), U, tokenizer=edt.tokenizer), state + 1)
+    (dtv(edt.corpus.documents[state], edt.row_indices, U,
+         tokenizer=edt.tokenizer, lex_is_row_indices=true), state + 1)
 
 """
     each_dtv(crps::Corpus [; eltype::Type{U}=DEFAULT_DTM_TYPE, tokenizer=DEFAULT_TOKENIZER])
@@ -325,7 +353,6 @@ mutable struct EachHashDTV{U, S<:AbstractString, T<:AbstractDocument}
     tokenizer::Symbol
     function EachHashDTV{U,S,T}(corpus::Corpus{S,T}, tokenizer::Symbol=DEFAULT_TOKENIZER) where
             {U, S<:AbstractString, T<:AbstractDocument}
-        isempty(lexicon(corpus)) && update_lexicon!(corpus)
         @assert tokenizer in [:slow, :fast] "Tokenizer has to be either :slow or :fast"
         new(corpus, tokenizer)
     end

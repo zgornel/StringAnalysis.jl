@@ -1,6 +1,6 @@
 # Co-occurence matrix
 """
-    coo_matrix(::Type{T}, doc::Vector{AbstractString}, vocab::Dict{AbstractString, Int}, window::Int, normalize::Bool)
+    coo_matrix(::Type{T}, doc::Vector{AbstractString}, vocab::OrderedDict{AbstractString, Int}, window::Int, normalize::Bool)
 
 Basic low-level function that calculates the co-occurence matrix of a document.
 Returns a sparse co-occurence matrix sized `n × n` where `n = length(vocab)`
@@ -14,7 +14,7 @@ of not the counts by the distance between word positions.
 julia> using StringAnalysis
        doc = StringDocument("This is a text about an apple. There are many texts about apples.")
        docv = tokenize(text(doc))
-       vocab = Dict("This"=>1, "is"=>2, "apple."=>3)
+       vocab = OrderedDict("This"=>1, "is"=>2, "apple."=>3)
        StringAnalysis.coo_matrix(Float16, docv, vocab, 5, true)
 3×3 SparseArrays.SparseMatrixCSC{Float16,Int64} with 4 stored entries:
   [2, 1]  =  2.0
@@ -25,7 +25,7 @@ julia> using StringAnalysis
 """
 function coo_matrix(::Type{T},
                     doc::Vector{<:AbstractString},
-                    vocab::Dict{<:AbstractString, Int},
+                    vocab::OrderedDict{<:AbstractString, Int},
                     window::Int,
                     normalize::Bool=true) where T<:AbstractFloat
     n = length(vocab)
@@ -56,13 +56,13 @@ Basic Co-occurrence Matrix (COOM) type.
 co-occurrences of two terms within a given window
   * `terms::Vector{String}` a list of terms that represent the lexicon of
 the document or corpus
-  * `column_indices::Dict{String, Int}` a map between the `terms` and the
+  * `column_indices::OrderedDict{String, Int}` a map between the `terms` and the
 columns of the co-occurrence matrix
 """
 mutable struct CooMatrix{T}
     coom::SparseMatrixCSC{T, Int}
     terms::Vector{String}
-    column_indices::Dict{String, Int}
+    column_indices::OrderedDict{String, Int}
 end
 
 
@@ -94,7 +94,7 @@ CooMatrix(crps::Corpus, terms::Vector{String}; window::Int=5, normalize::Bool=tr
 
 CooMatrix{T}(crps::Corpus, lex::AbstractDict; window::Int=5, normalize::Bool=true
             ) where T<:AbstractFloat =
-    CooMatrix{T}(crps, sort(collect(keys(lex))), window=window, normalize=normalize)
+    CooMatrix{T}(crps, collect(keys(lex)), window=window, normalize=normalize)
 
 CooMatrix(crps::Corpus, lex::AbstractDict; window::Int=5, normalize::Bool=true) =
     CooMatrix{DEFAULT_FLOAT_TYPE}(crps, lex, window=window, normalize=normalize)
@@ -126,7 +126,7 @@ CooMatrix(doc, terms::Vector{String}; window::Int=5, normalize::Bool=true
     CooMatrix{DEFAULT_FLOAT_TYPE}(doc, terms, window=window, normalize=normalize)
 
 function CooMatrix{T}(doc; window::Int=5, normalize::Bool=true) where T<:AbstractFloat
-    terms = sort(unique(String.(tokens(doc))))
+    terms = unique(String.(tokens(doc)))
     CooMatrix{T}(doc, terms, window=window, normalize=normalize)
 end
 
