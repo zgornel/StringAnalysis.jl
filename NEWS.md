@@ -1,5 +1,10 @@
 ## StringAnalysis Release Notes
 
+v0.3.4
+------
+ - All forms of DTVs are sparse
+ - DTMs, COOMs are immutable
+
 v0.3.3
 ------
  - Performance improvementss
