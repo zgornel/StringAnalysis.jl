@@ -155,7 +155,7 @@ function dtv(d, lex::OrderedDict{String, Int},
              tokenizer::Symbol=DEFAULT_TOKENIZER,
              lex_is_row_indices::Bool=false) where T<:Real
     p = length(keys(lex))
-    column = zeros(T, p)
+    column = spzeros(T, p)
     indices, values = dtm_entries(d, lex, eltype, tokenizer=tokenizer,
                                   lex_is_row_indices=lex_is_row_indices)
     column[indices] = values
@@ -237,7 +237,7 @@ function dtv_regex(d, lex::OrderedDict{String, Int},
                    tokenizer::Symbol=DEFAULT_TOKENIZER,
                    lex_is_row_indices::Bool=false) where T<:Real
     p = length(keys(lex))
-    column = zeros(T, p)
+    column = spzeros(T, p)
     indices, values = dtm_regex_entries(d, lex, eltype, tokenizer=tokenizer,
                                         lex_is_row_indices=lex_is_row_indices)
     column[indices] = values
@@ -254,7 +254,7 @@ using the hashing function `h`. `d` can be an `AbstractString` or an `AbstractDo
 function hash_dtv(d, h::TextHashFunction, eltype::Type{T}=DEFAULT_DTM_TYPE;
                  tokenizer::Symbol=DEFAULT_TOKENIZER) where T<:Real
     p = cardinality(h)
-    res = zeros(T, p)
+    res = spzeros(T, p)
     ngs = ngrams(d, tokenizer=tokenizer)
     for ng in keys(ngs)
         res[index_hash(ng, h)] += ngs[ng]
@@ -280,7 +280,7 @@ function hash_dtm(crps::Corpus,
                   eltype::Type{T}=DEFAULT_DTM_TYPE;
                   tokenizer::Symbol=DEFAULT_TOKENIZER) where T<:Real
     n, p = length(crps), cardinality(h)
-    res = zeros(T, p, n)
+    res = spzeros(T, p, n)
     for (i, doc) in enumerate(crps)
         res[:, i] = hash_dtv(doc, h, eltype, tokenizer=tokenizer)
     end

@@ -39,7 +39,7 @@ end
         hash_dtv(crps[1], TextHashFunction())
     v = hash_dtv(text(crps[1]), cardinality=25)
     @test v == hash_dtv(crps[1], cardinality=25)
-    @test v isa Vector{StringAnalysis.DEFAULT_DTM_TYPE}
+    @test v isa SparseVector{StringAnalysis.DEFAULT_DTM_TYPE}
     @test length(v) == 25
 
     dtm1 = dtm(crps)
@@ -86,15 +86,14 @@ end
     update_inverse_index!(crps)
     m = DocumentTermMatrix(crps)
     # Iteration iterface tests
-    i = 1
-    for v in each_dtv(crps)
+    T = Int8
+    for (i,v) in enumerate(each_dtv(crps, eltype=T))
         @test v == m.dtm[1:end,i]
-        i+= 1
+        i==1 && @test v isa SparseVector{T}
     end
-    i = 1
-    for v in each_hash_dtv(crps)
+    for (i,v) in enumerate(each_hash_dtv(crps, eltype=T))
         @test v == hash_dtv(crps[i])
-        i+= 1
+        i==1 && @test v isa SparseVector{T}
     end
     # Indexing into the DTM
     word = "This"
