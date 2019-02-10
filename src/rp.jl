@@ -225,12 +225,12 @@ embed_document(rpm::RPModel{S,T,A,H}, doc::AbstractDocument) where {S,T,A,H} =
 embed_document(rpm::RPModel{S,T,A,H}, doc::AbstractString) where {S,T,A,H} =
     embed_document(rpm, NGramDocument{S}(doc))
 
-embed_document(rpm::RPModel{S,T,A,H}, doc::Vector{S2}) where {S,T,A,H,S2<:AbstractString} =
+embed_document(rpm::RPModel{S,T,A,H}, doc::AbstractVector{S2}) where {S,T,A,H,S2<:AbstractString} =
     embed_document(rpm, TokenDocument{S}(doc))
 
 # Actual embedding function: takes as input the random projection model `rpm` and a document
 # term vector `dtv`. Returns the representation of `dtv` in the embedding space.
-function embed_document(rpm::RPModel{S,T,A,H}, dtv::Vector{T}) where {S,T,A,H}
+function embed_document(rpm::RPModel{S,T,A,H}, dtv::AbstractVector{T}) where {S,T,A,H}
     words_in_document = sum(dtv)
     # Calculate document vector
     if rpm.stats == :count
