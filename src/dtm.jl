@@ -9,7 +9,7 @@ the corpus associated with the DTM
   * `row_indices::OrderedDict{String, Int}` a map between the `terms` and the
 rows of the `dtm`
 """
-mutable struct DocumentTermMatrix{T}
+struct DocumentTermMatrix{T}
     dtm::SparseMatrixCSC{T, Int}
     terms::Vector{String}
     row_indices::OrderedDict{String, Int}
@@ -293,7 +293,7 @@ hash_dtm(crps::Corpus, eltype::Type{T}=DEFAULT_DTM_TYPE;
 
 
 # Produce entries for on-line analysis when DTM would not fit in memory
-mutable struct EachDTV{U, S<:AbstractString, T<:AbstractDocument}
+struct EachDTV{U, S<:AbstractString, T<:AbstractDocument}
     corpus::Corpus{S,T}
     row_indices::OrderedDict{String, Int}
     tokenizer::Symbol
@@ -348,7 +348,7 @@ Base.show(io::IO, edt::EachDTV{U,S,T}) where {U,S,T} =
           "$(length(edt)) elements of type $(eltype(edt)).")
 
 
-mutable struct EachHashDTV{U, S<:AbstractString, T<:AbstractDocument}
+struct EachHashDTV{U, S<:AbstractString, T<:AbstractDocument}
     corpus::Corpus{S,T}
     tokenizer::Symbol
     function EachHashDTV{U,S,T}(corpus::Corpus{S,T}, tokenizer::Symbol=DEFAULT_TOKENIZER) where

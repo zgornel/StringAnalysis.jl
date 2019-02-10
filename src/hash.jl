@@ -43,7 +43,7 @@ julia> doc = StringDocument("this is a text")
  0.0
 ```
 """
-mutable struct TextHashFunction
+struct TextHashFunction
     hash_function::Function
     cardinality::Int
 end

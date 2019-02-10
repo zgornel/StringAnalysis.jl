@@ -59,7 +59,7 @@ the document or corpus
   * `column_indices::OrderedDict{String, Int}` a map between the `terms` and the
 columns of the co-occurrence matrix
 """
-mutable struct CooMatrix{T}
+struct CooMatrix{T}
     coom::SparseMatrixCSC{T, Int}
     terms::Vector{String}
     column_indices::OrderedDict{String, Int}
