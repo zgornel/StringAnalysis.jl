@@ -21,8 +21,8 @@
     map(x->prepare!(x, strip_everything_stem), [sdoc, ndoc, tdoc, crps])
     @test prepare(poem_no_1, strip_everything_stem) == "pin"
     @test text(sdoc) == "pin"
-    @test ngrams(ndoc) == Dict("tag"=>2,"pin"=>1,"hold"=>1,"thrill"=>1)
-    @test string.(tokens(tdoc)) == ["pin", "tag", "hold", "tag", "thrill"]
+    @test ngrams(ndoc) == Dict("tag"=>2,"pin "=>1,"hold"=>1,"thrill "=>1)
+    @test tokens(tdoc) == ["pin ", "tag", "hold", "tag", "thrill "]
     @test text(crps[1]) == "pin"
     # Flag generation
     v = [2, 5, 7]

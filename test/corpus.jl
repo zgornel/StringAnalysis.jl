@@ -14,7 +14,7 @@
 
     crps2 = Corpus([ngd, ngd])
     update_inverse_index!(crps2)
-    @test typeof(crps2) <: Corpus{<:SubString, <:NGramDocument}
+    @test typeof(crps2) <: Corpus{<:String, <:NGramDocument}
 
     documents(crps)
 
