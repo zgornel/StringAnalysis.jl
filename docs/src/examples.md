@@ -148,15 +148,17 @@ One can verify the DTM dimensions with:
 ### Document Term Vectors (DTVs)
 The individual rows of the DTM can also be generated iteratively whether a lexicon is present or not. If a lexicon is present, the `each_dtv` iterator allows the generation of the document vectors along with the control of the vector element type:
 ```@repl index
-for dv in each_dtv(crps, eltype=Int8)
+for dv in map(Vector, each_dtv(crps, eltype=Int8))
     @show dv
 end
 ```
 
 Alternatively, the vectors can be generated using the [hash trick](https://en.wikipedia.org/wiki/Feature_hashing). This is a form of dimensionality reduction as `cardinality` i.e. output dimension is much smaller than the dimension of the original DTM vectors, which is equal to the length of the lexicon. The `cardinality` is a keyword argument of the `Corpus` constructor. The hashed vector output type can be specified when building the iterator:
 ```@repl index
-for dv in each_hash_dtv(Corpus(documents(crps), cardinality=5), eltype=Int8)
-    @show dv
+new_crps = Corpus(documents(crps), cardinality=7);
+hash_vectors = map(Vector, each_hash_dtv(new_crps, eltype=Int8));
+for hdv in hash_vectors
+    @show hdv
 end
 ```
 One can construct a 'hashed' version of the DTM as well:
@@ -164,6 +166,14 @@ One can construct a 'hashed' version of the DTM as well:
 hash_dtm(Corpus(documents(crps), cardinality=5), Int8)
 ```
 The default `Corpus` cardinality is specified by the constant `DEFAULT_CARDINALITY` present in `src/defaults.jl`.
+
+!!! note
+
+    From version `v0.3.4`, all document vectors are instances of `SparseVector`. This consequently
+    has an impact on the output and performance of methods that directly employ DTVs such
+    as the `embed_document` method. In certain cases, if speed is more important than memory consumption,
+    it may be useful to first transform the vectors into a dense representation prior to transformation
+    i.e. `dtv_dense = Vector(dtv_sparse)`.
 
 ### TF, TF-IDF, BM25
 From the DTM, three more document-word statistics can be constructed: the [term frequency](https://en.wikipedia.org/wiki/Tf%E2%80%93idf#Term_frequency_2), the [tf-idf (term frequency - inverse document frequency)](https://en.wikipedia.org/wiki/Tf%E2%80%93idf#Term_frequency%E2%80%93Inverse_document_frequency) and [Okapi BM25](https://en.wikipedia.org/wiki/Okapi_BM25) using the `tf`, `tf!`, `tf_idf`, `tf_idf!`, `bm_25` and `bm_25!` functions respectively. Their usage is very similar yet there exist several approaches one can take to constructing the output.

@@ -9,7 +9,7 @@ the corpus associated with the DTM
   * `row_indices::OrderedDict{String, Int}` a map between the `terms` and the
 rows of the `dtm`
 """
-mutable struct DocumentTermMatrix{T}
+struct DocumentTermMatrix{T}
     dtm::SparseMatrixCSC{T, Int}
     terms::Vector{String}
     row_indices::OrderedDict{String, Int}
@@ -155,7 +155,7 @@ function dtv(d, lex::OrderedDict{String, Int},
              tokenizer::Symbol=DEFAULT_TOKENIZER,
              lex_is_row_indices::Bool=false) where T<:Real
     p = length(keys(lex))
-    column = zeros(T, p)
+    column = spzeros(T, p)
     indices, values = dtm_entries(d, lex, eltype, tokenizer=tokenizer,
                                   lex_is_row_indices=lex_is_row_indices)
     column[indices] = values
@@ -237,7 +237,7 @@ function dtv_regex(d, lex::OrderedDict{String, Int},
                    tokenizer::Symbol=DEFAULT_TOKENIZER,
                    lex_is_row_indices::Bool=false) where T<:Real
     p = length(keys(lex))
-    column = zeros(T, p)
+    column = spzeros(T, p)
     indices, values = dtm_regex_entries(d, lex, eltype, tokenizer=tokenizer,
                                         lex_is_row_indices=lex_is_row_indices)
     column[indices] = values
@@ -254,7 +254,7 @@ using the hashing function `h`. `d` can be an `AbstractString` or an `AbstractDo
 function hash_dtv(d, h::TextHashFunction, eltype::Type{T}=DEFAULT_DTM_TYPE;
                  tokenizer::Symbol=DEFAULT_TOKENIZER) where T<:Real
     p = cardinality(h)
-    res = zeros(T, p)
+    res = spzeros(T, p)
     ngs = ngrams(d, tokenizer=tokenizer)
     for ng in keys(ngs)
         res[index_hash(ng, h)] += ngs[ng]
@@ -280,7 +280,7 @@ function hash_dtm(crps::Corpus,
                   eltype::Type{T}=DEFAULT_DTM_TYPE;
                   tokenizer::Symbol=DEFAULT_TOKENIZER) where T<:Real
     n, p = length(crps), cardinality(h)
-    res = zeros(T, p, n)
+    res = spzeros(T, p, n)
     for (i, doc) in enumerate(crps)
         res[:, i] = hash_dtv(doc, h, eltype, tokenizer=tokenizer)
     end
@@ -293,7 +293,7 @@ hash_dtm(crps::Corpus, eltype::Type{T}=DEFAULT_DTM_TYPE;
 
 
 # Produce entries for on-line analysis when DTM would not fit in memory
-mutable struct EachDTV{U, S<:AbstractString, T<:AbstractDocument}
+struct EachDTV{U, S<:AbstractString, T<:AbstractDocument}
     corpus::Corpus{S,T}
     row_indices::OrderedDict{String, Int}
     tokenizer::Symbol
@@ -348,7 +348,7 @@ Base.show(io::IO, edt::EachDTV{U,S,T}) where {U,S,T} =
           "$(length(edt)) elements of type $(eltype(edt)).")
 
 
-mutable struct EachHashDTV{U, S<:AbstractString, T<:AbstractDocument}
+struct EachHashDTV{U, S<:AbstractString, T<:AbstractDocument}
     corpus::Corpus{S,T}
     tokenizer::Symbol
     function EachHashDTV{U,S,T}(corpus::Corpus{S,T}, tokenizer::Symbol=DEFAULT_TOKENIZER) where
