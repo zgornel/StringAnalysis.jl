@@ -11,7 +11,7 @@ convertible to type `T`.
 # Fields
   * `vocab::Vector{S}` a vector with all the words in the corpus
   * `vocab_hash::OrderedDict{S,H}` a word to index in word embeddings matrix mapping
-  * `Σinv::A` inverse of the singular value matrix
+  * `Σinv::A` diagonal of the inverse singular value matrix
   * `Uᵀ::A` transpose of the word embedding matrix
   * `stats::Symbol` the statistical measure to use for word importances in documents. Available values are: `:count` (term count), `:tf` (term frequency), `:tfidf` (default, term frequency-inverse document frequency) and `:bm25` (Okapi BM25)
   * `idf::Vector{T}` inverse document frequencies for the words in the vocabulary
@@ -25,7 +25,7 @@ convertible to type `T`.
 `X[i,j]` represents a statistical indicator of the importance of term `i` in document `j`
 then:
   * `U, Σ, V = svd(X)`
-  * `Σinv = inv(Σ)`
+  * `Σinv = diag(inv(Σ))`
   * `Uᵀ = U'`
   * `X ≈ U * Σ * V'`
   The matrix `V` of document embeddings is not actually stored in the model.
@@ -71,7 +71,7 @@ Query: "Apples and an exotic fruit."
 struct LSAModel{S<:AbstractString, T<:AbstractFloat, A<:AbstractMatrix{T}, H<:Integer}
     vocab::Vector{S}        # vocabulary
     vocab_hash::OrderedDict{S,H}   # term to column index in U
-    Σinv::A                 # inverse of Σ
+    Σinv::Vector{T}         # diagonal of inverse of Σ
     Uᵀ::A                   # word vectors (transpose of U)
     stats::Symbol           # term/document importance
     idf::Vector{T}          # inverse document frequencies
@@ -131,11 +131,10 @@ function LSAModel(dtm::DocumentTermMatrix{T};
         Σ = Σ[1:k]
     end
     # Build model components
-    Σinv = diagm(0 => 1 ./ Σ)
+    Σinv = 1 ./ Σ
     Σinv[abs.(Σinv) .< minval] .= zeroval
-    Σinv::SparseMatrixCSC{T,Int} = SparseMatrixCSC{T, Int}(Σinv)  # type stability annotated
     U₀[abs.(U₀).< minval] .= zeroval
-    U = SparseMatrixCSC{T, Int}(U₀')
+    U = Matrix{T}(U₀')
     # Return the model
     return LSAModel(dtm.terms, dtm.row_indices,
                     Σinv, U,
@@ -202,7 +201,7 @@ in_vocabulary(lm::LSAModel, word::AbstractString) = word in lm.vocab
 
 Return a tuple containin input and output dimensionalities of the LSA model `lm`.
 """
-size(lm::LSAModel) = size(lm.Uᵀ,2), size(lm.Σinv,1)
+size(lm::LSAModel) = size(lm.Uᵀ,2), length(lm.Σinv)
 
 
 """
@@ -219,7 +218,7 @@ index(lm::LSAModel, word) = lm.vocab_hash[word]
 Returns the vector representation of `word` from the LSA model `lm`.
 """
 function get_vector(lm::LSAModel{S,T,A,H}, word) where {S,T,A,H}
-    default = zeros(T, size(lm.Σinv,1))
+    default = zeros(T, length(lm.Σinv))
     idx = get(lm.vocab_hash, word, 0)
     if idx == 0
         return default
@@ -264,7 +263,7 @@ function embed_document(lm::LSAModel{S,T,A,H}, dtv::AbstractVector{T}) where {S,
                        (k * (one(T) - b + b * words_in_document/lm.nwords) .+ tf)
     end
     # Embed
-    d̂ = lm.Σinv * lm.Uᵀ * v         # embed
+    d̂ = (lm.Σinv .* lm.Uᵀ) * v      # embed
     d̂ = d̂ ./ (norm(d̂,2) .+ eps(T))  # normalize
     d̂[abs.(d̂) .< lm.tol] .= zero(T) # zero small elements
     return d̂
@@ -282,7 +281,7 @@ function embed_document(lm::LSAModel{S,T,A,H}, dtm::DocumentTermMatrix{T}) where
     elseif lm.stats == :bm25
         X = bm_25(dtm, κ=lm.κ, β=lm.β)
     end
-    V = lm.Σinv * lm.Uᵀ * X
+    V = (lm.Σinv .* lm.Uᵀ) * X
     V ./= (sqrt.(sum(V.^2, dims=1)) .+ eps(T))
     V[abs.(V) .< lm.tol] .= zero(T)
     return V
@@ -355,7 +354,7 @@ function save_lsa_model(lm::LSAModel{S,T,A,H}, filename::AbstractString) where {
         println(fid, lm.β)
         println(fid, lm.tol)
         # Σinv diagonal
-        writedlm(fid, diag(lm.Σinv)', " ")
+        writedlm(fid, lm.Σinv', " ")
         # Word embeddings
         idxs = [lm.vocab_hash[word] for word in lm.vocab]
         writedlm(fid, [lm.vocab lm.Uᵀ[:, idxs]'], " ")
@@ -364,14 +363,14 @@ end
 
 
 """
-    load_lsa_model(filename, eltype; [sparse=true])
+    load_lsa_model(filename, eltype; [sparse=false])
 
 Loads an LSA model from `filename` into an LSA model object. The embeddings matrix
 element type is specified by `eltype` (default `DEFAULT_FLOAT_TYPE`) while the keyword argument
 `sparse` specifies whether the matrix should be sparse or not.
 """
 function load_lsa_model(filename::AbstractString, ::Type{T}=DEFAULT_FLOAT_TYPE;
-                        sparse::Bool=true) where T<: AbstractFloat
+                        sparse::Bool=false) where T<: AbstractFloat
     # Matrix type for LSA model
     A = ifelse(sparse, SparseMatrixCSC{T, Int}, Matrix{T})
     # Define parsed variables local to outer scope of do statement
@@ -385,10 +384,10 @@ function load_lsa_model(filename::AbstractString, ::Type{T}=DEFAULT_FLOAT_TYPE;
         vocab_hash = OrderedDict{String, Int}()
         if sparse
             Uᵀ = SparseMatrixCSC{T, Int}(UniformScaling(0), k, vocab_size)
-            Σinv = spzeros(T, k, k)
+            Σinv = spzeros(T, k)
         else
             Uᵀ = Matrix{T}(undef, k, vocab_size)
-            Σinv = zeros(T, k, k)
+            Σinv = zeros(T, k)
         end
         # Start parsing the rest of the file
         stats = Symbol(strip(readline(fid)))
@@ -397,7 +396,7 @@ function load_lsa_model(filename::AbstractString, ::Type{T}=DEFAULT_FLOAT_TYPE;
         κ = parse(Int, readline(fid))
         β = parse(Float64, readline(fid))
         tol = parse(Float64, readline(fid))
-        Σinv[diagind(Σinv)] .= map(x->parse(T, x), split(readline(fid), ' '))
+        Σinv = map(x->parse(T, x), split(readline(fid), ' '))
         for i in 1:vocab_size
             line = strip(readline(fid))
             parts = split(line, ' ')

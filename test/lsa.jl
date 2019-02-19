@@ -19,8 +19,8 @@
             for T in [Float32, Float64]
                 dtm = DocumentTermMatrix{T}(crps, lex)
                 model = lsa(dtm, k=k, stats=stats)
-                @test model isa LSAModel{String, T, SparseMatrixCSC{T,Int}, Int}
-                @test size(model.Σinv, 1) == min(k, n)
+                @test model isa LSAModel{String, T, Matrix{T}, Int}
+                @test length(model.Σinv) == min(k, n)
                 idxs, corrs = cosine(model, dtm, query)
                 @test length(idxs) == length(corrs) == length(crps)
                 sim = similarity(model, crps[rand(1:n)], query)
@@ -33,7 +33,7 @@
     T = Float32
     # Vocabulary
     model = lsa(crps, T, k=K)
-    @test model isa LSAModel{String, T, SparseMatrixCSC{T, Int}, Int}
+    @test model isa LSAModel{String, T, Matrix{T}, Int}
     @test all(in_vocabulary(model, word) for word in keys(crps.lexicon))
     @test vocabulary(model) == collect(keys(crps.lexicon))
     @test size(model) == (length(crps.lexicon), K)
