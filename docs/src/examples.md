@@ -318,7 +318,7 @@ embed_document(lm, query)
 ```
 embed the corpus,
 ```@repl index
-V = Matrix(embed_document(lm, crps))  # `Matrix` looks nicer ;)
+V = embed_document(lm, crps)
 ```
 search for matching documents,
 ```@repl index
@@ -329,7 +329,7 @@ end
 ```
 or check for structure within the data
 ```@repl index
-U = Matrix(lm.Uᵀ);
+U = lm.Uᵀ;
 V'*V  # document to document similarity
 U'*U  # term to term similarity
 ```

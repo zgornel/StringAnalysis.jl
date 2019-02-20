@@ -1,5 +1,9 @@
 ## StringAnalysis Release Notes
 
+v0.3.5
+------
+ - Improved LSA embedding performance
+
 v0.3.4
 ------
  - All forms of DTVs are sparse
