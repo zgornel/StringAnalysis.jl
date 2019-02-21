@@ -85,7 +85,7 @@ function Base.iterate(crps::Corpus, ind=1)
     crps.documents[ind], ind+1
 end
 
-Base.eltype(::Type{Corpus{T}}) where T = T
+Base.eltype(::Type{Corpus{S,T}}) where {S,T} = T
 
 Base.length(crps::Corpus) = length(crps.documents)
 
@@ -129,7 +129,6 @@ end
 
 
 # Lexicon and inverse index
-# TODO: Offer progressive update that only changes based on current document
 lexicon(crps::Corpus) = crps.lexicon
 
 function update_lexicon!(crps::Corpus, doc::AbstractDocument)
