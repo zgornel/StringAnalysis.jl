@@ -259,8 +259,8 @@ function embed_document(lm::LSAModel{S,T,A,H}, dtv::AbstractVector{T}) where {S,
         k = T(lm.κ)
         b = T(lm.β)
         tf = sqrt.(dtv ./ max(words_in_document, one(T)))
-        v = lm.idf .* ((k + 1) .* tf) ./
-                       (k * (one(T) - b + b * words_in_document/lm.nwords) .+ tf)
+        v = lm.idf .* (k + 1) .* tf ./
+                      (k * (one(T) - b + b * words_in_document/lm.nwords) .+ tf)
     end
     # Embed
     d̂ = (lm.Σinv .* lm.Uᵀ) * v      # embed
