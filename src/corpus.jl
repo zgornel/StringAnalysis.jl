@@ -1,5 +1,5 @@
 # Basic Corpus type
-mutable struct Corpus{S, T<:AbstractDocument{S}}
+@auto_hash_equals mutable struct Corpus{S, T<:AbstractDocument{S}}
     documents::Vector{T}
     total_terms::Int
     lexicon::OrderedDict{S, Int}

@@ -8,6 +8,7 @@ using Languages
 using DataStructures
 
 println("Running tests:")
+include("autohash.jl")
 include("tokenizer.jl")
 include("ngramizer.jl")
 include("document.jl")

@@ -33,6 +33,7 @@ module StringAnalysis
     using TSVD
     using Languages
     using WordTokenizers
+    using AutoHashEquals
 
     # Imports
     import Base: size, show, summary, names
