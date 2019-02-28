@@ -3,6 +3,7 @@
 v0.3.5
 ------
  - Improved LSA embedding performance
+ - AbstractMetadata support
 
 v0.3.4
 ------
