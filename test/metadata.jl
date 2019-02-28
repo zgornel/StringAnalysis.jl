@@ -7,15 +7,15 @@
     crps = Corpus([sd1, sd2])
 
     # Single document metadata getters
-    @test isequal(StringAnalysis.name(sd1), "Unnamed Document")
+    @test isequal(StringAnalysis.name(sd1), "")
     @test isequal(StringAnalysis.language(sd1), Languages.English())
-    @test isequal(StringAnalysis.author(sd1), "Unknown Author")
-    @test isequal(StringAnalysis.timestamp(sd1), "Unknown Time")
-    @test isequal(StringAnalysis.id(sd1), "Unknown ID")
-    @test isequal(StringAnalysis.publisher(sd1), "Unknown Publisher")
-    @test isequal(StringAnalysis.published_year(sd1), "Unknown Publishing Year")
-    @test isequal(StringAnalysis.edition_year(sd1), "Unknown Edition Year")
-    @test isequal(StringAnalysis.documenttype(sd1), "Unknown Type")
+    @test isequal(StringAnalysis.author(sd1), "")
+    @test isequal(StringAnalysis.timestamp(sd1), "")
+    @test isequal(StringAnalysis.id(sd1), "")
+    @test isequal(StringAnalysis.publisher(sd1), "")
+    @test isequal(StringAnalysis.published_year(sd1), "")
+    @test isequal(StringAnalysis.edition_year(sd1), "")
+    @test isequal(StringAnalysis.documenttype(sd1), "")
     @test isequal(StringAnalysis.note(sd1), "")
 
     # Single document metadata setters
@@ -42,15 +42,15 @@
     @test isequal(StringAnalysis.note(sd1), "A Note")
 
     # Metadata getters for an entire corpus
-    @test isequal(StringAnalysis.names(crps), ["Document", "Unnamed Document"])
+    @test isequal(StringAnalysis.names(crps), ["Document", ""])
     @test isequal(StringAnalysis.languages(crps), [Languages.German(), Languages.English()])
-    @test isequal(StringAnalysis.authors(crps), ["Author", "Unknown Author"])
-    @test isequal(StringAnalysis.timestamps(crps), ["Time", "Unknown Time"])
-    @test isequal(StringAnalysis.ids(crps), ["ID", "Unknown ID"])
-    @test isequal(StringAnalysis.publishers(crps), ["Publisher", "Unknown Publisher"])
-    @test isequal(StringAnalysis.published_years(crps), ["Publishing Year", "Unknown Publishing Year"])
-    @test isequal(StringAnalysis.edition_years(crps), ["Edition Year", "Unknown Edition Year"])
-    @test isequal(StringAnalysis.documenttypes(crps), ["Type", "Unknown Type"])
+    @test isequal(StringAnalysis.authors(crps), ["Author", ""])
+    @test isequal(StringAnalysis.timestamps(crps), ["Time", ""])
+    @test isequal(StringAnalysis.ids(crps), ["ID", ""])
+    @test isequal(StringAnalysis.publishers(crps), ["Publisher", ""])
+    @test isequal(StringAnalysis.published_years(crps), ["Publishing Year", ""])
+    @test isequal(StringAnalysis.edition_years(crps), ["Edition Year", ""])
+    @test isequal(StringAnalysis.documenttypes(crps), ["Type", ""])
     @test isequal(StringAnalysis.notes(crps), ["A Note", ""])
 
     # Metadata setters for an entire corpus

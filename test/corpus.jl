@@ -10,7 +10,7 @@
     ngd = NGramDocument(sample_text1)
 
     crps = Corpus([sd, fd, td, ngd])
-    @test typeof(crps) <: Corpus{<:String, <:GenericDocument}
+    @test typeof(crps) <: Corpus{<:String, <:AbstractDocument}
 
     crps2 = Corpus([ngd, ngd])
     update_inverse_index!(crps2)
