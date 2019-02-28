@@ -42,7 +42,7 @@ module StringAnalysis
     # Exports
     export AbstractDocument, Document, FileDocument, StringDocument,
            TokenDocument, NGramDocument, GenericDocument,
-           DocumentMetadata, metadata,
+           AbstractMetadata, DocumentMetadata, metadata,
            text!, text, tokens!, tokens, ngrams!, ngrams,
            ngram_complexity
     export Corpus, DirectoryCorpus, documents, standardize!,

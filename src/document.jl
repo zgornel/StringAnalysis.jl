@@ -1,5 +1,7 @@
 # All Document types share a common metadata profile using DocumentMetadata
-@auto_hash_equals mutable struct DocumentMetadata
+abstract type AbstractMetadata end
+
+@auto_hash_equals mutable struct DocumentMetadata <: AbstractMetadata
     language::Languages.Language
     name::String
     author::String
@@ -27,10 +29,10 @@ DocumentMetadata() = DocumentMetadata(
 
 
 # The abstract Document type
-abstract type AbstractDocument{T<:AbstractString}; end
+abstract type AbstractDocument{T<:AbstractString, M<:AbstractMetadata} end
 
 # FileDocument type and constructors
-@auto_hash_equals mutable struct FileDocument{T} <: AbstractDocument{T}
+@auto_hash_equals mutable struct FileDocument{T} <: AbstractDocument{T, DocumentMetadata}
     filename::T
     metadata::DocumentMetadata
 end
@@ -45,7 +47,7 @@ FileDocument(f::AbstractString) = FileDocument{String}(f)
 
 
 # StringDocument type and constructors
-@auto_hash_equals mutable struct StringDocument{T<:AbstractString} <: AbstractDocument{T}
+@auto_hash_equals mutable struct StringDocument{T<:AbstractString} <: AbstractDocument{T, DocumentMetadata}
     text::T
     metadata::DocumentMetadata
 end
@@ -58,7 +60,7 @@ StringDocument(txt::T) where T<:AbstractString =
 
 
 # TokenDocument type and constructors
-@auto_hash_equals mutable struct TokenDocument{T<:AbstractString} <: AbstractDocument{T}
+@auto_hash_equals mutable struct TokenDocument{T<:AbstractString} <: AbstractDocument{T, DocumentMetadata}
     tokens::Vector{T}
     metadata::DocumentMetadata
 end
@@ -82,7 +84,7 @@ TokenDocument(txt::AbstractString,
 
 
 # NGramDocument type and constructors
-@auto_hash_equals mutable struct NGramDocument{T<:AbstractString} <: AbstractDocument{T}
+@auto_hash_equals mutable struct NGramDocument{T<:AbstractString} <: AbstractDocument{T, DocumentMetadata}
     ngrams::Dict{T,Int}
     n::Int
     metadata::DocumentMetadata
