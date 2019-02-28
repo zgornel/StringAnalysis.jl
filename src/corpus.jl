@@ -35,10 +35,18 @@ Corpus(docs::Vector{AbstractDocument};
     T = String
     new_docs = Vector{GenericDocument{T}}(undef, n)
     for i in 1:n
-        docs[i] isa FileDocument && (new_docs[i] = convert(FileDocument{T}, docs[i]))
-        docs[i] isa StringDocument && (new_docs[i] = convert(StringDocument{T}, docs[i]))
-        docs[i] isa TokenDocument && (new_docs[i] = convert(TokenDocument{T}, docs[i]))
-        docs[i] isa NGramDocument && (new_docs[i] = convert(NGramDocument{T}, docs[i]))
+        if docs[i] isa FileDocument
+            new_docs[i] = convert(FileDocument{T}, docs[i])
+        elseif docs[i] isa StringDocument
+            new_docs[i] = convert(StringDocument{T}, docs[i])
+        elseif docs[i] isa TokenDocument
+            new_docs[i] = convert(TokenDocument{T}, docs[i])
+        elseif docs[i] isa NGramDocument
+            new_docs[i] = convert(NGramDocument{T}, docs[i])
+        else
+            # Some other unknown AbstractDocument type
+            new_docs[i] = abstract_convert(docs[i], T)
+        end
     end
     return Corpus(new_docs; hash_function=hash_function, cardinality=cardinality)
 end

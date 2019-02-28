@@ -18,13 +18,17 @@ titleize(str::AbstractString) = begin
 end
 
 show(io::IO, md::DocumentMetadata) = begin
-    printstyled(io, "$(md.id)", bold=true)
-    printstyled(io, " - \"$(titleize(md.name))\"",
-                    " by $(titlecase(md.author)),",
-                    " $(md.edition_year)",
-                    " ($(md.published_year))")
+    _id = ifelse(isempty(md.id), "<no ID>", md.id)
+    _name = ifelse(isempty(md.name), "<no name>", "\"$(titleize(md.name))\"")
+    _author = ifelse(isempty(md.author), "<unknown author>", "by $(titlecase(md.author))")
+    _edition_year = ifelse(isempty(md.edition_year), "?", md.edition_year)
+    _published_year = ifelse(isempty(md.published_year), "?", md.published_year)
+    printstyled(io, "$(_id)", bold=true)
+    printstyled(io, " $(_name)",
+                    " $(_author)",
+                    " $(_edition_year)",
+                    " ($(_published_year))")
 end
-
 
 
 # Summary methods

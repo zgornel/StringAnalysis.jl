@@ -14,18 +14,7 @@ abstract type AbstractMetadata end
     note::String
 end
 
-DocumentMetadata() = DocumentMetadata(
-    DEFAULT_LANGUAGE,
-    "Unnamed Document",
-    "Unknown Author",
-    "Unknown Time",
-    "Unknown ID",
-    "Unknown Publisher",
-    "Unknown Edition Year",
-    "Unknown Publishing Year",
-    "Unknown Type",
-    ""
-)
+DocumentMetadata() = DocumentMetadata(DEFAULT_LANGUAGE, ("" for _ in 1:9)...)
 
 
 # The abstract Document type
@@ -241,6 +230,10 @@ ngram_complexity(d::AbstractDocument) =
     error("$(typeof(d))'s have no n-gram complexity")
 
 
+# getindex() methods: StringDocument("This is text and that is not")["is"]
+Base.getindex(d::AbstractDocument, term::AbstractString) = get(ngrams(d), term, 0)
+
+
 # Conversion rules
 Base.convert(::Type{FileDocument{T}}, d::FileDocument
             ) where T<:AbstractString =
@@ -262,5 +255,37 @@ Base.convert(::Type{NGramDocument{T}}, d::NGramDocument{T2}
             ) where {T<:AbstractString, T2<:AbstractString} =
     NGramDocument(Dict{T, Int}(ngrams(d)), d.n, d.metadata)
 
-# getindex() methods: StringDocument("This is text and that is not")["is"]
-Base.getindex(d::AbstractDocument, term::AbstractString) = get(ngrams(d), term, 0)
+
+"""
+    abstract_convert(document::AbstractDocument, parameter::Union{Nothing, Type{T}})
+
+Tries converting `document::AbstractDocument` to one of the concrete types
+with witch `StringAnalysis` works i.e. `StringDocument{T}`, `TokenDocument{T}`,
+`NGramDocument{T}`. A user-defined `convert` method between the `typeof(document)`
+and the concrete types should be defined.
+"""
+function abstract_convert(document::AbstractDocument,
+                          parameter::Union{Nothing, Type{T}}=nothing
+                         ) where T<:AbstractString
+    if parameter != nothing
+        known_types = [FileDocument{T}, StringDocument{T},
+                       TokenDocument{T}, NGramDocument{T}]
+    else
+        known_types = [FileDocument, StringDocument,
+                       TokenDocument, NGramDocument]
+    end
+    local newdoc
+    converted = false
+    for typ in known_types
+        try
+            newdoc = convert(typ, document)
+            converted = true
+            break
+        catch e
+        end
+    end
+    !converted && throw(ErrorException(
+        "Could not convert the $(typeof(document)) "*
+        "to any GenericDocument type."))
+    return newdoc
+end
