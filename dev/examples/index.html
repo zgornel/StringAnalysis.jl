@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Usage examples ·   </title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><a href="../index.html"><img class="logo" src="../assets/logo.png" alt="   logo"/></a><h1>  </h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../">Introduction</a></li><li class="current"><a class="toctext" href>Usage examples</a><ul class="internal"><li><a class="toctext" href="#Documents-1">Documents</a></li><li><a class="toctext" href="#Documents-and-types-1">Documents and types</a></li><li><a class="toctext" href="#Metadata-1">Metadata</a></li><li><a class="toctext" href="#Corpus-1">Corpus</a></li><li><a class="toctext" href="#The-lexicon-and-inverse-index-1">The lexicon and inverse index</a></li><li><a class="toctext" href="#Preprocessing-1">Preprocessing</a></li><li><a class="toctext" href="#Features-1">Features</a></li><li><a class="toctext" href="#Dimensionality-reduction-1">Dimensionality reduction</a></li><li><a class="toctext" href="#Semantic-Analysis-1">Semantic Analysis</a></li></ul></li><li><a class="toctext" href="../api/">API Reference</a></li></ul></nav><article id="docs"><header><nav><ul><li><a href>Usage examples</a></li></ul><a class="edit-page" href="https://github.com/zgornel/StringAnalysis.jl/blob/master/docs/src/examples.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Usage examples</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Usage-examples-1" href="#Usage-examples-1">Usage examples</a></h1><h2><a class="nav-anchor" id="Documents-1" href="#Documents-1">Documents</a></h2><p>Documents are simple wrappers around basic structures that contain text. The underlying data representation can be simple strings, dictionaries or vectors of strings. All document types are subtypes of the parametric type <code>AbstractDocument{T}</code> where <code>T&lt;:AbstractString</code>.</p><pre><code class="language-julia-repl">julia&gt; using StringAnalysis
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Usage examples ·   </title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><a href="../index.html"><img class="logo" src="../assets/logo.png" alt="   logo"/></a><h1>  </h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../">Introduction</a></li><li class="current"><a class="toctext" href>Usage examples</a><ul class="internal"><li><a class="toctext" href="#Documents-1">Documents</a></li><li><a class="toctext" href="#Documents-and-types-1">Documents and types</a></li><li><a class="toctext" href="#Metadata-1">Metadata</a></li><li><a class="toctext" href="#Corpus-1">Corpus</a></li><li><a class="toctext" href="#The-lexicon-and-inverse-index-1">The lexicon and inverse index</a></li><li><a class="toctext" href="#Preprocessing-1">Preprocessing</a></li><li><a class="toctext" href="#Features-1">Features</a></li><li><a class="toctext" href="#Dimensionality-reduction-1">Dimensionality reduction</a></li><li><a class="toctext" href="#Semantic-Analysis-1">Semantic Analysis</a></li></ul></li><li><a class="toctext" href="../doc_extensions/">More on documents</a></li><li><a class="toctext" href="../api/">API Reference</a></li></ul></nav><article id="docs"><header><nav><ul><li><a href>Usage examples</a></li></ul><a class="edit-page" href="https://github.com/zgornel/StringAnalysis.jl/blob/master/docs/src/examples.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Usage examples</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Usage-examples-1" href="#Usage-examples-1">Usage examples</a></h1><h2><a class="nav-anchor" id="Documents-1" href="#Documents-1">Documents</a></h2><p>Documents are simple wrappers around basic structures that contain text. The underlying data representation can be simple strings, dictionaries or vectors of strings. All document types are subtypes of the parametric type <code>AbstractDocument{T}</code> where <code>T&lt;:AbstractString</code>.</p><pre><code class="language-julia-repl">julia&gt; using StringAnalysis
 
 julia&gt; sd = StringDocument(&quot;this is a string document&quot;)
 A StringDocument{String}
@@ -38,7 +38,7 @@ A NGramDocument{String}</code></pre><h2><a class="nav-anchor" id="Metadata-1" hr
 A StringDocument{String}
 
 julia&gt; metadata(doc)
-Unknown ID - &quot;Unnamed Document&quot; by Unknown Author, Unknown Edition Year (Unknown Publishing Year)
+&lt;no ID&gt; &lt;no name&gt; &lt;unknown author&gt; ? (?)
 
 julia&gt; fieldnames(typeof(metadata(doc)))
 (:language, :name, :author, :timestamp, :id, :publisher, :edition_year, :published_year, :documenttype, :note)</code></pre><p>Metadata fields can be modified through methods bearing the same name as the metadata field. Note that these methods are not explicitly exported.</p><pre><code class="language-julia-repl">julia&gt; StringAnalysis.id!(doc, &quot;doc1&quot;);
@@ -52,8 +52,8 @@ julia&gt; StringAnalysis.edition_year!(doc, &quot;2019&quot;);
 julia&gt; StringAnalysis.published_year!(doc, &quot;2019&quot;);
 
 julia&gt; metadata(doc)
-doc1 - &quot;A simple document&quot; by Corneliu C., 2019 (2019)</code></pre><h2><a class="nav-anchor" id="Corpus-1" href="#Corpus-1">Corpus</a></h2><p>A corpus is an object that holds a bunch of documents together.</p><pre><code class="language-julia-repl">julia&gt; docs = [sd, nd, td]
-3-element Array{AbstractDocument{String},1}:
+doc1 &quot;A simple document&quot; by Corneliu C. 2019 (2019)</code></pre><h2><a class="nav-anchor" id="Corpus-1" href="#Corpus-1">Corpus</a></h2><p>A corpus is an object that holds a bunch of documents together.</p><pre><code class="language-julia-repl">julia&gt; docs = [sd, nd, td]
+3-element Array{AbstractDocument{String,DocumentMetadata},1}:
  A StringDocument{String}
  A NGramDocument{String}
  A TokenDocument{String}
@@ -62,13 +62,13 @@ julia&gt; crps = Corpus(docs)
 A Corpus with 3 documents
 
 julia&gt; crps.documents
-3-element Array{Union{FileDocument{String}, NGramDocument{String}, StringDocument{String}, TokenDocument{String}},1}:
+3-element Array{AbstractDocument{String,DocumentMetadata},1}:
  A StringDocument{String}
  A NGramDocument{String}
  A TokenDocument{String}</code></pre><p>The corpus can be &#39;standardized&#39; to hold the same type of document,</p><pre><code class="language-julia-repl">julia&gt; standardize!(crps, NGramDocument{String})
 
 julia&gt; crps.documents
-3-element Array{Union{FileDocument{String}, NGramDocument{String}, StringDocument{String}, TokenDocument{String}},1}:
+3-element Array{AbstractDocument{String,DocumentMetadata},1}:
  A NGramDocument{String}
  A NGramDocument{String}
  A NGramDocument{String}</code></pre><p>however, the corpus has to be created from an <code>AbstractDocument</code> document vector for the standardization to work (<code>AbstractDocument{T}</code> vectors are converted to a <code>Union</code> of all documents types parametrized by <code>T</code> during <code>Corpus</code> construction):</p><pre><code class="language-julia-repl">julia&gt; doc1 = StringDocument(&quot;one&quot;);
@@ -82,9 +82,9 @@ julia&gt; standardize!(Corpus([doc1, doc3]), NGramDocument{String})  # works
 julia&gt; standardize!(Corpus([doc1, doc2]), NGramDocument{String})  # fails because we have a Vector{StringDocument{T}}
 ERROR: MethodError: Cannot `convert` an object of type NGramDocument{String} to an object of type StringDocument{String}
 Closest candidates are:
-  convert(::Type{StringDocument{T&lt;:AbstractString}}, !Matched::Union{FileDocument, StringDocument}) where T&lt;:AbstractString at /home/travis/build/zgornel/StringAnalysis.jl/src/document.jl:248
+  convert(::Type{StringDocument{T&lt;:AbstractString}}, !Matched::Union{FileDocument, StringDocument}) where T&lt;:AbstractString at /home/travis/build/zgornel/StringAnalysis.jl/src/document.jl:243
   convert(::Type{T}, !Matched::T) where T at essentials.jl:154
-  StringDocument{String}(::Any, !Matched::Any) where T&lt;:AbstractString at /home/travis/build/zgornel/StringAnalysis.jl/src/document.jl:49
+  StringDocument{String}(::Any, !Matched::Any) where T&lt;:AbstractString at /home/travis/build/zgornel/StringAnalysis.jl/src/document.jl:40
 
 julia&gt; standardize!(Corpus(AbstractDocument[doc1, doc2]), NGramDocument{String})  # works</code></pre><p>The corpus can be also iterated through,</p><pre><code class="language-julia-repl">julia&gt; for (i,doc) in enumerate(crps)
            @show (i, doc)
@@ -95,10 +95,10 @@ julia&gt; standardize!(Corpus(AbstractDocument[doc1, doc2]), NGramDocument{Strin
 A NGramDocument{String}
 
 julia&gt; docs = crps[2:3]
-2-element Array{Union{FileDocument{String}, NGramDocument{String}, StringDocument{String}, TokenDocument{String}},1}:
+2-element Array{AbstractDocument{String,DocumentMetadata},1}:
  A NGramDocument{String}
  A NGramDocument{String}</code></pre><p>and used as a container.</p><pre><code class="language-julia-repl">julia&gt; push!(crps, NGramDocument{String}(&quot;new document&quot;))
-4-element Array{Union{FileDocument{String}, NGramDocument{String}, StringDocument{String}, TokenDocument{String}},1}:
+4-element Array{AbstractDocument{String,DocumentMetadata},1}:
  A NGramDocument{String}
  A NGramDocument{String}
  A NGramDocument{String}
@@ -328,10 +328,10 @@ julia&gt; density = 0.2;  # percentage of non-zero elements
 
 julia&gt; R = StringAnalysis.random_projection_matrix(m, k, T, density)
 10×2 SparseArrays.SparseMatrixCSC{Float32,Int64} with 4 stored entries:
-  [3 ,  1]  =  -0.707107
-  [10,  1]  =  -0.707107
-  [1 ,  2]  =  -0.707107
-  [3 ,  2]  =  0.707107</code></pre><p>Building a random projection model from a <code>DocumentTermMatrix</code> or <code>Corpus</code> is straightforward</p><pre><code class="language-julia-repl">julia&gt; M = DocumentTermMatrix{Float32}(crps)
+  [1 ,  1]  =  0.707107
+  [4 ,  1]  =  0.707107
+  [8 ,  1]  =  -0.707107
+  [10,  1]  =  0.707107</code></pre><p>Building a random projection model from a <code>DocumentTermMatrix</code> or <code>Corpus</code> is straightforward</p><pre><code class="language-julia-repl">julia&gt; M = DocumentTermMatrix{Float32}(crps)
 A 7x3 DocumentTermMatrix{Float32}
 
 julia&gt; model = RPModel(M, k=2, density=0.5, stats=:tf)
@@ -343,34 +343,33 @@ A StringDocument{String}
 
 julia&gt; embed_document(model, doc)
 2-element SparseArrays.SparseVector{Float32,Int64} with 2 stored entries:
-  [1]  =  -0.242536
-  [2]  =  -0.970142
+  [1]  =  -0.707107
+  [2]  =  0.707107
 
 julia&gt; embed_document(model2, doc)
-17-element SparseArrays.SparseVector{Float32,Int64} with 4 stored entries:
-  [2 ]  =  0.5
-  [5 ]  =  -0.5
-  [6 ]  =  -0.5
-  [12]  =  -0.5</code></pre><p>Embedding a DTM or corpus can be done in a similar way:</p><pre><code class="language-julia-repl">julia&gt; Matrix(embed_document(model, M))
+17-element SparseArrays.SparseVector{Float32,Int64} with 3 stored entries:
+  [2 ]  =  0.408248
+  [4 ]  =  -0.408248
+  [10]  =  -0.816496</code></pre><p>Embedding a DTM or corpus can be done in a similar way:</p><pre><code class="language-julia-repl">julia&gt; Matrix(embed_document(model, M))
 2×3 Array{Float32,2}:
-  0.0  -0.447214  -0.242536
- -1.0  -0.894427  -0.970142
+ -0.707107  -0.447214  0.0
+  0.707107   0.894427  1.0
 
 julia&gt; Matrix(embed_document(model2, crps))
 17×3 Array{Float32,2}:
   0.0        0.0        0.0
-  0.357144   0.357144   0.670211
+  0.269846   0.269326   0.317932
+  0.53243    0.0        0.0
+  0.262584  -0.269326  -0.317932
+  0.0       -0.531404   0.0
+  0.0        0.0        0.0
+  0.0       -0.531404   0.0
   0.0        0.0        0.0
   0.0        0.0        0.0
- -0.357144  -0.357144  -0.225426
- -0.357144   0.347532  -0.670211
+ -0.539693  -0.538652  -0.635864
   0.0        0.0        0.0
   0.0        0.0        0.0
-  0.704675   0.704675   0.0
-  0.0        0.0        0.0
-  0.0        0.0        0.0
-  0.347532  -0.357144  -0.225426
-  0.0        0.0        0.0
+  0.53243    0.0       -0.627308
   0.0        0.0        0.0
   0.0        0.0        0.0
   0.0        0.0        0.0
@@ -383,7 +382,7 @@ Random Projection model (tf), 7 terms, dimensionality 2, Float32 vectors
 julia&gt; save_rp_model(model, file)  # model saved
 
 julia&gt; print(join(readlines(file)[1:5], &quot;\n&quot;))  # first five lines
-Random Projection Model saved at 2019-02-27T13:46:43.466
+Random Projection Model saved at 2019-02-28T14:34:31.152
 7 2
 true
 tf
@@ -425,55 +424,55 @@ LSA Model (tfidf), 38 terms, dimensionality 4, Float32 vectors</code></pre><p>On
 
 julia&gt; embed_document(lm, query)
 4-element Array{Float32,1}:
- -0.73225117
- -0.14379159
-  0.3171765
-  0.5852611</code></pre><p>embed the corpus,</p><pre><code class="language-julia-repl">julia&gt; V = embed_document(lm, crps)
+  0.7322508
+ -0.14379308
+ -0.31717503
+  0.58526206</code></pre><p>embed the corpus,</p><pre><code class="language-julia-repl">julia&gt; V = embed_document(lm, crps)
 4×5 Array{Float32,2}:
- -0.735058   -0.822172  -0.361582  -0.369556  -0.267474
-  0.127937   -0.281847  -0.15593   -0.312653   0.92502
-  0.0854178   0.393251   0.432532  -0.844545  -0.165553
-  0.660323    0.299915  -0.811086  -0.228956  -0.213045</code></pre><p>search for matching documents,</p><pre><code class="language-julia-repl">julia&gt; idxs, corrs = cosine(lm, crps, query);
+  0.735058    0.822171   0.361582   0.369555   0.267474
+  0.127936   -0.28185   -0.155933  -0.312652   0.925019
+ -0.0854171  -0.393249  -0.432531   0.844545   0.165555
+  0.660322    0.299917  -0.811086  -0.228957  -0.213045</code></pre><p>search for matching documents,</p><pre><code class="language-julia-repl">julia&gt; idxs, corrs = cosine(lm, crps, query);
 
 julia&gt; for (idx, corr) in zip(idxs, corrs)
            println(&quot;$corr -&gt; \&quot;$(crps[idx].text)\&quot;&quot;);
        end
-0.9428219 -&gt; &quot;Pears and apples are good but not exotic  An apple a day keeps the doctor away &quot;
-0.93340415 -&gt; &quot;This is a text about an apple  There are many texts about apples &quot;
--0.050317526 -&gt; &quot;Fruits are good for you &quot;
+0.94282234 -&gt; &quot;Pears and apples are good but not exotic  An apple a day keeps the doctor away &quot;
+0.9334043 -&gt; &quot;This is a text about an apple  There are many texts about apples &quot;
+-0.050318778 -&gt; &quot;Fruits are good for you &quot;
 -0.08630398 -&gt; &quot;This phrase has nothing to do with the others &quot;
--0.114348635 -&gt; &quot;Simple text  little info inside&quot;</code></pre><p>or check for structure within the data</p><pre><code class="language-julia-repl">julia&gt; U = lm.Uᵀ;
+-0.11435041 -&gt; &quot;Simple text  little info inside&quot;</code></pre><p>or check for structure within the data</p><pre><code class="language-julia-repl">julia&gt; U = lm.Uᵀ;
 
 julia&gt; V&#39;*V  # document to document similarity
 5×5 Array{Float32,2}:
-  1.0          0.799916    -0.252798     0.00832114   0.160133
-  0.799916     1.0          0.268068    -0.00882653  -0.169805
- -0.252798     0.268068     1.0          0.00278702   0.0536656
-  0.00832114  -0.00882653   0.00278702   1.0         -0.00176866
-  0.160133    -0.169805     0.0536656   -0.00176866   1.0
+  1.0          0.799917    -0.252798     0.00832157   0.160133
+  0.799917     1.0          0.268066    -0.00882587  -0.169807
+ -0.252798     0.268066     1.0          0.00278904   0.0536634
+  0.00832157  -0.00882587   0.00278904   1.0         -0.00176599
+  0.160133    -0.169807     0.0536634   -0.00176599   1.0
 
 julia&gt; U&#39;*U  # term to term similarity
 38×38 Array{Float32,2}:
-  0.0487285    0.0633793    0.0633793   …   0.00940076    0.00940076
-  0.0633793    0.0907       0.0907         -0.00765938   -0.00765938
-  0.0633793    0.0907       0.0907         -0.00765939   -0.00765939
-  0.0633793    0.0907       0.0907         -0.00765939   -0.00765939
-  0.0487285    0.0633793    0.0633793       0.00940076    0.00940076
-  0.0487285    0.0633793    0.0633793   …   0.00940076    0.00940076
-  0.0487285    0.0633793    0.0633793       0.00940075    0.00940076
-  0.0689125    0.0896319    0.0896319       0.0132947     0.0132947
-  0.0341388    0.0431566    0.0431566       0.00776605    0.00776605
-  0.0249999    0.0599409    0.0599409       0.00433636    0.00433637
+  0.0487283    0.0633793    0.0633793   …   0.00940071    0.00940071
+  0.0633793    0.0907       0.0907         -0.00765955   -0.00765955
+  0.0633793    0.0907       0.0907001      -0.00765955   -0.00765955
+  0.0633793    0.0907       0.0907001      -0.00765955   -0.00765955
+  0.0487283    0.0633793    0.0633793       0.00940071    0.00940071
+  0.0487283    0.0633793    0.0633793   …   0.00940071    0.00940071
+  0.0487283    0.0633793    0.0633793       0.00940071    0.00940071
+  0.0689123    0.0896318    0.0896318       0.0132946     0.0132946
+  0.0341387    0.0431566    0.0431566       0.00776637    0.00776637
+  0.0249999    0.0599409    0.0599409       0.0043359     0.0043359
   ⋮                                     ⋱
- -0.00542769  -0.00864062  -0.00864062      0.0004495     0.000449496
- -0.0054277   -0.00864063  -0.00864063  …   0.000449508   0.000449506
- -0.00542769  -0.00864062  -0.00864062      0.000449504   0.000449498
- -0.00542769  -0.00864062  -0.00864062      0.000449496   0.000449491
- -0.00542769  -0.00864062  -0.00864062      0.000449506   0.000449502
-  0.00940076  -0.00765938  -0.00765939      0.207998      0.207998
-  0.00940075  -0.00765939  -0.00765939  …   0.207998      0.207998
-  0.00940076  -0.00765938  -0.00765939      0.207998      0.207998
-  0.00940076  -0.00765938  -0.00765939      0.207998      0.207998</code></pre><p>LSA models can be saved/loaded to/from disk using a text format similar to the random projection model one.</p><pre><code class="language-julia-repl">julia&gt; file = &quot;model.txt&quot;
+ -0.00542771  -0.00864063  -0.00864062      0.000449943   0.000449941
+ -0.00542771  -0.00864063  -0.00864062  …   0.000449933   0.000449931
+ -0.00542771  -0.00864063  -0.00864062      0.000449934   0.000449936
+ -0.00542771  -0.00864063  -0.00864062      0.000449946   0.000449948
+ -0.00542771  -0.00864063  -0.00864062      0.000449951   0.000449945
+  0.00940071  -0.00765955  -0.00765955      0.207997      0.207997
+  0.00940071  -0.00765955  -0.00765955  …   0.207997      0.207997
+  0.00940071  -0.00765955  -0.00765955      0.207997      0.207997
+  0.00940071  -0.00765955  -0.00765955      0.207997      0.207997</code></pre><p>LSA models can be saved/loaded to/from disk using a text format similar to the random projection model one.</p><pre><code class="language-julia-repl">julia&gt; file = &quot;model.txt&quot;
 &quot;model.txt&quot;
 
 julia&gt; lm
@@ -482,7 +481,7 @@ LSA Model (tfidf), 38 terms, dimensionality 4, Float32 vectors
 julia&gt; save_lsa_model(lm, file)  # model saved
 
 julia&gt; print(join(readlines(file)[1:5], &quot;\n&quot;))  # first five lines
-LSA Model saved at 2019-02-27T13:46:50.722
+LSA Model saved at 2019-02-28T14:34:38.406
 38 4
 tfidf
 1.9162908 1.5108256 1.5108256 1.5108256 1.9162908 1.9162908 1.9162908 1.9162908 1.5108256 1.2231436 1.5108256 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.5108256 1.9162908 1.9162908 1.5108256 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908
@@ -490,4 +489,4 @@ tfidf
 julia&gt; new_model = load_lsa_model(file, Float64)  # change element type
 LSA Model (tfidf), 38 terms, dimensionality 4, Float64 vectors
 
-julia&gt; rm(file)</code></pre><h3><a class="nav-anchor" id="Latent-Dirichlet-Allocation-(LDA)-1" href="#Latent-Dirichlet-Allocation-(LDA)-1">Latent Dirichlet Allocation (LDA)</a></h3><p>Documentation coming soon; check the API reference for information on the associated methods.</p><footer><hr/><a class="previous" href="../"><span class="direction">Previous</span><span class="title">Introduction</span></a><a class="next" href="../api/"><span class="direction">Next</span><span class="title">API Reference</span></a></footer></article></body></html>
+julia&gt; rm(file)</code></pre><h3><a class="nav-anchor" id="Latent-Dirichlet-Allocation-(LDA)-1" href="#Latent-Dirichlet-Allocation-(LDA)-1">Latent Dirichlet Allocation (LDA)</a></h3><p>Documentation coming soon; check the API reference for information on the associated methods.</p><footer><hr/><a class="previous" href="../"><span class="direction">Previous</span><span class="title">Introduction</span></a><a class="next" href="../doc_extensions/"><span class="direction">Next</span><span class="title">More on documents</span></a></footer></article></body></html>

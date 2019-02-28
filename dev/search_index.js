@@ -201,6 +201,22 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "doc_extensions/#",
+    "page": "More on documents",
+    "title": "More on documents",
+    "category": "page",
+    "text": ""
+},
+
+{
+    "location": "doc_extensions/#Extending-the-document-model-1",
+    "page": "More on documents",
+    "title": "Extending the document model",
+    "category": "section",
+    "text": "Sometimes it may make sense to define new document types with whom to operate and use only some functionality of this package. For example, let us define two new document types, a SimpleDocument with no metadatausing StringAnalysis\nstruct NoMetadata <: AbstractMetadata end\n\nstruct SimpleDocument{T<:AbstractString} <: AbstractDocument{T, NoMetadata}\n    text::T\nendand a ConferencePublication with only a limited number of metadata fields.struct ConferenceMetadata <: AbstractMetadata\n    name::String\n    authors::String\n    conference::String\nend\n\nstruct ConferencePublication{T<:AbstractString} <: AbstractDocument{T, ConferenceMetadata}\n    text::T\n    metadata::ConferenceMetadata\nendAt this point, one can create documents and use basic containers along with other standard documents of the package:sd = SimpleDocument(\"a simple document\")\ncmd = ConferenceMetadata(\"Tile Inc.\",\"John P. Doe\",\"IEEE Conference on Unknown Facts\")\ncd = ConferencePublication(\"publication text\", cmd)\n\ndoc = StringDocument(\"a document\")\n\ndocs = [sd, cd, doc]However, creating a Corpus fails because no conversion method exists between the new document types and any of the standardized ones StringDocument, NGramDocument etc.Corpus(AbstractDocument[sd, cd, doc])By defining at least one conversion method to a known type,Base.convert(::Type{NGramDocument{String}}, doc::SimpleDocument) =\n    NGramDocument{String}(doc.text)\nBase.convert(::Type{NGramDocument{String}}, doc::ConferencePublication) = begin\n    new_doc = NGramDocument{String}(doc.text)\n    new_doc.metadata.name = doc.metadata.name\n    new_doc.metadata.author = doc.metadata.authors\n    new_doc.metadata.note = doc.metadata.conference\n    return new_doc\nendthe Corpus can be created and the rest of the functionality of the package i.e. numerical operations, can be employed on the document data.crps = Corpus(AbstractDocument[sd, cd, doc])\nmetadata.(doc for doc in crps)\nDocumentTermMatrix(crps)The SimpleDocument and ConferencePublication were both converted to NGramDocuments since this was the only conversion method available. If more would be available, the priority of conversion is given by the code in the abstract_convert function. Generally, one single conversion method suffices."
+},
+
+{
     "location": "api/#StringAnalysis.StringAnalysis",
     "page": "API Reference",
     "title": "StringAnalysis.StringAnalysis",
@@ -646,6 +662,14 @@ var documenterSearchIndex = {"docs": [
     "title": "Base.summary",
     "category": "method",
     "text": "summary(crps)\n\nShows information about the corpus crps.\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#StringAnalysis.abstract_convert-Union{Tuple{AbstractDocument}, Tuple{T}, Tuple{AbstractDocument,Union{Nothing, Type{T}}}} where T<:AbstractString",
+    "page": "API Reference",
+    "title": "StringAnalysis.abstract_convert",
+    "category": "method",
+    "text": "abstract_convert(document::AbstractDocument, parameter::Union{Nothing, Type{T}})\n\nTries converting document::AbstractDocument to one of the concrete types with witch StringAnalysis works i.e. StringDocument{T}, TokenDocument{T}, NGramDocument{T}. A user-defined convert method between the typeof(document) and the concrete types should be defined.\n\n\n\n\n\n"
 },
 
 {
