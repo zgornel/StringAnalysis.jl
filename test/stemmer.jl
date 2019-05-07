@@ -75,4 +75,15 @@
     @test try stem!(fdoc); false
               catch; true end
 
+    # Test 3-gram document
+    doc = NGramDocument("parts of language", DocumentMetadata(), 3)
+    stem!(doc)
+    @test begin
+        "of" in keys(doc.ngrams)
+        "languag" in keys(doc.ngrams)
+        "part of languag" in keys(doc.ngrams)
+        "part of" in keys(doc.ngrams)
+        "part" in keys(doc.ngrams)
+        "of languag" in keys(doc.ngrams)
+    end
 end

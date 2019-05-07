@@ -155,7 +155,7 @@ end
 
 function stem!(stemmer::Stemmer, d::NGramDocument)
     for token in keys(d.ngrams)
-        new_token = stem(stemmer, token)
+        new_token = join(stem(stemmer, split(token)), " ")
         if new_token != token
             if haskey(d.ngrams, new_token)
                 d.ngrams[new_token] = d.ngrams[new_token] + d.ngrams[token]
