@@ -381,7 +381,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.frequent_terms",
     "category": "function",
-    "text": "frequent_terms(doc, alpha)\n\nReturns a vector with frequent terms in the document doc. The parameter alpha indicates the sparsity threshold (a frequency <= alpha means sparse).\n\n\n\n\n\n"
+    "text": "frequent_terms(crps::Corpus, alpha)\n\nReturns a vector with frequent terms among all documents. The parameter alpha indicates the sparsity threshold (a frequency <= alpha means sparse).\n\n\n\n\n\n"
 },
 
 {
@@ -389,7 +389,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.frequent_terms",
     "category": "function",
-    "text": "frequent_terms(crps::Corpus, alpha)\n\nReturns a vector with frequent terms among all documents. The parameter alpha indicates the sparsity threshold (a frequency <= alpha means sparse).\n\n\n\n\n\n"
+    "text": "frequent_terms(doc, alpha)\n\nReturns a vector with frequent terms in the document doc. The parameter alpha indicates the sparsity threshold (a frequency <= alpha means sparse).\n\n\n\n\n\n"
 },
 
 {
@@ -549,7 +549,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.sparse_terms",
     "category": "function",
-    "text": "sparse_terms(doc, alpha)\n\nReturns a vector with rare terms in the document doc. The parameter alpha indicates the sparsity threshold (a frequency <= alpha means sparse).\n\n\n\n\n\n"
+    "text": "sparse_terms(crps::Corpus, alpha)\n\nReturns a vector with rare terms among all documents. The parameter alpha indicates the sparsity threshold (a frequency <= alpha means sparse).\n\n\n\n\n\n"
 },
 
 {
@@ -557,7 +557,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.sparse_terms",
     "category": "function",
-    "text": "sparse_terms(crps::Corpus, alpha)\n\nReturns a vector with rare terms among all documents. The parameter alpha indicates the sparsity threshold (a frequency <= alpha means sparse).\n\n\n\n\n\n"
+    "text": "sparse_terms(doc, alpha)\n\nReturns a vector with rare terms in the document doc. The parameter alpha indicates the sparsity threshold (a frequency <= alpha means sparse).\n\n\n\n\n\n"
 },
 
 {
