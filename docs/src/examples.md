@@ -113,7 +113,11 @@ using Languages
 it = StringDocument("Quest'e un piccolo esempio di come si puo fare l'analisi");
 StringAnalysis.language!(it, Languages.Italian());
 prepare!(it, strip_articles|strip_prepositions|strip_whitespace);
-it.text
+text(it)
+```
+In the case of `AbstractString`s, the language has to be explicitly defined:
+```@repl index
+prepare("Nous sommes tous d'accord avec les examples!", stem_words, language=Languages.French())
 ```
 
 ## Features

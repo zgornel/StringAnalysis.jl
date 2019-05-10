@@ -354,16 +354,16 @@ function prepare!(entity,  # can be an AbstractDocument or Corpus
         ((flags & strip_single_chars) > 0) && push!(rpatterns, strip2regex[strip_single_chars])
     end
     # known words
-    lang = _language(entity)
+    language = _language(entity)
     if (flags & strip_articles) > 0
-        union!(skip_words, articles(lang))
+        union!(skip_words, articles(language))
     else
-        ((flags & strip_indefinite_articles) > 0) && union!(skip_words, indefinite_articles(lang))
-        ((flags & strip_definite_articles) > 0) && union!(skip_words, definite_articles(lang))
+        ((flags & strip_indefinite_articles) > 0) && union!(skip_words, indefinite_articles(language))
+        ((flags & strip_definite_articles) > 0) && union!(skip_words, definite_articles(language))
     end
-    ((flags & strip_prepositions) > 0) && union!(skip_words, prepositions(lang))
-    ((flags & strip_pronouns) > 0) && union!(skip_words, pronouns(lang))
-    ((flags & strip_stopwords) > 0) && union!(skip_words, stopwords(lang))
+    ((flags & strip_prepositions) > 0) && union!(skip_words, prepositions(language))
+    ((flags & strip_pronouns) > 0) && union!(skip_words, pronouns(language))
+    ((flags & strip_stopwords) > 0) && union!(skip_words, stopwords(language))
     if !isempty(skip_words)
         push!(rpatterns, _build_words_pattern(skip_words))
     end
@@ -386,7 +386,7 @@ end
 
 function prepare(s::AbstractString,
                  flags::UInt32;
-                 lang::Language = DEFAULT_LANGUAGE,
+                 language::Language = DEFAULT_LANGUAGE,
                  skip_patterns = Vector{Regex}(),
                  skip_words = Vector{AbstractString}())
     os = s  # Initialize output string
@@ -407,14 +407,14 @@ function prepare(s::AbstractString,
     end
     # known words
     if (flags & strip_articles) > 0
-        union!(skip_words, articles(lang))
+        union!(skip_words, articles(language))
     else
-        ((flags & strip_indefinite_articles) > 0) && union!(skip_words, indefinite_articles(lang))
-        ((flags & strip_definite_articles) > 0) && union!(skip_words, definite_articles(lang))
+        ((flags & strip_indefinite_articles) > 0) && union!(skip_words, indefinite_articles(language))
+        ((flags & strip_definite_articles) > 0) && union!(skip_words, definite_articles(language))
     end
-    ((flags & strip_prepositions) > 0) && union!(skip_words, prepositions(lang))
-    ((flags & strip_pronouns) > 0) && union!(skip_words, pronouns(lang))
-    ((flags & strip_stopwords) > 0) && union!(skip_words, stopwords(lang))
+    ((flags & strip_prepositions) > 0) && union!(skip_words, prepositions(language))
+    ((flags & strip_pronouns) > 0) && union!(skip_words, pronouns(language))
+    ((flags & strip_stopwords) > 0) && union!(skip_words, stopwords(language))
     if !isempty(skip_words)
         push!(rpatterns, _build_words_pattern(skip_words))
     end
@@ -431,6 +431,6 @@ function prepare(s::AbstractString,
         os = remove_patterns(os, r)
     end
     # Stemming
-    ((flags & stem_words) > 0) && (os = stem(os))
+    ((flags & stem_words) > 0) && (os = stem(os, language=language))
     return os
 end
