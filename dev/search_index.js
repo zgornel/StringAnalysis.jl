@@ -109,7 +109,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Usage examples",
     "title": "Preprocessing",
     "category": "section",
-    "text": "The text preprocessing mainly consists of the prepare and prepare! functions and preprocessing flags which start mostly with strip_ except for stem_words. The preprocessing function prepare works on AbstractDocument, Corpus and AbstractString types, returning new objects; prepare! works only on AbstractDocuments and Corpus as strings are immutable.str=\"This is a text containing words, some more words, a bit of punctuation and 1 number...\";\nsd = StringDocument(str);\nflags = strip_punctuation|strip_articles|strip_punctuation|strip_whitespace\nprepare(str, flags)\nprepare!(sd, flags);\ntext(sd)More extensive preprocessing examples can be viewed in test/preprocessing.jl.One can strip parts of speech i.e. prepositions, articles, in languages other than English (support provided from Languages.jl):using Languages\nit = StringDocument(\"Quest\'e un piccolo esempio di come si puo fare l\'analisi\");\nStringAnalysis.language!(it, Languages.Italian());\nprepare!(it, strip_articles|strip_prepositions|strip_whitespace);\nit.text"
+    "text": "The text preprocessing mainly consists of the prepare and prepare! functions and preprocessing flags which start mostly with strip_ except for stem_words. The preprocessing function prepare works on AbstractDocument, Corpus and AbstractString types, returning new objects; prepare! works only on AbstractDocuments and Corpus as strings are immutable.str=\"This is a text containing words, some more words, a bit of punctuation and 1 number...\";\nsd = StringDocument(str);\nflags = strip_punctuation|strip_articles|strip_punctuation|strip_whitespace\nprepare(str, flags)\nprepare!(sd, flags);\ntext(sd)More extensive preprocessing examples can be viewed in test/preprocessing.jl.One can strip parts of speech i.e. prepositions, articles, in languages other than English (support provided from Languages.jl):using Languages\nit = StringDocument(\"Quest\'e un piccolo esempio di come si puo fare l\'analisi\");\nStringAnalysis.language!(it, Languages.Italian());\nprepare!(it, strip_articles|strip_prepositions|strip_whitespace);\ntext(it)In the case of AbstractStrings, the language has to be explicitly defined:prepare(\"Nous sommes tous d\'accord avec les examples!\", stem_words, language=Languages.French())"
 },
 
 {
@@ -381,7 +381,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.frequent_terms",
     "category": "function",
-    "text": "frequent_terms(crps::Corpus, alpha)\n\nReturns a vector with frequent terms among all documents. The parameter alpha indicates the sparsity threshold (a frequency <= alpha means sparse).\n\n\n\n\n\n"
+    "text": "frequent_terms(doc, alpha)\n\nReturns a vector with frequent terms in the document doc. The parameter alpha indicates the sparsity threshold (a frequency <= alpha means sparse).\n\n\n\n\n\n"
 },
 
 {
@@ -389,7 +389,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.frequent_terms",
     "category": "function",
-    "text": "frequent_terms(doc, alpha)\n\nReturns a vector with frequent terms in the document doc. The parameter alpha indicates the sparsity threshold (a frequency <= alpha means sparse).\n\n\n\n\n\n"
+    "text": "frequent_terms(crps::Corpus, alpha)\n\nReturns a vector with frequent terms among all documents. The parameter alpha indicates the sparsity threshold (a frequency <= alpha means sparse).\n\n\n\n\n\n"
 },
 
 {
@@ -549,7 +549,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.sparse_terms",
     "category": "function",
-    "text": "sparse_terms(crps::Corpus, alpha)\n\nReturns a vector with rare terms among all documents. The parameter alpha indicates the sparsity threshold (a frequency <= alpha means sparse).\n\n\n\n\n\n"
+    "text": "sparse_terms(doc, alpha)\n\nReturns a vector with rare terms in the document doc. The parameter alpha indicates the sparsity threshold (a frequency <= alpha means sparse).\n\n\n\n\n\n"
 },
 
 {
@@ -557,7 +557,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.sparse_terms",
     "category": "function",
-    "text": "sparse_terms(doc, alpha)\n\nReturns a vector with rare terms in the document doc. The parameter alpha indicates the sparsity threshold (a frequency <= alpha means sparse).\n\n\n\n\n\n"
+    "text": "sparse_terms(crps::Corpus, alpha)\n\nReturns a vector with rare terms among all documents. The parameter alpha indicates the sparsity threshold (a frequency <= alpha means sparse).\n\n\n\n\n\n"
 },
 
 {
