@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>More on documents ·   </title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><a href="../index.html"><img class="logo" src="../assets/logo.png" alt="   logo"/></a><h1>  </h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../">Introduction</a></li><li><a class="toctext" href="../examples/">Usage examples</a></li><li class="current"><a class="toctext" href>More on documents</a><ul class="internal"></ul></li><li><a class="toctext" href="../api/">API Reference</a></li></ul></nav><article id="docs"><header><nav><ul><li><a href>More on documents</a></li></ul><a class="edit-page" href="https://github.com/zgornel/StringAnalysis.jl/blob/master/docs/src/doc_extensions.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>More on documents</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Extending-the-document-model-1" href="#Extending-the-document-model-1">Extending the document model</a></h1><p>Sometimes it may make sense to define new document types with whom to operate and use only some functionality of this package. For example, let us define two new document types, a <code>SimpleDocument</code> with no metadata</p><pre><code class="language-julia-repl">julia&gt; using StringAnalysis
+
+julia&gt; struct NoMetadata &lt;: AbstractMetadata end
+
+julia&gt; struct SimpleDocument{T&lt;:AbstractString} &lt;: AbstractDocument{T, NoMetadata}
+           text::T
+       end</code></pre><p>and a <code>ConferencePublication</code> with only a limited number of metadata fields.</p><pre><code class="language-julia-repl">julia&gt; struct ConferenceMetadata &lt;: AbstractMetadata
+           name::String
+           authors::String
+           conference::String
+       end
+
+julia&gt; struct ConferencePublication{T&lt;:AbstractString} &lt;: AbstractDocument{T, ConferenceMetadata}
+           text::T
+           metadata::ConferenceMetadata
+       end</code></pre><p>At this point, one can create documents and use basic containers along with other standard documents of the package:</p><pre><code class="language-julia-repl">julia&gt; sd = SimpleDocument(&quot;a simple document&quot;)
+A Main.ex-index.SimpleDocument{String}
+
+julia&gt; cmd = ConferenceMetadata(&quot;Tile Inc.&quot;,&quot;John P. Doe&quot;,&quot;IEEE Conference on Unknown Facts&quot;)
+Main.ex-index.ConferenceMetadata(&quot;Tile Inc.&quot;, &quot;John P. Doe&quot;, &quot;IEEE Conference on Unknown Facts&quot;)
+
+julia&gt; cd = ConferencePublication(&quot;publication text&quot;, cmd)
+A Main.ex-index.ConferencePublication{String}
+
+julia&gt; doc = StringDocument(&quot;a document&quot;)
+A StringDocument{String}
+
+julia&gt; docs = [sd, cd, doc]
+3-element Array{AbstractDocument{String,M} where M&lt;:AbstractMetadata,1}:
+ A Main.ex-index.SimpleDocument{String}
+ A Main.ex-index.ConferencePublication{String}
+ A StringDocument{String}</code></pre><p>However, creating a <code>Corpus</code> fails because no conversion method exists between the new document types and any of the standardized ones <code>StringDocument</code>, <code>NGramDocument</code> etc.</p><pre><code class="language-julia-repl">julia&gt; Corpus(AbstractDocument[sd, cd, doc])
+ERROR: Could not convert the Main.ex-index.SimpleDocument{String} to any GenericDocument type.</code></pre><p>By defining at least one conversion method to a known type,</p><pre><code class="language-julia-repl">julia&gt; Base.convert(::Type{NGramDocument{String}}, doc::SimpleDocument) =
+           NGramDocument{String}(doc.text)
+
+julia&gt; Base.convert(::Type{NGramDocument{String}}, doc::ConferencePublication) = begin
+           new_doc = NGramDocument{String}(doc.text)
+           new_doc.metadata.name = doc.metadata.name
+           new_doc.metadata.author = doc.metadata.authors
+           new_doc.metadata.note = doc.metadata.conference
+           return new_doc
+       end</code></pre><p>the <code>Corpus</code> can be created and the rest of the functionality of the package i.e. numerical operations, can be employed on the document data.</p><pre><code class="language-julia-repl">julia&gt; crps = Corpus(AbstractDocument[sd, cd, doc])
+A Corpus with 3 documents
+
+julia&gt; metadata.(doc for doc in crps)
+3-element Array{DocumentMetadata,1}:
+ &lt;no ID&gt; &lt;no name&gt; &lt;unknown author&gt; ? (?)
+ &lt;no ID&gt; &quot;Tile Inc&quot; by John P. Doe ? (?)
+ &lt;no ID&gt; &lt;no name&gt; &lt;unknown author&gt; ? (?)
+
+julia&gt; DocumentTermMatrix(crps)
+A 5x3 DocumentTermMatrix{Int64}</code></pre><p>The <code>SimpleDocument</code> and <code>ConferencePublication</code> were both converted to <code>NGramDocument</code>s since this was the only conversion method available. If more would be available, the priority of conversion is given by the code in the <code>abstract_convert</code> function. Generally, one single conversion method suffices.</p><footer><hr/><a class="previous" href="../examples/"><span class="direction">Previous</span><span class="title">Usage examples</span></a><a class="next" href="../api/"><span class="direction">Next</span><span class="title">API Reference</span></a></footer></article></body></html>
