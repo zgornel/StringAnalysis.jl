@@ -75,12 +75,8 @@ end
 function stem_all(stemmer::Stemmer,
                   lang::S,
                   sentence::AbstractString;
-                  method="fast") where S <: Language
-    if method == "fast"
-        tokens = tokenize_fast(sentence)
-    else
-        tokens = tokenize(sentence)
-    end
+                  method=:fast) where S <: Language
+    tokens = tokenize(sentence, method=method)
     stemmed = stem(stemmer, tokens)
     join(stemmed, ' ')
 end
@@ -95,7 +91,7 @@ end
 function stem(stemmer::Stemmer, words::Vector{S}) where S<:AbstractString
     l::Int = length(words)
     ret = [words[i] for i in 1:l]
-    stem!(ret)
+    stem!(stemmer, ret)
     return ret
 end
 
