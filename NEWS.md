@@ -1,5 +1,9 @@
 ## StringAnalysis Release Notes
 
+v0.3.7
+------
+ - Bugfix release
+
 v0.3.6
 ------
  - Bugfix release
