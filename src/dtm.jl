@@ -302,7 +302,8 @@ struct EachDTV{U, S<:AbstractString, T<:AbstractDocument}
                             tokenizer::Symbol=DEFAULT_TOKENIZER) where
             {U, S<:AbstractString, T<:AbstractDocument}
         isempty(lexicon(corpus)) && update_lexicon!(corpus)
-        @assert tokenizer in [:slow, :fast] "Tokenizer has to be either :slow or :fast"
+        @assert tokenizer in [:default,
+            :stringanalysis] "Tokenizer has to be either :default or :stringanalysis"
         new(corpus, row_indices, tokenizer)
     end
 end
@@ -353,7 +354,8 @@ struct EachHashDTV{U, S<:AbstractString, T<:AbstractDocument}
     tokenizer::Symbol
     function EachHashDTV{U,S,T}(corpus::Corpus{S,T}, tokenizer::Symbol=DEFAULT_TOKENIZER) where
             {U, S<:AbstractString, T<:AbstractDocument}
-        @assert tokenizer in [:slow, :fast] "Tokenizer has to be either :slow or :fast"
+        @assert tokenizer in [:default,
+            :stringanalysis] "Tokenizer has to be either :default or :stringanalysis"
         new(corpus, tokenizer)
     end
 end

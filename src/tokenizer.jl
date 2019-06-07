@@ -12,48 +12,52 @@ sentence_tokenize(lang::S, s::T) where {S<:Language, T<:AbstractString} =
 
 
 """
-    tokenize_slow([lang,] s)
+    tokenize_default([lang,] s)
 
 Splits string `s` into tokens on whitespace using `WordTokenizers.tokenize`
 function to perform the tokenization. If a language `lang` is provided,
 it ignores it ;)
 """
-tokenize_slow(s::T) where T<:AbstractString = WordTokenizers.tokenize(s)
-tokenize_slow(lang::S, s::T) where {S<:Language, T<:AbstractString} = WordTokenizers.tokenize(s)
+tokenize_default(s::T) where T<:AbstractString = DEFAULT_WT_TOKENIZER(s)
+tokenize_default(lang::S, s::T) where {S<:Language, T<:AbstractString} = DEFAULT_WT_TOKENIZER(s)
 
 
 """
-    tokenize_fast(doc [;splitter])
+    tokenize_stringanalysis(doc [;splitter])
 
 Function that quickly tokenizes `doc` based on the splitting
 pattern specified by `splitter::RegEx`.
 Supported types for `doc` are: `AbstractString`, `Vector{AbstractString}`,
 `StringDocument` and `NGramDocument`.
 """
-tokenize_fast(doc::Vector{S}; splitter::Regex=DEFAULT_TOKENIZATION_REGEX
-             ) where S<:AbstractString =
-    return vcat((tokenize_fast(words) for words in doc)...)
-
-tokenize_fast(doc::S; splitter::Regex=DEFAULT_TOKENIZATION_REGEX
-             ) where S<:AbstractString =
+tokenize_stringanalysis(doc::S; splitter::Regex=DEFAULT_TOKENIZATION_REGEX
+                       ) where S<:AbstractString =
     strip.(split(doc, splitter, keepempty=false))
 
-tokenize_fast(doc::NGramDocument; splitter::Regex=DEFAULT_TOKENIZATION_REGEX) =
-    unique!(tokenize_fast(collect(keys(doc.ngrams))))
+tokenize_stringanalysis(doc::Vector{S}; splitter::Regex=DEFAULT_TOKENIZATION_REGEX
+                       ) where S<:AbstractString =
+    return vcat((tokenize_stringanalysis(words, splitter=splitter) for words in doc)...)
 
-tokenize_fast(doc::StringDocument; splitter::Regex=DEFAULT_TOKENIZATION_REGEX) =
-    tokenize_fast(doc.text, splitter=splitter)
+tokenize_stringanalysis(doc::NGramDocument; splitter::Regex=DEFAULT_TOKENIZATION_REGEX) =
+    unique!(tokenize_stringanalysis(collect(keys(doc.ngrams)), splitter=splitter))
 
+tokenize_stringanalysis(doc::StringDocument; splitter::Regex=DEFAULT_TOKENIZATION_REGEX) =
+    tokenize_stringanalysis(doc.text, splitter=splitter)
+
+
+""""
+    tokenize(doc [;method, splitter])
+
+Tokenizes the document `doc` based on the `mehtod` (default `:default`, i.e.
+a `WordTokenizers.jl` tokenizer) and the `splitter`, which is a `Regex` used
+if `method=:stringanalysis`.
 """
-    tokenize(s [;method])
-
-Tokenizes based on either the `tokenize_slow` or `tokenize_fast`
-functions.
-"""
-function tokenize(doc; method::Symbol=DEFAULT_TOKENIZER)
-    if method == :slow
-        return tokenize_slow(doc)
+function tokenize(doc;
+                  method::Symbol=DEFAULT_TOKENIZER,
+                  splitter::Regex=DEFAULT_TOKENIZATION_REGEX)
+    if method == :stringanalysis
+        return tokenize_stringanalysis(doc, splitter=splitter)
     else
-        return tokenize_fast(doc)
+        return tokenize_default(doc)
     end
 end

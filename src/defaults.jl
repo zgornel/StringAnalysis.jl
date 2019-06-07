@@ -5,10 +5,6 @@
 # Note: Constants that have local scope (such as preprocessing.jl constants)
 #       should not be added here.
 
-# Regular expression on which to split text into tokens;
-# It used by the tokenize_fast function
-const DEFAULT_TOKENIZATION_REGEX = r"(,|\n|\r|\:|\\|\/|;|\.|\[|\]|\{|\}|\'|\`|\"|\"|\?|\!|\=|\~|\&|\s+)"
-const DEFAULT_TOKENIZER = :slow  # :fast or :slow (slow is stable, uses WordTokenizers, passes tests)
 const DEFAULT_LANGUAGE = Languages.English()
 const DEFAULT_HASH_FUNCTION = hash
 const DEFAULT_CARDINALITY = 100
@@ -19,3 +15,9 @@ const DEFAULT_CORPUS_SPARSITY = 0.05  # if a term is present in less docs of a c
 const DEFAULT_DOC_SPARSITY = 0.05  # if a term is present less than this percent in a document, it is sparse
 const BM25_KAPPA = 2  # default value for BM25 κ parameter
 const BM25_BETA = 0.75  # default value for BM25 β parameter
+
+# Tokenization
+# Regular expression on which to split text into tokens; It used by the `tokenize_stringanalysis` function
+const DEFAULT_TOKENIZATION_REGEX = r"(,|\n|\r|\:|\\|\/|;|\.|\[|\]|\{|\}|\'|\`|\"|\"|\?|\!|\=|\~|\&|\s+)"
+const DEFAULT_WT_TOKENIZER = WordTokenizers.nltk_word_tokenize
+const DEFAULT_TOKENIZER = :default  # can be :default of :stringanalysis
