@@ -581,23 +581,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.tokenize",
     "category": "method",
-    "text": "tokenize(s [;method])\n\nTokenizes based on either the tokenize_slow or tokenize_fast functions.\n\n\n\n\n\n"
-},
-
-{
-    "location": "api/#StringAnalysis.tokenize_fast-Union{Tuple{Array{S,1}}, Tuple{S}} where S<:AbstractString",
-    "page": "API Reference",
-    "title": "StringAnalysis.tokenize_fast",
-    "category": "method",
-    "text": "tokenize_fast(doc [;splitter])\n\nFunction that quickly tokenizes doc based on the splitting pattern specified by splitter::RegEx. Supported types for doc are: AbstractString, Vector{AbstractString}, StringDocument and NGramDocument.\n\n\n\n\n\n"
-},
-
-{
-    "location": "api/#StringAnalysis.tokenize_slow-Union{Tuple{T}, Tuple{T}} where T<:AbstractString",
-    "page": "API Reference",
-    "title": "StringAnalysis.tokenize_slow",
-    "category": "method",
-    "text": "tokenize_slow([lang,] s)\n\nSplits string s into tokens on whitespace using WordTokenizers.tokenize function to perform the tokenization. If a language lang is provided, it ignores it ;)\n\n\n\n\n\n"
+    "text": "\"     tokenize(doc [;method, splitter])\n\nTokenizes the document doc based on the mehtod (default :default, i.e. a WordTokenizers.jl tokenizer) and the splitter, which is a Regex used if method=:stringanalysis.\n\n\n\n\n\n"
 },
 
 {
@@ -613,7 +597,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.tokens",
     "category": "method",
-    "text": "tokens(d [; method=DEFAULT_TOKENIZER])\n\nAccess the tokens of document d as a token array. The method keyword argument specifies the type of tokenization to perform. Available options are :slow and :fast.\n\n\n\n\n\n"
+    "text": "tokens(d [; method=DEFAULT_TOKENIZER])\n\nAccess the tokens of document d as a token array. The method keyword argument specifies the type of tokenization to perform. Available options are :default and :stringanalysis.\n\n\n\n\n\n"
 },
 
 {
@@ -726,6 +710,22 @@ var documenterSearchIndex = {"docs": [
     "title": "StringAnalysis.rowindices",
     "category": "method",
     "text": "rowindices(terms)\n\nReturns a dictionary that maps each term from the vector terms to a integer idex.\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#StringAnalysis.tokenize_default-Union{Tuple{T}, Tuple{T}} where T<:AbstractString",
+    "page": "API Reference",
+    "title": "StringAnalysis.tokenize_default",
+    "category": "method",
+    "text": "tokenize_default([lang,] s)\n\nSplits string s into tokens on whitespace using WordTokenizers.tokenize function to perform the tokenization. If a language lang is provided, it ignores it ;)\n\n\n\n\n\n"
+},
+
+{
+    "location": "api/#StringAnalysis.tokenize_stringanalysis-Union{Tuple{S}, Tuple{S}} where S<:AbstractString",
+    "page": "API Reference",
+    "title": "StringAnalysis.tokenize_stringanalysis",
+    "category": "method",
+    "text": "tokenize_stringanalysis(doc [;splitter])\n\nFunction that quickly tokenizes doc based on the splitting pattern specified by splitter::RegEx. Supported types for doc are: AbstractString, Vector{AbstractString}, StringDocument and NGramDocument.\n\n\n\n\n\n"
 },
 
 {
