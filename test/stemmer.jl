@@ -32,11 +32,11 @@
         )
     )
     lang = StringAnalysis.DEFAULT_LANGUAGE
-    for method in ["fast", "slow"]
+    for method in [:default, :stringanalysis]
         for (alg, test_words) in test_cases
             stmr = Stemmer(alg)
             for (n,v) in test_words
-                @test v == StringAnalysis.stem_all(stmr, lang, n)
+                @test v == StringAnalysis.stem_all(stmr, lang, n, method=method)
             end
         end
     end

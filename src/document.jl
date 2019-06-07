@@ -153,7 +153,7 @@ text!(d::AbstractDocument, new_text::AbstractString) =
 
 Access the tokens of document `d` as a token array. The `method` keyword
 argument specifies the type of tokenization to perform. Available
-options are `:slow` and `:fast`.
+options are `:default` and `:stringanalysis`.
 """
 tokens(d::AbstractString; method::Symbol=DEFAULT_TOKENIZER) =
     tokenize(d, method=method)

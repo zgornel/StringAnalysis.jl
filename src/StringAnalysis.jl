@@ -32,12 +32,12 @@ module StringAnalysis
     using DataStructures
     using TSVD
     using Languages
-    using WordTokenizers
     using AutoHashEquals
 
     # Imports
     import Base: size, show, summary, names
     import Languages: name
+    import WordTokenizers
 
     # Exports
     export AbstractDocument, Document, FileDocument, StringDocument,
@@ -54,7 +54,7 @@ module StringAnalysis
            hash_function, hash_function!
     export CooMatrix, coom
     export Stemmer, stem!, stem, stemmer_types
-    export tokenize, tokenize_fast, tokenize_slow, sentence_tokenize
+    export tokenize, sentence_tokenize
     export tf!, tf, tf_idf!, tf_idf, bm_25!, bm_25
     export LSAModel, lsa, save_lsa_model, load_lsa_model
     export RPModel, rp, save_rp_model, load_rp_model
@@ -90,6 +90,7 @@ module StringAnalysis
     include("lda.jl")
     include("preprocessing.jl")
     include("show.jl")
+
     # Load libstemmer from our deps.jl
     const depsjl_path = joinpath(dirname(@__FILE__), "..", "deps", "deps.jl")
     if !isfile(depsjl_path)
@@ -98,4 +99,5 @@ module StringAnalysis
               "Julia and try again.")
     end
     include(depsjl_path)
+
 end

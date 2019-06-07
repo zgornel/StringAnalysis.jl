@@ -1,7 +1,7 @@
-# Test tokenize_fast, tokenize_slow through tokenize
+# Test tokenize_default, tokenize_stringanalysis through tokenize
 @testset "Tokenizer (to words)" begin
     sample_text = "this is some sample text"
-    for method in [:slow, :fast]
+    for method in [:default, :stringanalysis]
         tkns = StringAnalysis.tokenize(sample_text, method=method)
         @test isequal(
             tkns,
@@ -11,7 +11,7 @@
     for doc in [StringDocument(sample_text),
                 NGramDocument(sample_text),
                 split(sample_text)]
-        tkns = StringAnalysis.tokenize(doc, method=:fast)
+        tkns = StringAnalysis.tokenize(doc, method=:stringanalysis)
         @test isequal(
             tkns,
             String["this", "is", "some", "sample", "text"]
