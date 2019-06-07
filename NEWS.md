@@ -1,5 +1,10 @@
 ## StringAnalysis Release Notes
 
+v0.3.8
+------
+ - Tokenization fixes
+ - Stemmer fixes
+
 v0.3.7
 ------
  - Bugfix release
