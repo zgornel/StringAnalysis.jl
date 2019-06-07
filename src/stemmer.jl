@@ -75,7 +75,7 @@ end
 function stem_all(stemmer::Stemmer,
                   lang::S,
                   sentence::AbstractString;
-                  method=:fast) where S <: Language
+                  method=:stringanalysis) where S <: Language
     tokens = tokenize(sentence, method=method)
     stemmed = stem(stemmer, tokens)
     join(stemmed, ' ')
