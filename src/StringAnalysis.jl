@@ -46,8 +46,10 @@ module StringAnalysis
            text!, text, tokens!, tokens, ngrams!, ngrams,
            ngram_complexity
     export Corpus, DirectoryCorpus, documents, standardize!,
-           lexicon, update_lexicon!, lexical_frequency, lexicon_size,
-           inverse_index, update_inverse_index!, index_size
+           lexicon, update_lexicon!, create_lexicon,
+           lexical_frequency, lexicon_size,
+           inverse_index, update_inverse_index!,
+           create_inverse_index, index_size
     export DocumentTermMatrix, dtm, dtv, dtv_regex, each_dtv
     export hash_dtv, each_hash_dtv, hash_dtm
     export TextHashFunction, index_hash, cardinality,

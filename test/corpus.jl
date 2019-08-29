@@ -25,10 +25,12 @@
     @test isempty(lexicon(crps))
     update_lexicon!(crps)
     @test !isempty(lexicon(crps))
+    @test lexicon(crps) == create_lexicon(crps)
 
     @test isempty(inverse_index(crps))
     update_inverse_index!(crps)
     @test !isempty(inverse_index(crps))
+    @test inverse_index(crps) == create_inverse_index(crps)
 
     @test hash_function(hash_function(crps)) === hash
     hash_function!(crps, TextHashFunction(hash, 10))

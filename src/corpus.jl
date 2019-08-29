@@ -139,20 +139,31 @@ end
 # Lexicon and inverse index
 lexicon(crps::Corpus) = crps.lexicon
 
-function update_lexicon!(crps::Corpus, doc::AbstractDocument)
-    ngs = ngrams(doc)
+function update_lexicon!(crps::Corpus, doc::AbstractDocument, n::Int=DEFAULT_NGRAM_COMPLEXITY)
+    ngs = ngrams(doc, n)
     for (ngram, counts) in ngs
         crps.total_terms += counts
         crps.lexicon[ngram] = get(crps.lexicon, ngram, 0) + counts
     end
 end
 
-function update_lexicon!(crps::Corpus)
+function update_lexicon!(crps::Corpus, n::Int=DEFAULT_NGRAM_COMPLEXITY)
     crps.total_terms = 0
     crps.lexicon = OrderedDict{String,Int}()
     for doc in crps
-        update_lexicon!(crps, doc)
+        update_lexicon!(crps, doc, n)
     end
+end
+
+function create_lexicon(crps::Corpus{S,T}, n::Int=DEFAULT_NGRAM_COMPLEXITY) where {S,T}
+    lexicon = OrderedDict{S, Int}()
+    for doc in crps
+        ngs = ngrams(doc, n)
+        for (ngram, counts) in ngs
+            lexicon[ngram] = get(lexicon, ngram, 0) + counts
+        end
+    end
+    return lexicon
 end
 
 lexicon_size(crps::Corpus) = length(keys(crps.lexicon))
@@ -166,12 +177,11 @@ lexical_frequency(crps::Corpus, term::AbstractString) =
 # TODO: offer progressive update that only changes based on current document
 inverse_index(crps::Corpus) = crps.inverse_index
 
-function update_inverse_index!(crps::Corpus)
-    idx = OrderedDict{String, Vector{Int}}()
+function create_inverse_index(crps::Corpus{S,T}, n::Int=DEFAULT_NGRAM_COMPLEXITY) where {S,T}
+    idx = OrderedDict{S, Vector{Int}}()
     for i in 1:length(crps)
         doc = crps.documents[i]
-        ngram_arr = isa(doc, NGramDocument) ? collect(keys(ngrams(doc))) : tokens(doc)
-        ngram_arr = convert(Vector{String}, ngram_arr)
+        ngram_arr = collect(S, keys(ngrams(doc, n)))
         for ngram in ngram_arr
             if haskey(idx, ngram)
                 push!(idx[ngram], i)
@@ -183,8 +193,12 @@ function update_inverse_index!(crps::Corpus)
     for key in keys(idx)
         idx[key] = unique(idx[key])
     end
-    crps.inverse_index = idx
-    nothing
+    return idx
+end
+
+function update_inverse_index!(crps::Corpus, n::Int=DEFAULT_NGRAM_COMPLEXITY)
+    crps.inverse_index = create_inverse_index(crps, n)
+    return nothing
 end
 
 index_size(crps::Corpus) = length(crps.inverse_index)

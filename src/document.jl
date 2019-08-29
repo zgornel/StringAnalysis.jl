@@ -192,6 +192,8 @@ ngrams(d::AbstractString,
 
 ngrams(d::NGramDocument; tokenizer::Symbol=DEFAULT_TOKENIZER) = d.ngrams
 
+ngrams(d::NGramDocument, n::Int; tokenizer::Symbol=DEFAULT_TOKENIZER) = d.ngrams
+
 ngrams(d::AbstractDocument,
        n::Int=DEFAULT_NGRAM_COMPLEXITY;
        tokenizer::Symbol=DEFAULT_TOKENIZER) =
