@@ -101,7 +101,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Usage examples",
     "title": "The lexicon and inverse index",
     "category": "section",
-    "text": "The Corpus object offers the ability of creating a lexicon and an inverse index for the documents present. These are not automatically created when the Corpus is created,crps.lexicon\ncrps.inverse_indexbut instead have to be explicitly built:update_lexicon!(crps)\ncrps.lexicon\nupdate_inverse_index!(crps)\ncrps.inverse_index"
+    "text": "The Corpus object offers the ability of creating a lexicon and an inverse index for the documents present. These are not automatically created when the Corpus is created,crps.lexicon\ncrps.inverse_indexbut instead have to be explicitly built:update_lexicon!(crps)\ncrps.lexicon\nupdate_inverse_index!(crps)\ncrps.inverse_indexThe ngram complexity can be specified as well:update_inverse_index!(crps, 2)\ncrps.inverse_index\nupdate_inverse_index!(crps)  # default ngram complexity is 1note: Note\nFrom version v0.3.9, the lexicon and inverse index can be created with the create_lexicon and create_inverse_index functions respectively. Both functions support specifying the ngram complexity."
 },
 
 {
@@ -253,7 +253,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.DocumentTermMatrix",
     "category": "method",
-    "text": "DocumentTermMatrix{T}(crps::Corpus [,terms] [; tokenizer=DEFAULT_TOKENIZER])\n\nAuxiliary constructor(s) of the DocumentTermMatrix type. The type T has to be a subtype of Real. The constructor(s) requires a corpus crps and a terms structure representing the lexicon of the corpus. The latter can be a Vector{String}, an AbstractDict where the keys are the lexicon, or can be missing, in which case the lexicon field of the corpus is used.\n\n\n\n\n\n"
+    "text": "DocumentTermMatrix{T}(crps::Corpus [,terms] [; ngram_complexity=DEFAULT_NGRAM_COMPLEXITY, tokenizer=DEFAULT_TOKENIZER])\n\nAuxiliary constructor(s) of the DocumentTermMatrix type. The type T has to be a subtype of Real. The constructor(s) requires a corpus crps and a terms structure representing the lexicon of the corpus. The latter can be a Vector{String}, an AbstractDict where the keys are the lexicon, or can be missing, in which case the lexicon field of the corpus is used.\n\n\n\n\n\n"
 },
 
 {
@@ -261,7 +261,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.LSAModel",
     "category": "type",
-    "text": "LSAModel{S<:AbstractString, T<:AbstractFloat, A<:AbstractMatrix{T}, H<:Integer}\n\nLSA (latent semantic analysis) model. It constructs from a document term matrix (dtm) a model that can be used to embed documents in a latent semantic space pertaining to the data. The model requires that the document term matrix be a DocumentTermMatrix{T<:AbstractFloat} because the elements of the matrices resulted from the SVD operation are floating point numbers and these have to match or be convertible to type T.\n\nFields\n\nvocab::Vector{S} a vector with all the words in the corpus\nvocab_hash::OrderedDict{S,H} a word to index in word embeddings matrix mapping\nΣinv::A diagonal of the inverse singular value matrix\nUᵀ::A transpose of the word embedding matrix\nstats::Symbol the statistical measure to use for word importances in documents. Available values are: :count (term count), :tf (term frequency), :tfidf (default, term frequency-inverse document frequency) and :bm25 (Okapi BM25)\nidf::Vector{T} inverse document frequencies for the words in the vocabulary\nnwords::T averge number of words in a document\nκ::Int the κ parameter of the BM25 statistic\nβ::Float64 the β parameter of the BM25 statistic\ntol::T minimum size of the vector components (default T(1e-15))\n\nSVD matrices U, Σinv and V:\n\nIf X is a m×n document-term-matrix with n documents and m words so that X[i,j] represents a statistical indicator of the importance of term i in document j then:\n\nU, Σ, V = svd(X)\nΣinv = diag(inv(Σ))\nUᵀ = U\'\nX ≈ U * Σ * V\'\n\nThe matrix V of document embeddings is not actually stored in the model.\n\nExamples\n\njulia> using StringAnalysis\n\n       doc1 = StringDocument(\"This is a text about an apple. There are many texts about apples.\")\n       doc2 = StringDocument(\"Pears and apples are good but not exotic. An apple a day keeps the doctor away.\")\n       doc3 = StringDocument(\"Fruits are good for you.\")\n       doc4 = StringDocument(\"This phrase has nothing to do with the others...\")\n       doc5 = StringDocument(\"Simple text, little info inside\")\n\n       crps = Corpus(AbstractDocument[doc1, doc2, doc3, doc4, doc5])\n       prepare!(crps, strip_punctuation)\n       update_lexicon!(crps)\n       dtm = DocumentTermMatrix{Float32}(crps, collect(keys(crps.lexicon)))\n\n       ### Build LSA Model ###\n       lsa_model = LSAModel(dtm, k=3, stats=:tf)\n\n       query = StringDocument(\"Apples and an exotic fruit.\")\n       idxs, corrs = cosine(lsa_model, crps, query)\n\n       println(\"Query: \"$(query.text)\"\")\n       for (idx, corr) in zip(idxs, corrs)\n           println(\"$corr -> \"$(crps[idx].text)\"\")\n       end\nQuery: \"Apples and an exotic fruit.\"\n0.9746108 -> \"Pears and apples are good but not exotic  An apple a day keeps the doctor away \"\n0.870703 -> \"This is a text about an apple  There are many texts about apples \"\n0.7122063 -> \"Fruits are good for you \"\n0.22725986 -> \"This phrase has nothing to do with the others \"\n0.076901935 -> \"Simple text  little info inside \"\n\nReferences:\n\nThe LSA wiki page\nDeerwester et al. 1990\n\n\n\n\n\n"
+    "text": "LSAModel{S<:AbstractString, T<:AbstractFloat, A<:AbstractMatrix{T}, H<:Integer}\n\nLSA (latent semantic analysis) model. It constructs from a document term matrix (dtm) a model that can be used to embed documents in a latent semantic space pertaining to the data. The model requires that the document term matrix be a DocumentTermMatrix{T<:AbstractFloat} because the elements of the matrices resulted from the SVD operation are floating point numbers and these have to match or be convertible to type T.\n\nFields\n\nvocab::Vector{S} a vector with all the words in the corpus\nvocab_hash::OrderedDict{S,H} a word to index in word embeddings matrix mapping\nΣinv::A diagonal of the inverse singular value matrix\nUᵀ::A transpose of the word embedding matrix\nstats::Symbol the statistical measure to use for word importances in documents. Available values are: :count (term count), :tf (term frequency), :tfidf (default, term frequency-inverse document frequency) and :bm25 (Okapi BM25)\nidf::Vector{T} inverse document frequencies for the words in the vocabulary\nnwords::T averge number of words in a document\nngram_complexity::Int ngram complexity\nκ::Int the κ parameter of the BM25 statistic\nβ::Float64 the β parameter of the BM25 statistic\ntol::T minimum size of the vector components (default T(1e-15))\n\nSVD matrices U, Σinv and V:\n\nIf X is a m×n document-term-matrix with n documents and m words so that X[i,j] represents a statistical indicator of the importance of term i in document j then:\n\nU, Σ, V = svd(X)\nΣinv = diag(inv(Σ))\nUᵀ = U\'\nX ≈ U * Σ * V\'\n\nThe matrix V of document embeddings is not actually stored in the model.\n\nExamples\n\njulia> using StringAnalysis\n\n       doc1 = StringDocument(\"This is a text about an apple. There are many texts about apples.\")\n       doc2 = StringDocument(\"Pears and apples are good but not exotic. An apple a day keeps the doctor away.\")\n       doc3 = StringDocument(\"Fruits are good for you.\")\n       doc4 = StringDocument(\"This phrase has nothing to do with the others...\")\n       doc5 = StringDocument(\"Simple text, little info inside\")\n\n       crps = Corpus(AbstractDocument[doc1, doc2, doc3, doc4, doc5])\n       prepare!(crps, strip_punctuation)\n       update_lexicon!(crps)\n       dtm = DocumentTermMatrix{Float32}(crps, collect(keys(crps.lexicon)))\n\n       ### Build LSA Model ###\n       lsa_model = LSAModel(dtm, k=3, stats=:tf)\n\n       query = StringDocument(\"Apples and an exotic fruit.\")\n       idxs, corrs = cosine(lsa_model, crps, query)\n\n       println(\"Query: \"$(query.text)\"\")\n       for (idx, corr) in zip(idxs, corrs)\n           println(\"$corr -> \"$(crps[idx].text)\"\")\n       end\nQuery: \"Apples and an exotic fruit.\"\n0.9746108 -> \"Pears and apples are good but not exotic  An apple a day keeps the doctor away \"\n0.870703 -> \"This is a text about an apple  There are many texts about apples \"\n0.7122063 -> \"Fruits are good for you \"\n0.22725986 -> \"This phrase has nothing to do with the others \"\n0.076901935 -> \"Simple text  little info inside \"\n\nReferences:\n\nThe LSA wiki page\nDeerwester et al. 1990\n\n\n\n\n\n"
 },
 
 {
@@ -269,7 +269,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.RPModel",
     "category": "type",
-    "text": "RPModel{S<:AbstractString, T<:AbstractFloat, A<:AbstractMatrix{T}, H<:Integer}\n\nRandom projection model. It constructs from a document term matrix (DTM) a model that can be used to embed documents in a random sub-space. The model requires that the document term matrix be a DocumentTermMatrix{T<:AbstractFloat} because the elements of the matrices resulted projection operation are floating point numbers and these have to match or be convertible to type T. The approach is based on the effects of the Johnson-Lindenstrauss lemma.\n\nFields\n\nvocab::Vector{S} a vector with all the words in the corpus\nvocab_hash::OrderedDict{S,H} a word to index in the random projection maatrix mapping\nR::A the random projection matrix\nstats::Symbol the statistical measure to use for word importances in documents. Available values are: :count (term count), :tf (term frequency), :tfidf (default, term frequency-inverse document frequency) and :bm25 (Okapi BM25)\nidf::Vector{T} inverse document frequencies for the words in the vocabulary\nnwords::T averge number of words in a document\nκ::Int the κ parameter of the BM25 statistic\nβ::Float64 the β parameter of the BM25 statistic\nproject::Bool specifies whether the model actually performs the projection or not; it is false if the number of dimensions provided is zero or negative\n\nReferences:\n\nKaski 1998\nAchlioptas 2001\nLi et al. 2006\n\n\n\n\n\n"
+    "text": "RPModel{S<:AbstractString, T<:AbstractFloat, A<:AbstractMatrix{T}, H<:Integer}\n\nRandom projection model. It constructs from a document term matrix (DTM) a model that can be used to embed documents in a random sub-space. The model requires that the document term matrix be a DocumentTermMatrix{T<:AbstractFloat} because the elements of the matrices resulted projection operation are floating point numbers and these have to match or be convertible to type T. The approach is based on the effects of the Johnson-Lindenstrauss lemma.\n\nFields\n\nvocab::Vector{S} a vector with all the words in the corpus\nvocab_hash::OrderedDict{S,H} a word to index in the random projection maatrix mapping\nR::A the random projection matrix\nstats::Symbol the statistical measure to use for word importances in documents. Available values are: :count (term count), :tf (term frequency), :tfidf (default, term frequency-inverse document frequency) and :bm25 (Okapi BM25)\nidf::Vector{T} inverse document frequencies for the words in the vocabulary\nnwords::T averge number of words in a document\nngram_complexity::Int ngram complexity\nκ::Int the κ parameter of the BM25 statistic\nβ::Float64 the β parameter of the BM25 statistic\nproject::Bool specifies whether the model actually performs the projection or not; it is false if the number of dimensions provided is zero or negative\n\nReferences:\n\nKaski 1998\nAchlioptas 2001\nLi et al. 2006\n\n\n\n\n\n"
 },
 
 {
@@ -317,7 +317,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.dtm",
     "category": "method",
-    "text": "dtm(crps::Corpus, eltype::Type{T}=DEFAULT_DTM_TYPE [; tokenizer=DEFAULT_TOKENIZER])\n\nAccess the matrix of the DTM associated with the corpus crps. The DocumentTermMatrix{T} will first have to be created in order for the actual matrix to be accessed.\n\n\n\n\n\n"
+    "text": "dtm(crps::Corpus, eltype::Type{T}=DEFAULT_DTM_TYPE [; ngram_complexity=DEFAULT_NGRAM_COMPLEXITY, tokenizer=DEFAULT_TOKENIZER])\n\nAccess the matrix of the DTM associated with the corpus crps. The DocumentTermMatrix{T} will first have to be created in order for the actual matrix to be accessed.\n\n\n\n\n\n"
 },
 
 {
@@ -325,7 +325,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.dtv",
     "category": "method",
-    "text": "dtv(d, lex::OrderedDict{String,Int}, eltype::Type{T}=DEFAULT_DTM_TYPE [; tokenizer=DEFAULT_TOKENIZER])\n\nCreates a document-term-vector with elements of type T for document d using the lexicon lex. d can be an AbstractString or an AbstractDocument.\n\n\n\n\n\n"
+    "text": "dtv(d, lex::OrderedDict{String,Int}, eltype::Type{T}=DEFAULT_DTM_TYPE [; ngram_complexity=DEFAULT_NGRAM_COMPLEXITY, tokenizer=DEFAULT_TOKENIZER])\n\nCreates a document-term-vector with elements of type T for document d using the lexicon lex. d can be an AbstractString or an AbstractDocument.\n\n\n\n\n\n"
 },
 
 {
@@ -333,7 +333,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.dtv",
     "category": "method",
-    "text": "dtv(crps::Corpus, idx::Int, eltype::Type{T}=DEFAULT_DTM_TYPE [; tokenizer=DEFAULT_TOKENIZER])\n\nCreates a document-term-vector with elements of type T for document idx of the corpus crps.\n\n\n\n\n\n"
+    "text": "dtv(crps::Corpus, idx::Int, eltype::Type{T}=DEFAULT_DTM_TYPE [; ngram_complexity=DEFAULT_NGRAM_COMPLEXITY, tokenizer=DEFAULT_TOKENIZER])\n\nCreates a document-term-vector with elements of type T for document idx of the corpus crps.\n\n\n\n\n\n"
 },
 
 {
@@ -341,7 +341,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.dtv_regex",
     "category": "method",
-    "text": "dtv_regex(d, lex::OrderedDict{String,Int}, eltype::Type{T}=DEFAULT_DTM_TYPE [; tokenizer=DEFAULT_TOKENIZER])\n\nCreates a document-term-vector with elements of type T for document d using the lexicon lex. The tokens of document d are assumed to be regular expressions in text format. d can be an AbstractString or an AbstractDocument.\n\nExamples\n\njulia> dtv_regex(NGramDocument(\"a..b\"), OrderedDict(\"aaa\"=>1, \"aaab\"=>2, \"accb\"=>3, \"bbb\"=>4), Float32)\n4-element Array{Float32,1}:\n 0.0\n 1.0\n 1.0\n 0.0\n\n\n\n\n\n"
+    "text": "dtv_regex(d, lex::OrderedDict{String,Int}, eltype::Type{T}=DEFAULT_DTM_TYPE [; ngram_complexity=DEFAULT_NGRAM_COMPLEXITY, tokenizer=DEFAULT_TOKENIZER])\n\nCreates a document-term-vector with elements of type T for document d using the lexicon lex. The tokens of document d are assumed to be regular expressions in text format. d can be an AbstractString or an AbstractDocument.\n\nExamples\n\njulia> dtv_regex(NGramDocument(\"a..b\"), OrderedDict(\"aaa\"=>1, \"aaab\"=>2, \"accb\"=>3, \"bbb\"=>4), Float32)\n4-element Array{Float32,1}:\n 0.0\n 1.0\n 1.0\n 0.0\n\n\n\n\n\n"
 },
 
 {
@@ -349,7 +349,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.each_dtv",
     "category": "method",
-    "text": "each_dtv(crps::Corpus [; eltype::Type{U}=DEFAULT_DTM_TYPE, tokenizer=DEFAULT_TOKENIZER])\n\nIterates through the columns of the DTM of the corpus crps without constructing it. Useful when the DTM would not fit in memory. eltype specifies the element type of the generated vectors.\n\n\n\n\n\n"
+    "text": "each_dtv(crps::Corpus [; eltype::Type{U}=DEFAULT_DTM_TYPE, ngram_complexity=DEFAULT_NGRAM_COMPLEXITY, tokenizer=DEFAULT_TOKENIZER])\n\nIterates through the columns of the DTM of the corpus crps without constructing it. Useful when the DTM would not fit in memory. eltype specifies the element type of the generated vectors.\n\n\n\n\n\n"
 },
 
 {
@@ -357,7 +357,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.each_hash_dtv",
     "category": "method",
-    "text": "each_hash_dtv(crps::Corpus [; eltype::Type{U}=DEFAULT_DTM_TYPE, tokenizer=DEFAULT_TOKENIZER])\n\nIterates through the columns of the hashed DTM of the corpus crps without constructing it. Useful when the DTM would not fit in memory. eltype specifies the element type of the generated vectors.\n\n\n\n\n\n"
+    "text": "each_hash_dtv(crps::Corpus [; eltype::Type{U}=DEFAULT_DTM_TYPE, ngram_complexity=DEFAULT_NGRAM_COMPLEXITY, tokenizer=DEFAULT_TOKENIZER])\n\nIterates through the columns of the hashed DTM of the corpus crps without constructing it. Useful when the DTM would not fit in memory. eltype specifies the element type of the generated vectors.\n\n\n\n\n\n"
 },
 
 {
@@ -413,7 +413,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.hash_dtm",
     "category": "method",
-    "text": "hash_dtm(crps::Corpus [,h::TextHashFunction], eltype::Type{T}=DEFAULT_DTM_TYPE [; tokenizer=DEFAULT_TOKENIZER])\n\nCreates a hashed DTM with elements of type T for corpus crps using the the hashing function h. If h is missing, the hash function of the Corpus is used.\n\n\n\n\n\n"
+    "text": "hash_dtm(crps::Corpus [,h::TextHashFunction], eltype::Type{T}=DEFAULT_DTM_TYPE [; ngram_complexity=DEFAULT_NGRAM_COMPLEXITY, tokenizer=DEFAULT_TOKENIZER])\n\nCreates a hashed DTM with elements of type T for corpus crps using the the hashing function h. If h is missing, the hash function of the Corpus is used.\n\n\n\n\n\n"
 },
 
 {
@@ -421,7 +421,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.hash_dtv",
     "category": "method",
-    "text": "hash_dtv(d, h::TextHashFunction, eltype::Type{T}=DEFAULT_DTM_TYPE [; tokenizer=DEFAULT_TOKENIZER])\n\nCreates a hashed document-term-vector with elements of type T for document d using the hashing function h. d can be an AbstractString or an AbstractDocument.\n\n\n\n\n\n"
+    "text": "hash_dtv(d, h::TextHashFunction, eltype::Type{T}=DEFAULT_DTM_TYPE [; ngram_complexity=DEFAULT_NGRAM_COMPLEXITY, tokenizer=DEFAULT_TOKENIZER])\n\nCreates a hashed document-term-vector with elements of type T for document d using the hashing function h. d can be an AbstractString or an AbstractDocument.\n\n\n\n\n\n"
 },
 
 {
@@ -509,7 +509,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API Reference",
     "title": "StringAnalysis.rp",
     "category": "method",
-    "text": "rp(X [;k=m, density=1/sqrt(k), stats=:tfidf, κ=2, β=0.75])\n\nConstructs a random projection model. The input X can be a Corpus or a DocumentTermMatrix with m words in the lexicon. The model does not store the corpus or DTM document embeddings, just the projection matrix. Use ?RPModel for more details.\n\n\n\n\n\n"
+    "text": "rp(X [;k=m, density=1/sqrt(k), stats=:tfidf, ngram_complexity=DEFAULT_NGRAM_COMPLEXITY, κ=2, β=0.75])\n\nConstructs a random projection model. The input X can be a Corpus or a DocumentTermMatrix with m words in the lexicon. The model does not store the corpus or DTM document embeddings, just the projection matrix. Use ?RPModel for more details.\n\n\n\n\n\n"
 },
 
 {
@@ -665,7 +665,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api/#StringAnalysis.coo_matrix-Union{Tuple{T}, Tuple{Type{T},Array{#s12,1} where #s12<:AbstractString,OrderedDict{#s51,Int64} where #s51<:AbstractString,Int64}, Tuple{Type{T},Array{#s52,1} where #s52<:AbstractString,OrderedDict{#s53,Int64} where #s53<:AbstractString,Int64,Bool}} where T<:AbstractFloat",
+    "location": "api/#StringAnalysis.coo_matrix-Union{Tuple{T}, Tuple{Type{T},Array{#s12,1} where #s12<:AbstractString,OrderedDict{#s53,Int64} where #s53<:AbstractString,Int64}, Tuple{Type{T},Array{#s54,1} where #s54<:AbstractString,OrderedDict{#s55,Int64} where #s55<:AbstractString,Int64,Bool}} where T<:AbstractFloat",
     "page": "API Reference",
     "title": "StringAnalysis.coo_matrix",
     "category": "method",
