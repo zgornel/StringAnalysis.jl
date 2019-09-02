@@ -16,6 +16,7 @@ convertible to type `T`.
   * `stats::Symbol` the statistical measure to use for word importances in documents. Available values are: `:count` (term count), `:tf` (term frequency), `:tfidf` (default, term frequency-inverse document frequency) and `:bm25` (Okapi BM25)
   * `idf::Vector{T}` inverse document frequencies for the words in the vocabulary
   * `nwords::T` averge number of words in a document
+  * `ngram_complexity::Int` ngram complexity
   * `κ::Int` the `κ` parameter of the BM25 statistic
   * `β::Float64` the `β` parameter of the BM25 statistic
   * `tol::T` minimum size of the vector components (default `T(1e-15)`)
@@ -76,6 +77,7 @@ struct LSAModel{S<:AbstractString, T<:AbstractFloat, A<:AbstractMatrix{T}, H<:In
     stats::Symbol           # term/document importance
     idf::Vector{T}          # inverse document frequencies
     nwords::T               # average words/document in corpus
+    ngram_complexity::Int   # ngram complexity
     κ::Int                  # κ parameter for Okapi BM25 (used if stats==:bm25)
     β::Float64              # β parameter for Okapi BM25 (used if stats==:bm25)
     tol::T                  # Minimum size of vector elements
@@ -90,6 +92,7 @@ end
 function LSAModel(dtm::DocumentTermMatrix{T};
                   k::Int=size(dtm.dtm, 2),
                   stats::Symbol=:tfidf,
+                  ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY,
                   tol::T=T(1e-15),
                   κ::Int=BM25_KAPPA,
                   β::Float64=BM25_BETA
@@ -137,8 +140,8 @@ function LSAModel(dtm::DocumentTermMatrix{T};
     U = Matrix{T}(U₀')
     # Return the model
     return LSAModel(dtm.terms, dtm.row_indices,
-                    Σinv, U,
-                    stats, idf, nwords, κ, β, minval)
+                    Σinv, U, stats, idf, nwords,
+                    ngram_complexity, κ, β, minval)
 end
 
 
@@ -159,23 +162,25 @@ zeroed out.
 function lsa(dtm::DocumentTermMatrix{T};
              k::Int=size(dtm.dtm, 2),
              stats::Symbol=:tfidf,
+             ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY,
              tol::T=T(1e-15),
              κ::Int=BM25_KAPPA,
              β::Float64=BM25_BETA) where T<:AbstractFloat
-    LSAModel(dtm, k=k, stats=stats, κ=κ, β=β, tol=tol)
+    LSAModel(dtm, k=k, stats=stats, ngram_complexity=ngram_complexity, κ=κ, β=β, tol=tol)
 end
 
 function lsa(crps::Corpus,
              ::Type{T} = DEFAULT_FLOAT_TYPE;
              k::Int=length(crps),
              stats::Symbol=:tfidf,
+             ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY,
              tol::T=T(1e-15),
              κ::Int=BM25_KAPPA,
              β::Float64=BM25_BETA) where T<:AbstractFloat
-    if isempty(crps.lexicon)
-        update_lexicon!(crps)
-    end
-    lsa(DocumentTermMatrix{T}(crps, lexicon(crps)), k=k, stats=stats, κ=κ, β=β, tol=tol)
+    lex = create_lexicon(crps, ngram_complexity)
+    lsa(DocumentTermMatrix{T}(crps, lex, ngram_complexity=ngram_complexity),
+        k=k, stats=stats, ngram_complexity=ngram_complexity,
+        κ=κ, β=β, tol=tol)
 end
 
 
@@ -236,10 +241,12 @@ Return the vector representation of `doc`, obtained using the LSA model `lm`.
 """
 embed_document(lm::LSAModel{S,T,A,H}, doc::AbstractDocument) where {S,T,A,H} =
     # Hijack vocabulary hash to use as lexicon (only the keys needed)
-    embed_document(lm, dtv(doc, lm.vocab_hash, T, lex_is_row_indices=true))
+    embed_document(lm, dtv(doc, lm.vocab_hash, T,
+                           ngram_complexity=lm.ngram_complexity,
+                           lex_is_row_indices=true))
 
 embed_document(lm::LSAModel{S,T,A,H}, doc::AbstractString) where {S,T,A,H} =
-    embed_document(lm, NGramDocument{S}(doc))
+    embed_document(lm, NGramDocument{S}(doc, DocumentMetadata(), lm.ngram_complexity))
 
 embed_document(lm::LSAModel{S,T,A,H}, doc::Vector{S2}) where {S,T,A,H,S2<:AbstractString} =
     embed_document(lm, TokenDocument{S}(doc))
@@ -288,10 +295,8 @@ function embed_document(lm::LSAModel{S,T,A,H}, dtm::DocumentTermMatrix{T}) where
 end
 
 function embed_document(lm::LSAModel{S,T,A,H}, crps::Corpus) where {S,T,A,H}
-    if isempty(crps.lexicon)
-        update_lexicon!(crps)
-    end
-    embed_document(lm, DocumentTermMatrix{T}(crps, lexicon(crps)))
+    lex = create_lexicon(crps, lm.ngram_complexity)
+    embed_document(lm, DocumentTermMatrix{T}(crps, lex, ngram_complexity=lm.ngram_complexity))
 end
 
 
@@ -350,6 +355,7 @@ function save_lsa_model(lm::LSAModel{S,T,A,H}, filename::AbstractString) where {
         println(fid, lm.stats)
         writedlm(fid, lm.idf', " ")
         println(fid, lm.nwords)
+        println(fid, lm.ngram_complexity)
         println(fid, lm.κ)
         println(fid, lm.β)
         println(fid, lm.tol)
@@ -374,7 +380,7 @@ function load_lsa_model(filename::AbstractString, ::Type{T}=DEFAULT_FLOAT_TYPE;
     # Matrix type for LSA model
     A = ifelse(sparse, SparseMatrixCSC{T, Int}, Matrix{T})
     # Define parsed variables local to outer scope of do statement
-    local vocab, vocab_hash, Σinv, Uᵀ, stats, idf, nwords, κ, β, tol
+    local vocab, vocab_hash, Σinv, Uᵀ, stats, idf, nwords, ngram_complexity, κ, β, tol
     open(filename, "r") do fid
         readline(fid)  # first line, header
         line = readline(fid)
@@ -393,6 +399,7 @@ function load_lsa_model(filename::AbstractString, ::Type{T}=DEFAULT_FLOAT_TYPE;
         stats = Symbol(strip(readline(fid)))
         idf = map(x->parse(T, x), split(readline(fid), ' '))
         nwords = parse(T, readline(fid))
+        ngram_complexity = parse(Int, readline(fid))
         κ = parse(Int, readline(fid))
         β = parse(Float64, readline(fid))
         tol = parse(Float64, readline(fid))
@@ -407,6 +414,6 @@ function load_lsa_model(filename::AbstractString, ::Type{T}=DEFAULT_FLOAT_TYPE;
             Uᵀ[:, i] = vector
         end
     end
-    return LSAModel{String, T, A, Int}(vocab, vocab_hash, Σinv, Uᵀ,
-                                       stats, idf, nwords, κ, β, tol)
+    return LSAModel{String,T,A,Int}(vocab, vocab_hash, Σinv, Uᵀ, stats, idf,
+                                    nwords, ngram_complexity, κ, β, tol)
 end

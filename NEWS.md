@@ -3,6 +3,7 @@
 v0.3.9
 ------
  - Lexicon, inverse index creation functions
+ - ngram complexity specification support
  - Sparse/Frequent terms stripping fixes
 
 v0.3.8

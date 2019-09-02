@@ -8,17 +8,17 @@
     # Corpus
     crps = Corpus(AbstractDocument[doc1, doc2, doc3, doc4, doc5])
     prepare!(crps, strip_punctuation)
-    update_lexicon!(crps)
-    update_inverse_index!(crps)
-    lex = collect(keys(crps.lexicon))
+    ngram_complexity = 2
+    lex = create_lexicon(crps, ngram_complexity)
+    lex_keys = collect(keys(lex))
     n = length(crps)
     # Retrieval
     query = StringDocument("Apples and an exotic fruit.")
     for k in [1, 6]
         for stats in [:count, :tf, :tfidf, :bm25]
             for T in [Float32, Float64]
-                dtm = DocumentTermMatrix{T}(crps, lex)
-                model = lsa(dtm, k=k, stats=stats)
+                dtm = DocumentTermMatrix{T}(crps, lex_keys, ngram_complexity=ngram_complexity)
+                model = lsa(dtm, k=k, stats=stats, ngram_complexity=ngram_complexity)
                 @test model isa LSAModel{String, T, Matrix{T}, Int}
                 @test length(model.Σinv) == min(k, n)
                 idxs, corrs = cosine(model, dtm, query)
@@ -28,17 +28,18 @@
             end
         end
     end
+
     # Tests for the rest of the functions
     K = 2
     T = Float32
     # Vocabulary
-    model = lsa(crps, T, k=K)
+    model = lsa(crps, T, k=K, ngram_complexity=ngram_complexity)
     @test model isa LSAModel{String, T, Matrix{T}, Int}
-    @test all(in_vocabulary(model, word) for word in keys(crps.lexicon))
-    @test vocabulary(model) == collect(keys(crps.lexicon))
-    @test size(model) == (length(crps.lexicon), K)
+    @test all(in_vocabulary(model, word) for word in lex_keys)
+    @test vocabulary(model) == lex_keys
+    @test size(model) == (length(lex_keys), K)
     # Document, corpus embedding
-    dtm = DocumentTermMatrix{T}(crps, lex)
+    dtm = DocumentTermMatrix{T}(crps, lex_keys, ngram_complexity=ngram_complexity)
     V = Matrix(embed_document(model, crps))
     @test eltype(V) == T
     @test eltype(embed_document(model, crps[1])) == T
