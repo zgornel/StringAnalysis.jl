@@ -16,6 +16,7 @@ based on the effects of the
   * `stats::Symbol` the statistical measure to use for word importances in documents. Available values are: `:count` (term count), `:tf` (term frequency), `:tfidf` (default, term frequency-inverse document frequency) and `:bm25` (Okapi BM25)
   * `idf::Vector{T}` inverse document frequencies for the words in the vocabulary
   * `nwords::T` averge number of words in a document
+  * `ngram_complexity::Int` ngram complexity
   * `κ::Int` the `κ` parameter of the BM25 statistic
   * `β::Float64` the `β` parameter of the BM25 statistic
   * `project::Bool` specifies whether the model actually performs the projection or not; it is false if the number of dimensions provided is zero or negative
@@ -32,6 +33,7 @@ struct RPModel{S<:AbstractString, T<:AbstractFloat, A<:AbstractMatrix{T}, H<:Int
     stats::Symbol           # term/document importance
     idf::Vector{T}          # inverse document frequencies
     nwords::T               # average words/document in corpus
+    ngram_complexity::Int   # ngram complexity
     κ::Int                  # κ parameter for Okapi BM25 (used if stats==:bm25)
     β::Float64              # β parameter for Okapi BM25 (used if stats==:bm25)
     project::Bool
@@ -41,6 +43,7 @@ function RPModel(dtm::DocumentTermMatrix{T};
                  k::Int=size(dtm.dtm, 1),
 				 density::Float64=1/sqrt(k),
                  stats::Symbol=:tfidf,
+                 ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY,
                  κ::Int=BM25_KAPPA,
                  β::Float64=BM25_BETA
                 ) where T<:AbstractFloat
@@ -60,8 +63,8 @@ function RPModel(dtm::DocumentTermMatrix{T};
     R = random_projection_matrix(k, m, T, density)
     project = ifelse(k > 0, true, false)
     # Return the model
-    return RPModel(dtm.terms, dtm.row_indices, R,
-                   stats, idf, nwords, κ, β, project)
+    return RPModel(dtm.terms, dtm.row_indices, R, stats, idf,
+                   nwords, ngram_complexity, κ, β, project)
 end
 
 function RPModel(dtm::DocumentTermMatrix{T}; kwargs...) where T<:Integer
@@ -128,7 +131,7 @@ end
 
 
 """
-    rp(X [;k=m, density=1/sqrt(k), stats=:tfidf, κ=2, β=0.75])
+    rp(X [;k=m, density=1/sqrt(k), stats=:tfidf, ngram_complexity=DEFAULT_NGRAM_COMPLEXITY, κ=2, β=0.75])
 
 Constructs a random projection model. The input `X` can be a `Corpus` or a `DocumentTermMatrix`
 with `m` words in the lexicon. The model does not store the corpus or DTM document embeddings,
@@ -138,10 +141,12 @@ function rp(dtm::DocumentTermMatrix{T};
             k::Int=size(dtm.dtm, 1),
             density::Float64=1/sqrt(k),
             stats::Symbol=:tfidf,
+            ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY,
             κ::Int=BM25_KAPPA,
             β::Float64=BM25_BETA
            ) where T<:AbstractFloat
-    RPModel(dtm, k=k, density=density, stats=stats, κ=κ, β=β)
+    RPModel(dtm, k=k, density=density, stats=stats,
+            ngram_complexity=ngram_complexity, κ=κ, β=β)
 end
 
 function rp(crps::Corpus,
@@ -149,14 +154,13 @@ function rp(crps::Corpus,
             k::Int=length(crps.lexicon),
             density::Float64=1/sqrt(k),
             stats::Symbol=:tfidf,
+            ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY,
             κ::Int=BM25_KAPPA,
             β::Float64=BM25_BETA
            ) where T<:AbstractFloat
-    if isempty(crps.lexicon)
-        update_lexicon!(crps)
-    end
-    rp(DocumentTermMatrix{T}(crps, lexicon(crps)),
-                     k=k, density=density, stats=stats, κ=κ, β=β)
+    lex = create_lexicon(crps, ngram_complexity)
+    rp(DocumentTermMatrix{T}(crps, lex, ngram_complexity=ngram_complexity),
+       k=k, density=density, stats=stats, ngram_complexity=ngram_complexity, κ=κ, β=β)
 end
 
 
@@ -220,10 +224,12 @@ random projection model `rpm`. `doc` can be an `AbstractDocument`,
 """
 embed_document(rpm::RPModel{S,T,A,H}, doc::AbstractDocument) where {S,T,A,H} =
     # Hijack vocabulary hash to use as lexicon (only the keys needed)
-    embed_document(rpm, dtv(doc, rpm.vocab_hash, T, lex_is_row_indices=true))
+    embed_document(rpm, dtv(doc, rpm.vocab_hash, T,
+                            ngram_complexity=rpm.ngram_complexity,
+                            lex_is_row_indices=true))
 
 embed_document(rpm::RPModel{S,T,A,H}, doc::AbstractString) where {S,T,A,H} =
-    embed_document(rpm, NGramDocument{S}(doc))
+    embed_document(rpm, NGramDocument{S}(doc, DocumentMetadata(), rpm.ngram_complexity))
 
 embed_document(rpm::RPModel{S,T,A,H}, doc::AbstractVector{S2}) where {S,T,A,H,S2<:AbstractString} =
     embed_document(rpm, TokenDocument{S}(doc))
@@ -280,10 +286,8 @@ function embed_document(rpm::RPModel{S,T,A,H}, dtm::DocumentTermMatrix{T}) where
 end
 
 function embed_document(rpm::RPModel{S,T,A,H}, crps::Corpus) where {S,T,A,H}
-    if isempty(crps.lexicon)
-        update_lexicon!(crps)
-    end
-    embed_document(rpm, DocumentTermMatrix{T}(crps, lexicon(crps)))
+    lex = create_lexicon(crps, rpm.ngram_complexity)
+    embed_document(rpm, DocumentTermMatrix{T}(crps, lex, ngram_complexity=rpm.ngram_complexity))
 end
 
 
@@ -301,6 +305,7 @@ function save_rp_model(rpm::RPModel{S,T,A,H}, filename::AbstractString) where {S
         println(fid, rpm.stats)
         writedlm(fid, rpm.idf', " ")
         println(fid, rpm.nwords)
+        println(fid, rpm.ngram_complexity)
         println(fid, rpm.κ)
         println(fid, rpm.β)
         # Vocabulary
@@ -325,7 +330,7 @@ function load_rp_model(filename::AbstractString, ::Type{T}=DEFAULT_FLOAT_TYPE;
     # Matrix type for random projection model
     A = ifelse(sparse, SparseMatrixCSC{T, Int}, Matrix{T})
     # Define parsed variables local to outer scope of do statement
-    local vocab, vocab_hash, R, stats, idf, nwords, κ, β, project
+    local vocab, vocab_hash, R, stats, idf, nwords, ngram_complexity, κ, β, project
     open(filename, "r") do fid
         readline(fid)  # first line, header
         line = readline(fid)
@@ -341,6 +346,7 @@ function load_rp_model(filename::AbstractString, ::Type{T}=DEFAULT_FLOAT_TYPE;
         stats = Symbol(strip(readline(fid)))
         idf = map(x->parse(T, x), split(readline(fid), ' '))
         nwords = parse(T, readline(fid))
+        ngram_complexity = parse(Int, readline(fid))
         κ = parse(Int, readline(fid))
         β = parse(Float64, readline(fid))
         vocab = Vector{String}(split(readline(fid),' '))
@@ -349,5 +355,6 @@ function load_rp_model(filename::AbstractString, ::Type{T}=DEFAULT_FLOAT_TYPE;
             R[i,:] = map(x->parse(T,x), split(readline(fid), ' '))
         end
     end
-    return RPModel{String, T, A, Int}(vocab, vocab_hash, R, stats, idf, nwords, κ, β, project)
+    return RPModel{String,T,A,Int}(vocab, vocab_hash, R, stats, idf,
+                                      nwords, ngram_complexity, κ, β, project)
 end

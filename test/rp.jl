@@ -8,18 +8,18 @@
     # Corpus
     crps = Corpus(AbstractDocument[doc1, doc2, doc3, doc4, doc5])
     prepare!(crps, strip_punctuation)
-    update_lexicon!(crps)
-    update_inverse_index!(crps)
-    lex = collect(keys(crps.lexicon))
-    m = length(lexicon(crps))
+    ngram_complexity = 2
+    lex = create_lexicon(crps, ngram_complexity)
+    lex_keys = collect(keys(lex))
+    m = length(lex_keys)
     n = length(crps)
     # Retrieval
     query = StringDocument("Apples and an exotic fruit.")
     for k in [0, 1, 3]
         for stats in [:count, :tf, :tfidf, :bm25]
             for T in [Float16, Float32, Float64]
-                dtm = DocumentTermMatrix{T}(crps, lex)
-                model = rp(dtm, k=k, stats=stats)
+                dtm = DocumentTermMatrix{T}(crps, lex_keys, ngram_complexity=ngram_complexity)
+                model = rp(dtm, k=k, stats=stats, ngram_complexity=ngram_complexity)
                 @test model isa RPModel{String, T, SparseMatrixCSC{T,Int}, Int}
                 @test size(model.R, 2) == m
                 if k > 0
@@ -36,17 +36,18 @@
             end
         end
     end
+
     # Tests for the rest of the functions
     K = 2
     T = Float32
     # Vocabulary
-    model = rp(crps, T, k=K)
+    model = rp(crps, T, k=K, ngram_complexity=ngram_complexity)
     @test model isa RPModel{String, T, SparseMatrixCSC{T, Int}, Int}
-    @test all(in_vocabulary(model, word) for word in keys(crps.lexicon))
-    @test vocabulary(model) == collect(keys(crps.lexicon))
-    @test size(model) == (length(crps.lexicon), K)
+    @test all(in_vocabulary(model, word) for word in lex_keys)
+    @test vocabulary(model) == lex_keys
+    @test size(model) == (length(lex_keys), K)
     # Document, corpus embedding
-    dtm = DocumentTermMatrix{T}(crps, lex)
+    dtm = DocumentTermMatrix{T}(crps, lex, ngram_complexity=ngram_complexity)
     U = embed_document(model, crps)
     @test eltype(U) == T
     @test eltype(embed_document(model, crps[1])) == T
