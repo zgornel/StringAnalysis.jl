@@ -21,11 +21,8 @@ end
 Returns a dictionary that maps each term from the vector `terms`
 to a integer idex.
 """
-function rowindices(terms::Vector{String})
-    row_indices = OrderedDict{String, Int}(
-                    term => i for (i,term) in enumerate(terms))
-    return row_indices
-end
+rowindices(terms::Vector{String}) =
+    OrderedDict{String, Int}(term => i for (i,term) in enumerate(terms))
 
 """
     columnindices(terms)
@@ -37,7 +34,7 @@ columnindices = rowindices
 
 
 """
-    DocumentTermMatrix{T}(crps::Corpus [,terms] [; tokenizer=DEFAULT_TOKENIZER])
+    DocumentTermMatrix{T}(crps::Corpus [,terms] [; ngram_complexity=DEFAULT_NGRAM_COMPLEXITY, tokenizer=DEFAULT_TOKENIZER])
 
 Auxiliary constructor(s) of the `DocumentTermMatrix` type. The type `T` has to be
 a subtype of `Real`. The constructor(s) requires a corpus `crps` and
@@ -47,7 +44,8 @@ be missing, in which case the `lexicon` field of the corpus is used.
 """
 function DocumentTermMatrix{T}(crps::Corpus,
                                terms::Vector{String};
-                               tokenizer::Symbol=DEFAULT_TOKENIZER) where T<:Real
+                               ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY,
+                               tokenizer::Symbol=DEFAULT_TOKENIZER) where {T<:Real}
     row_indices = rowindices(terms)
     m = length(terms)
     n = length(crps)
@@ -55,7 +53,7 @@ function DocumentTermMatrix{T}(crps::Corpus,
     columns = Vector{Int}(undef, 0)
     values = Vector{T}(undef, 0)
     for (i, doc) in enumerate(crps)
-        ngs = ngrams(doc, tokenizer=tokenizer)
+        ngs = ngrams(doc, ngram_complexity, tokenizer=tokenizer)
         for ngram in keys(ngs)
             j = get(row_indices, ngram, 0)
             v = ngs[ngram]
@@ -74,27 +72,39 @@ function DocumentTermMatrix{T}(crps::Corpus,
     return DocumentTermMatrix(dtm, terms, row_indices)
 end
 
-DocumentTermMatrix(crps::Corpus, terms::Vector{String}; tokenizer::Symbol=DEFAULT_TOKENIZER) =
-    DocumentTermMatrix{DEFAULT_DTM_TYPE}(crps, terms, tokenizer=tokenizer)
+DocumentTermMatrix(crps::Corpus,
+                   terms::Vector{String};
+                   ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY,
+                   tokenizer::Symbol=DEFAULT_TOKENIZER) =
+    DocumentTermMatrix{DEFAULT_DTM_TYPE}(crps, terms, ngram_complexity=ngram_complexity, tokenizer=tokenizer)
 
-DocumentTermMatrix{T}(crps::Corpus, lex::AbstractDict; tokenizer::Symbol=DEFAULT_TOKENIZER
-                     ) where T<:Real =
-    DocumentTermMatrix{T}(crps, collect(keys(lex)), tokenizer=tokenizer)
+DocumentTermMatrix{T}(crps::Corpus,
+                      lex::AbstractDict;
+                      ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY,
+                      tokenizer::Symbol=DEFAULT_TOKENIZER) where {T<:Real} =
+    DocumentTermMatrix{T}(crps, collect(keys(lex)), ngram_complexity=ngram_complexity, tokenizer=tokenizer)
 
-DocumentTermMatrix(crps::Corpus, lex::AbstractDict; tokenizer::Symbol=DEFAULT_TOKENIZER) =
-    DocumentTermMatrix{DEFAULT_DTM_TYPE}(crps, lex, tokenizer=tokenizer)
+DocumentTermMatrix(crps::Corpus,
+                   lex::AbstractDict;
+                   ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY,
+                   tokenizer::Symbol=DEFAULT_TOKENIZER) =
+    DocumentTermMatrix{DEFAULT_DTM_TYPE}(crps, lex, ngram_complexity=ngram_complexity, tokenizer=tokenizer)
 
-DocumentTermMatrix{T}(crps::Corpus; tokenizer::Symbol=DEFAULT_TOKENIZER) where T<:Real = begin
-    isempty(lexicon(crps)) && update_lexicon!(crps)
-    DocumentTermMatrix{T}(crps, lexicon(crps), tokenizer=tokenizer)
+DocumentTermMatrix{T}(crps::Corpus;
+                      ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY,
+                      tokenizer::Symbol=DEFAULT_TOKENIZER) where {T<:Real} = begin
+    DocumentTermMatrix{T}(crps, create_lexicon(crps, ngram_complexity),
+                          ngram_complexity=ngram_complexity, tokenizer=tokenizer)
 end
 
-DocumentTermMatrix(crps::Corpus; tokenizer::Symbol=DEFAULT_TOKENIZER) = begin
-    isempty(lexicon(crps)) && update_lexicon!(crps)
-    DocumentTermMatrix{DEFAULT_DTM_TYPE}(crps, lexicon(crps), tokenizer=tokenizer)
+DocumentTermMatrix(crps::Corpus;
+                   ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY,
+                   tokenizer::Symbol=DEFAULT_TOKENIZER) = begin
+    DocumentTermMatrix{DEFAULT_DTM_TYPE}(crps, create_lexicon(crps, ngram_complexity),
+                                         ngram_complexity=ngram_complexity, tokenizer=tokenizer)
 end
 
-DocumentTermMatrix(dtm::SparseMatrixCSC{T, Int}, terms::Vector{String}) where T<:Real =
+DocumentTermMatrix(dtm::SparseMatrixCSC{T, Int}, terms::Vector{String}) where {T<:Real} =
     DocumentTermMatrix(dtm, terms, rowindices(terms))
 
 
@@ -106,23 +116,28 @@ Access the matrix of a `DocumentTermMatrix` `d`.
 dtm(d::DocumentTermMatrix) = d.dtm
 
 """
-    dtm(crps::Corpus, eltype::Type{T}=DEFAULT_DTM_TYPE [; tokenizer=DEFAULT_TOKENIZER])
+    dtm(crps::Corpus, eltype::Type{T}=DEFAULT_DTM_TYPE [; ngram_complexity=DEFAULT_NGRAM_COMPLEXITY, tokenizer=DEFAULT_TOKENIZER])
 
 Access the matrix of the DTM associated with the corpus `crps`. The
 `DocumentTermMatrix{T}` will first have to be created in order for
 the actual matrix to be accessed.
 """
-dtm(crps::Corpus, eltype::Type{T}=DEFAULT_DTM_TYPE;
-        tokenizer::Symbol=DEFAULT_TOKENIZER) where T<:Real =
-    dtm(DocumentTermMatrix{T}(crps, tokenizer=tokenizer))
+dtm(crps::Corpus,
+    eltype::Type{T}=DEFAULT_DTM_TYPE;
+    ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY,
+    tokenizer::Symbol=DEFAULT_TOKENIZER
+   ) where {T<:Real} =
+    dtm(DocumentTermMatrix{T}(crps, ngram_complexity=ngram_complexity, tokenizer=tokenizer))
 
 
 # Produce the signature of a DTM entry for a document
-function dtm_entries(d, lex::OrderedDict{String, Int},
+function dtm_entries(d,
+                     lex::OrderedDict{String, Int},
                      eltype::Type{T}=DEFAULT_DTM_TYPE;
+                     ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY,
                      tokenizer::Symbol=DEFAULT_TOKENIZER,
-                     lex_is_row_indices::Bool=false) where T<:Real
-    ngs = ngrams(d, tokenizer=tokenizer)
+                     lex_is_row_indices::Bool=false) where {T<:Real}
+    ngs = ngrams(d, ngram_complexity, tokenizer=tokenizer)
     indices = Vector{Int}(undef, 0)
     values = Vector{T}(undef, 0)
     local row_indices
@@ -145,54 +160,69 @@ end
 
 
 """
-    dtv(d, lex::OrderedDict{String,Int}, eltype::Type{T}=DEFAULT_DTM_TYPE [; tokenizer=DEFAULT_TOKENIZER])
+    dtv(d, lex::OrderedDict{String,Int}, eltype::Type{T}=DEFAULT_DTM_TYPE [; ngram_complexity=DEFAULT_NGRAM_COMPLEXITY, tokenizer=DEFAULT_TOKENIZER])
 
 Creates a document-term-vector with elements of type `T` for document `d`
 using the lexicon `lex`. `d` can be an `AbstractString` or an `AbstractDocument`.
 """
-function dtv(d, lex::OrderedDict{String, Int},
+function dtv(d,
+             lex::OrderedDict{String, Int},
              eltype::Type{T}=DEFAULT_DTM_TYPE;
+             ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY,
              tokenizer::Symbol=DEFAULT_TOKENIZER,
-             lex_is_row_indices::Bool=false) where T<:Real
+             lex_is_row_indices::Bool=false) where {T<:Real}
     p = length(keys(lex))
     column = spzeros(T, p)
-    indices, values = dtm_entries(d, lex, eltype, tokenizer=tokenizer,
+    indices, values = dtm_entries(d, lex, eltype,
+                                  ngram_complexity=ngram_complexity,
+                                  tokenizer=tokenizer,
                                   lex_is_row_indices=lex_is_row_indices)
     column[indices] = values
     return column
 end
 
 """
-    dtv(crps::Corpus, idx::Int, eltype::Type{T}=DEFAULT_DTM_TYPE [; tokenizer=DEFAULT_TOKENIZER])
+    dtv(crps::Corpus, idx::Int, eltype::Type{T}=DEFAULT_DTM_TYPE [; ngram_complexity=DEFAULT_NGRAM_COMPLEXITY, tokenizer=DEFAULT_TOKENIZER])
 
 Creates a document-term-vector with elements of type `T` for document `idx`
 of the corpus `crps`.
 """
-function dtv(crps::Corpus, idx::Int,
+function dtv(crps::Corpus,
+             idx::Int,
              eltype::Type{T}=DEFAULT_DTM_TYPE;
+             ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY,
              tokenizer::Symbol=DEFAULT_TOKENIZER,
-             lex_is_row_indices::Bool=false) where T<:Real
-    if isempty(crps.lexicon)
-        error("Cannot construct a DTV without a pre-existing lexicon")
-    elseif idx >= length(crps.documents) || idx < 1
+             lex_is_row_indices::Bool=false) where {T<:Real}
+    if idx >= length(crps.documents) || idx < 1
         error("DTV requires the document index in [1,$(length(crps.documents))]")
-    else
-        return dtv(crps.documents[idx], crps.lexicon, eltype, tokenizer=tokenizer,
-                   lex_is_row_indices=lex_is_row_indices)
     end
+    if isempty(crps.lexicon)
+        lex = create_lexicon(crps, ngram_complexity)
+    else
+        lex = lexicon(crps)
+    end
+    return dtv(crps.documents[idx], lex, eltype,
+               ngram_complexity=ngram_complexity,
+               tokenizer=tokenizer,
+               lex_is_row_indices=lex_is_row_indices)
 end
 
-function dtv(d; tokenizer::Symbol=DEFAULT_TOKENIZER, lex_is_row_indices::Bool=false)
+function dtv(d;
+             ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY,
+             tokenizer::Symbol=DEFAULT_TOKENIZER,
+             lex_is_row_indices::Bool=false)
     throw(ErrorException("Cannot construct a DTV without a pre-existing lexicon"))
 end
 
 
 # Document is a list of regular expressions in text form
-function dtm_regex_entries(d, lex::OrderedDict{String, Int},
+function dtm_regex_entries(d,
+                           lex::OrderedDict{String, Int},
                            eltype::Type{T}=DEFAULT_DTM_TYPE;
+                           ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY,
                            tokenizer::Symbol=DEFAULT_TOKENIZER,
-                           lex_is_row_indices::Bool=false) where T<:Real
-    ngs = ngrams(d, tokenizer=tokenizer)
+                           lex_is_row_indices::Bool=false) where {T<:Real}
+    ngs = ngrams(d, ngram_complexity, tokenizer=tokenizer)
     patterns = Regex.(keys(ngs))
     indices = Vector{Int}(undef, 0)
     terms = collect(keys(lex))
@@ -216,7 +246,7 @@ end
 
 
 """
-    dtv_regex(d, lex::OrderedDict{String,Int}, eltype::Type{T}=DEFAULT_DTM_TYPE [; tokenizer=DEFAULT_TOKENIZER])
+    dtv_regex(d, lex::OrderedDict{String,Int}, eltype::Type{T}=DEFAULT_DTM_TYPE [; ngram_complexity=DEFAULT_NGRAM_COMPLEXITY, tokenizer=DEFAULT_TOKENIZER])
 
 Creates a document-term-vector with elements of type `T` for document `d`
 using the lexicon `lex`. The tokens of document `d` are assumed to be regular
@@ -232,13 +262,17 @@ julia> dtv_regex(NGramDocument("a..b"), OrderedDict("aaa"=>1, "aaab"=>2, "accb"=
  0.0
 ```
 """
-function dtv_regex(d, lex::OrderedDict{String, Int},
+function dtv_regex(d,
+                   lex::OrderedDict{String, Int},
                    eltype::Type{T}=DEFAULT_DTM_TYPE;
+                   ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY,
                    tokenizer::Symbol=DEFAULT_TOKENIZER,
-                   lex_is_row_indices::Bool=false) where T<:Real
+                   lex_is_row_indices::Bool=false) where {T<:Real}
     p = length(keys(lex))
     column = spzeros(T, p)
-    indices, values = dtm_regex_entries(d, lex, eltype, tokenizer=tokenizer,
+    indices, values = dtm_regex_entries(d, lex, eltype,
+                                        ngram_complexity=ngram_complexity,
+                                        tokenizer=tokenizer,
                                         lex_is_row_indices=lex_is_row_indices)
     column[indices] = values
     return column
@@ -246,30 +280,36 @@ end
 
 
 """
-    hash_dtv(d, h::TextHashFunction, eltype::Type{T}=DEFAULT_DTM_TYPE [; tokenizer=DEFAULT_TOKENIZER])
+    hash_dtv(d, h::TextHashFunction, eltype::Type{T}=DEFAULT_DTM_TYPE [; ngram_complexity=DEFAULT_NGRAM_COMPLEXITY, tokenizer=DEFAULT_TOKENIZER])
 
 Creates a hashed document-term-vector with elements of type `T` for document `d`
 using the hashing function `h`. `d` can be an `AbstractString` or an `AbstractDocument`.
 """
-function hash_dtv(d, h::TextHashFunction, eltype::Type{T}=DEFAULT_DTM_TYPE;
-                 tokenizer::Symbol=DEFAULT_TOKENIZER) where T<:Real
+function hash_dtv(d,
+                  h::TextHashFunction,
+                  eltype::Type{T}=DEFAULT_DTM_TYPE;
+                  ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY,
+                  tokenizer::Symbol=DEFAULT_TOKENIZER) where {T<:Real}
     p = cardinality(h)
     res = spzeros(T, p)
-    ngs = ngrams(d, tokenizer=tokenizer)
+    ngs = ngrams(d, ngram_complexity, tokenizer=tokenizer)
     for ng in keys(ngs)
         res[index_hash(ng, h)] += ngs[ng]
     end
     return res
 end
 
-function hash_dtv(d; cardinality::Int=DEFAULT_CARDINALITY, eltype::Type{T}=DEFAULT_DTM_TYPE,
-                 tokenizer::Symbol=DEFAULT_TOKENIZER) where T<:Real
-    hash_dtv(d, TextHashFunction(cardinality), eltype, tokenizer=tokenizer)
+function hash_dtv(d;
+                  cardinality::Int=DEFAULT_CARDINALITY,
+                  eltype::Type{T}=DEFAULT_DTM_TYPE,
+                  ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY,
+                  tokenizer::Symbol=DEFAULT_TOKENIZER) where {T<:Real}
+    hash_dtv(d, TextHashFunction(cardinality), eltype, ngram_complexity=ngram_complexity, tokenizer=tokenizer)
 end
 
 
 """
-    hash_dtm(crps::Corpus [,h::TextHashFunction], eltype::Type{T}=DEFAULT_DTM_TYPE [; tokenizer=DEFAULT_TOKENIZER])
+    hash_dtm(crps::Corpus [,h::TextHashFunction], eltype::Type{T}=DEFAULT_DTM_TYPE [; ngram_complexity=DEFAULT_NGRAM_COMPLEXITY, tokenizer=DEFAULT_TOKENIZER])
 
 Creates a hashed DTM with elements of type `T` for corpus `crps` using the
 the hashing function `h`. If `h` is missing, the hash function of the `Corpus`
@@ -278,40 +318,46 @@ is used.
 function hash_dtm(crps::Corpus,
                   h::TextHashFunction,
                   eltype::Type{T}=DEFAULT_DTM_TYPE;
-                  tokenizer::Symbol=DEFAULT_TOKENIZER) where T<:Real
+                  ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY,
+                  tokenizer::Symbol=DEFAULT_TOKENIZER) where {T<:Real}
     n, p = length(crps), cardinality(h)
     res = spzeros(T, p, n)
     for (i, doc) in enumerate(crps)
-        res[:, i] = hash_dtv(doc, h, eltype, tokenizer=tokenizer)
+        res[:, i] = hash_dtv(doc, h, eltype, ngram_complexity=ngram_complexity, tokenizer=tokenizer)
     end
     return res
 end
 
-hash_dtm(crps::Corpus, eltype::Type{T}=DEFAULT_DTM_TYPE;
-         tokenizer::Symbol=DEFAULT_TOKENIZER) where T<:Real =
-    hash_dtm(crps, hash_function(crps), eltype, tokenizer=tokenizer)
+hash_dtm(crps::Corpus,
+         eltype::Type{T}=DEFAULT_DTM_TYPE;
+         ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY,
+         tokenizer::Symbol=DEFAULT_TOKENIZER) where {T<:Real} =
+    hash_dtm(crps, hash_function(crps), eltype, ngram_complexity=ngram_complexity, tokenizer=tokenizer)
 
 
 # Produce entries for on-line analysis when DTM would not fit in memory
 struct EachDTV{U, S<:AbstractString, T<:AbstractDocument}
     corpus::Corpus{S,T}
     row_indices::OrderedDict{String, Int}
+    ngram_complexity::Int
     tokenizer::Symbol
     function EachDTV{U,S,T}(corpus::Corpus{S,T},
                             row_indices::OrderedDict{String, Int},
-                            tokenizer::Symbol=DEFAULT_TOKENIZER) where
-            {U, S<:AbstractString, T<:AbstractDocument}
-        isempty(lexicon(corpus)) && update_lexicon!(corpus)
+                            ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY,
+                            tokenizer::Symbol=DEFAULT_TOKENIZER
+                           ) where {U, S<:AbstractString, T<:AbstractDocument}
+        @assert ngram_complexity >= 1 "Ngram complexity has to be >= 1"
         @assert tokenizer in [:default,
             :stringanalysis] "Tokenizer has to be either :default or :stringanalysis"
-        new(corpus, row_indices, tokenizer)
+        new(corpus, row_indices, ngram_complexity, tokenizer)
     end
 end
 
-EachDTV{U}(crps::Corpus{S,T}; tokenizer::Symbol=DEFAULT_TOKENIZER) where {U,S,T} = begin
-    isempty(lexicon(crps)) && update_lexicon!(crps)
-    row_indices = rowindices(collect(keys(lexicon(crps))))
-    EachDTV{U,S,T}(crps, row_indices, tokenizer)
+EachDTV{U}(crps::Corpus{S,T};
+           ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY,
+           tokenizer::Symbol=DEFAULT_TOKENIZER) where {U,S,T} = begin
+    row_indices = rowindices(collect(keys(create_lexicon(crps, ngram_complexity))))
+    EachDTV{U,S,T}(crps, row_indices, ngram_complexity, tokenizer)
 end
 
 Base.iterate(edt::EachDTV, state=1) = begin
@@ -324,10 +370,11 @@ end
 
 next(edt::EachDTV{U,S,T}, state::Int) where {U,S,T} =
     (dtv(edt.corpus.documents[state], edt.row_indices, U,
+         ngram_complexity=edt.ngram_complexity,
          tokenizer=edt.tokenizer, lex_is_row_indices=true), state + 1)
 
 """
-    each_dtv(crps::Corpus [; eltype::Type{U}=DEFAULT_DTM_TYPE, tokenizer=DEFAULT_TOKENIZER])
+    each_dtv(crps::Corpus [; eltype::Type{U}=DEFAULT_DTM_TYPE, ngram_complexity=DEFAULT_NGRAM_COMPLEXITY, tokenizer=DEFAULT_TOKENIZER])
 
 Iterates through the columns of the DTM of the corpus `crps` without
 constructing it. Useful when the DTM would not fit in memory.
@@ -335,8 +382,9 @@ constructing it. Useful when the DTM would not fit in memory.
 """
 each_dtv(crps::Corpus;
          eltype::Type{U}=DEFAULT_DTM_TYPE,
+         ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY,
          tokenizer::Symbol=DEFAULT_TOKENIZER) where U<:Real =
-    EachDTV{U}(crps, tokenizer=tokenizer)
+    EachDTV{U}(crps, ngram_complexity=ngram_complexity, tokenizer=tokenizer)
 
 Base.eltype(::Type{EachDTV{U,S,T}}) where {U,S,T} = Vector{U}
 
@@ -351,17 +399,23 @@ Base.show(io::IO, edt::EachDTV{U,S,T}) where {U,S,T} =
 
 struct EachHashDTV{U, S<:AbstractString, T<:AbstractDocument}
     corpus::Corpus{S,T}
+    ngram_complexity::Int
     tokenizer::Symbol
-    function EachHashDTV{U,S,T}(corpus::Corpus{S,T}, tokenizer::Symbol=DEFAULT_TOKENIZER) where
+    function EachHashDTV{U,S,T}(corpus::Corpus{S,T},
+                                ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY,
+                                tokenizer::Symbol=DEFAULT_TOKENIZER) where
             {U, S<:AbstractString, T<:AbstractDocument}
+        @assert ngram_complexity >= 1 "Ngram complexity has to be >= 1"
         @assert tokenizer in [:default,
             :stringanalysis] "Tokenizer has to be either :default or :stringanalysis"
-        new(corpus, tokenizer)
+        new(corpus, ngram_complexity, tokenizer)
     end
 end
 
-EachHashDTV{U}(crps::Corpus{S,T}; tokenizer::Symbol=DEFAULT_TOKENIZER) where {U,S,T} =
-    EachHashDTV{U,S,T}(crps)
+EachHashDTV{U}(crps::Corpus{S,T};
+               ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY,
+               tokenizer::Symbol=DEFAULT_TOKENIZER) where {U,S,T} =
+    EachHashDTV{U,S,T}(crps, ngram_complexity, tokenizer)
 
 Base.iterate(edt::EachHashDTV, state=1) = begin
     if state > length(edt.corpus)
@@ -372,10 +426,12 @@ Base.iterate(edt::EachHashDTV, state=1) = begin
 end
 
 next(edt::EachHashDTV{U,S,T}, state::Int) where {U,S,T} =
-    (hash_dtv(edt.corpus.documents[state], edt.corpus.h, U, tokenizer=edt.tokenizer), state + 1)
+    (hash_dtv(edt.corpus.documents[state], edt.corpus.h, U,
+              ngram_complexity=edt.ngram_complexity,
+              tokenizer=edt.tokenizer), state + 1)
 
 """
-    each_hash_dtv(crps::Corpus [; eltype::Type{U}=DEFAULT_DTM_TYPE, tokenizer=DEFAULT_TOKENIZER])
+    each_hash_dtv(crps::Corpus [; eltype::Type{U}=DEFAULT_DTM_TYPE, ngram_complexity=DEFAULT_NGRAM_COMPLEXITY, tokenizer=DEFAULT_TOKENIZER])
 
 Iterates through the columns of the hashed DTM of the corpus `crps` without
 constructing it. Useful when the DTM would not fit in memory.
@@ -383,8 +439,9 @@ constructing it. Useful when the DTM would not fit in memory.
 """
 each_hash_dtv(crps::Corpus;
               eltype::Type{U}=DEFAULT_DTM_TYPE,
+              ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY,
               tokenizer::Symbol=DEFAULT_TOKENIZER) where U<:Real =
-    EachHashDTV{U}(crps, tokenizer=tokenizer)
+    EachHashDTV{U}(crps, ngram_complexity=ngram_complexity, tokenizer=tokenizer)
 
 Base.eltype(::Type{EachHashDTV{U,S,T}}) where {U,S,T} = Vector{U}
 
