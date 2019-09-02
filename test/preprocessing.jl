@@ -38,9 +38,6 @@
     c_flags = StringAnalysis.flag_generate(v...)
     @test c_flags isa UInt32
     @test c_flags == reduce(|, v)
-    # Minimal test of sparse/frequent terms
-    @test sparse_terms(crps) isa Vector{String}
-    @test frequent_terms(crps) isa Vector{String}
 end
 
 
@@ -137,4 +134,32 @@ end
     #Test #62
     StringAnalysis.remove_corrupt_utf8("abc") == "abc"
     StringAnalysis.remove_corrupt_utf8(String([0x43, 0xf0])) == "C "
+
+    # Minimal test of sparse/frequent terms
+    doc = "a a a a a a a a a a a b cx c c c c c c c v"
+    sd = StringDocument(doc)
+    ngd = NGramDocument(doc)
+    crps = Corpus(AbstractDocument[sd, ngd])
+
+    # Sparsity/frequency at document level
+    st = sparse_terms(doc, 0.1)
+    @test st isa Vector{String}
+    @test length(st) == 3
+    @test isempty(setdiff(st, ["b","cx","v"]))
+
+    ft = frequent_terms(doc, 0.5)
+    @test ft isa Vector{String}
+    @test length(ft) == 1
+    @test isempty(setdiff(ft, ["a"]))
+
+    # Sparsity/frequency at corpus level
+    # (all letters are frequent since they appear in both documents)
+    st = sparse_terms(crps, 0.1)
+    @test st isa Vector{String}
+    @test length(st) == 0
+
+    ft = frequent_terms(crps, 0.5)
+    @test ft isa Vector{String}
+    @test length(ft) == 5
+    @test isempty(setdiff(ft, ["a", "b","c", "cx","v"]))
 end

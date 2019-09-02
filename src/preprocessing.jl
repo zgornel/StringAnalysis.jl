@@ -42,12 +42,12 @@ const strip_articles = flag_generate(
 const strip_everything = flag_generate(
                             [0,1,2,3,
                             9,10,11,12,13,
-                            20,21,22,23,24,25,26])
+                            20,21,22,23,24])
 const strip_everything_stem = flag_generate(
                                 [0,1,2,3,
                                  7,
                                  9,10,11,12,13,
-                                 20,21,22,23,24,25,26])
+                                 20,21,22,23,24])
 
 # RegEx Expressions for various stripping flags
 # Format: flag => (match=>replacement)
@@ -225,17 +225,13 @@ function remove_words!(entity, words::Vector{T}) where T<: AbstractString
 end
 
 
-
-const alpha_sparse = 0.05
-const alpha_frequent = 0.95
-
 """
     sparse_terms(crps::Corpus, alpha)
 
 Returns a vector with rare terms among all documents. The parameter
 `alpha` indicates the sparsity threshold (a frequency <= alpha means sparse).
 """
-function sparse_terms(crps::Corpus, alpha = DEFAULT_CORPUS_SPARSITY)
+function sparse_terms(crps::Corpus, alpha=DEFAULT_CORPUS_SPARSITY)
     isempty(crps.lexicon) && update_lexicon!(crps)
     isempty(crps.inverse_index) && update_inverse_index!(crps)
     res = Vector{String}(undef, 0)
@@ -249,13 +245,14 @@ function sparse_terms(crps::Corpus, alpha = DEFAULT_CORPUS_SPARSITY)
     return res
 end
 
+
 """
     frequent_terms(crps::Corpus, alpha)
 
 Returns a vector with frequent terms among all documents. The parameter
 `alpha` indicates the sparsity threshold (a frequency <= alpha means sparse).
 """
-function frequent_terms(crps::Corpus, alpha = 1.0 - DEFAULT_CORPUS_SPARSITY)
+function frequent_terms(crps::Corpus, alpha=1.0-DEFAULT_CORPUS_SPARSITY)
     isempty(crps.lexicon) && update_lexicon!(crps)
     isempty(crps.inverse_index) && update_inverse_index!(crps)
     res = Vector{String}(undef, 0)
@@ -269,13 +266,14 @@ function frequent_terms(crps::Corpus, alpha = 1.0 - DEFAULT_CORPUS_SPARSITY)
     return res
 end
 
+
 """
     sparse_terms(doc, alpha)
 
 Returns a vector with rare terms in the document `doc`. The parameter
 `alpha` indicates the sparsity threshold (a frequency <= alpha means sparse).
 """
-function sparse_terms(doc, alpha = DEFAULT_DOC_SPARSITY)
+function sparse_terms(doc, alpha=DEFAULT_DOC_SPARSITY)
     ng = ngrams(doc)
     n = sum(values(ng))
     res = Vector{String}(undef, 0)
@@ -287,13 +285,14 @@ function sparse_terms(doc, alpha = DEFAULT_DOC_SPARSITY)
     return res
 end
 
+
 """
     frequent_terms(doc, alpha)
 
 Returns a vector with frequent terms in the document `doc`. The parameter
 `alpha` indicates the sparsity threshold (a frequency <= alpha means sparse).
 """
-function frequent_terms(doc, alpha = 1.0 - DEFAULT_DOC_SPARSITY)
+function frequent_terms(doc, alpha=1.0-DEFAULT_DOC_SPARSITY)
     ng = ngrams(doc)
     n = sum(values(ng))
     res = Vector{String}(undef, 0)
@@ -307,8 +306,10 @@ end
 
 
 # Function that builds a regex out of a set of strings
-_build_words_pattern(words::Vector{T}) where T<:AbstractString =
+_build_words_pattern(words::Vector{T}) where T<:AbstractString = begin
     Regex(ifelse(isempty(words), "", "\\b("* join(words,"|","|") *")\\b"))
+end
+
 
 # Function that builds a big regex out of a set of regexes
 _build_regex_pattern(regexes::Vector{T}) where T<:Regex = begin
@@ -336,8 +337,10 @@ end
 
 function prepare!(entity,  # can be an AbstractDocument or Corpus
                   flags::UInt32;
-                  skip_patterns = Vector{Regex}(),
-                  skip_words = Vector{AbstractString}())
+                  skip_patterns=Vector{Regex}(),
+                  skip_words=Vector{String}(),
+                  alpha_sparse=0.05,
+                  alpha_frequent=0.95)
     # Do function-based stripping
     ((flags & strip_corrupt_utf8) > 0) && remove_corrupt_utf8!(entity)
     ((flags & strip_html_tags) > 0) && remove_html_tags!(entity)
@@ -364,12 +367,12 @@ function prepare!(entity,  # can be an AbstractDocument or Corpus
     ((flags & strip_prepositions) > 0) && union!(skip_words, prepositions(language))
     ((flags & strip_pronouns) > 0) && union!(skip_words, pronouns(language))
     ((flags & strip_stopwords) > 0) && union!(skip_words, stopwords(language))
+    # sparse, frequent terms
+    ((flags & strip_sparse_terms) > 0) && union!(skip_words, sparse_terms(entity, alpha_sparse))
+    ((flags & strip_frequent_terms) > 0) && union!(skip_words, frequent_terms(entity, alpha_frequent))
     if !isempty(skip_words)
         push!(rpatterns, _build_words_pattern(skip_words))
     end
-    # sparse, frequent terms
-    ((flags & strip_sparse_terms) > 0) && union!(skip_words, sparse_terms(entity))
-    ((flags & strip_frequent_terms) > 0) && union!(skip_words, frequent_terms(entity))
     # custom regex
     if !isempty(skip_patterns)
         push!(rpatterns, _build_regex_pattern(skip_patterns))
@@ -388,7 +391,9 @@ function prepare(s::AbstractString,
                  flags::UInt32;
                  language::Language = DEFAULT_LANGUAGE,
                  skip_patterns = Vector{Regex}(),
-                 skip_words = Vector{AbstractString}())
+                 skip_words = Vector{String}(),
+                 alpha_sparse=0.05,
+                 alpha_frequent=0.95)
     os = s  # Initialize output string
     # Do function-based stripping
     ((flags & strip_corrupt_utf8) > 0) && (os = remove_corrupt_utf8(os))
@@ -415,12 +420,12 @@ function prepare(s::AbstractString,
     ((flags & strip_prepositions) > 0) && union!(skip_words, prepositions(language))
     ((flags & strip_pronouns) > 0) && union!(skip_words, pronouns(language))
     ((flags & strip_stopwords) > 0) && union!(skip_words, stopwords(language))
+    # sparse, frequent terms
+    ((flags & strip_sparse_terms) > 0) && union!(skip_words, sparse_terms(os, alpha_sparse))
+    ((flags & strip_frequent_terms) > 0) && union!(skip_words, frequent_terms(os, alpha_frequent))
     if !isempty(skip_words)
         push!(rpatterns, _build_words_pattern(skip_words))
     end
-    # sparse, frequent terms
-    ((flags & strip_sparse_terms) > 0) && union!(skip_words, sparse_terms(os))
-    ((flags & strip_frequent_terms) > 0) && union!(skip_words, frequent_terms(os))
     # custom regex
     if !isempty(skip_patterns)
         push!(rpatterns, _build_regex_pattern(skip_patterns))
