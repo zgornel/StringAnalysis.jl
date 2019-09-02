@@ -52,7 +52,6 @@ Corpus(docs::Vector{AbstractDocument};
 end
 
 
-
 # Construct a Corpus from a directory of text files
 function DirectoryCorpus(dirname::AbstractString;
                          hash_function::Function = DEFAULT_HASH_FUNCTION,
@@ -100,7 +99,6 @@ Base.length(crps::Corpus) = length(crps.documents)
 Base.size(crps, i) = size(crps.documents, i)
 
 
-
 # Treat a Corpus as a container
 Base.push!(crps::Corpus, d::AbstractDocument) = push!(crps.documents, d)
 
@@ -135,30 +133,34 @@ function Base.setindex!(crps::Corpus, d::AbstractDocument, ind::Real)
 end
 
 
-
 # Lexicon and inverse index
 lexicon(crps::Corpus) = crps.lexicon
 
-function update_lexicon!(crps::Corpus, doc::AbstractDocument, n::Int=DEFAULT_NGRAM_COMPLEXITY)
-    ngs = ngrams(doc, n)
+function update_lexicon!(crps::Corpus,
+                         doc::AbstractDocument,
+                         ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY)
+    ngs = ngrams(doc, ngram_complexity)
     for (ngram, counts) in ngs
         crps.total_terms += counts
         crps.lexicon[ngram] = get(crps.lexicon, ngram, 0) + counts
     end
 end
 
-function update_lexicon!(crps::Corpus, n::Int=DEFAULT_NGRAM_COMPLEXITY)
+function update_lexicon!(crps::Corpus,
+                         ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY)
     crps.total_terms = 0
     crps.lexicon = OrderedDict{String,Int}()
     for doc in crps
-        update_lexicon!(crps, doc, n)
+        update_lexicon!(crps, doc, ngram_complexity)
     end
 end
 
-function create_lexicon(crps::Corpus{S,T}, n::Int=DEFAULT_NGRAM_COMPLEXITY) where {S,T}
+function create_lexicon(crps::Corpus{S,T},
+                        ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY
+                       ) where {S,T}
     lexicon = OrderedDict{S, Int}()
     for doc in crps
-        ngs = ngrams(doc, n)
+        ngs = ngrams(doc, ngram_complexity)
         for (ngram, counts) in ngs
             lexicon[ngram] = get(lexicon, ngram, 0) + counts
         end
@@ -172,16 +174,16 @@ lexical_frequency(crps::Corpus, term::AbstractString) =
     (get(crps.lexicon, term, 0) / crps.total_terms)
 
 
-
 # Work with the Corpus's inverse index
-# TODO: offer progressive update that only changes based on current document
 inverse_index(crps::Corpus) = crps.inverse_index
 
-function create_inverse_index(crps::Corpus{S,T}, n::Int=DEFAULT_NGRAM_COMPLEXITY) where {S,T}
+function create_inverse_index(crps::Corpus{S,T},
+                              ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY
+                             ) where {S,T}
     idx = OrderedDict{S, Vector{Int}}()
     for i in 1:length(crps)
         doc = crps.documents[i]
-        ngram_arr = collect(S, keys(ngrams(doc, n)))
+        ngram_arr = collect(S, keys(ngrams(doc, ngram_complexity)))
         for ngram in ngram_arr
             if haskey(idx, ngram)
                 push!(idx[ngram], i)
@@ -196,8 +198,9 @@ function create_inverse_index(crps::Corpus{S,T}, n::Int=DEFAULT_NGRAM_COMPLEXITY
     return idx
 end
 
-function update_inverse_index!(crps::Corpus, n::Int=DEFAULT_NGRAM_COMPLEXITY)
-    crps.inverse_index = create_inverse_index(crps, n)
+function update_inverse_index!(crps::Corpus,
+                               ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY)
+    crps.inverse_index = create_inverse_index(crps, ngram_complexity)
     return nothing
 end
 

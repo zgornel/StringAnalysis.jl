@@ -23,14 +23,16 @@
     end
 
     @test isempty(lexicon(crps))
-    update_lexicon!(crps)
-    @test !isempty(lexicon(crps))
-    @test lexicon(crps) == create_lexicon(crps)
-
     @test isempty(inverse_index(crps))
-    update_inverse_index!(crps)
-    @test !isempty(inverse_index(crps))
-    @test inverse_index(crps) == create_inverse_index(crps)
+    for ngram_complexity in [1,2]
+        update_lexicon!(crps, ngram_complexity)
+        @test !isempty(lexicon(crps))
+        @test lexicon(crps) == create_lexicon(crps, ngram_complexity)
+
+        update_inverse_index!(crps, ngram_complexity)
+        @test !isempty(inverse_index(crps))
+        @test inverse_index(crps) == create_inverse_index(crps, ngram_complexity)
+    end
 
     @test hash_function(hash_function(crps)) === hash
     hash_function!(crps, TextHashFunction(hash, 10))
