@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Usage examples ·   </title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><a href="../index.html"><img class="logo" src="../assets/logo.png" alt="   logo"/></a><h1>  </h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../">Introduction</a></li><li class="current"><a class="toctext" href>Usage examples</a><ul class="internal"><li><a class="toctext" href="#Documents-1">Documents</a></li><li><a class="toctext" href="#Documents-and-types-1">Documents and types</a></li><li><a class="toctext" href="#Metadata-1">Metadata</a></li><li><a class="toctext" href="#Corpus-1">Corpus</a></li><li><a class="toctext" href="#The-lexicon-and-inverse-index-1">The lexicon and inverse index</a></li><li><a class="toctext" href="#Preprocessing-1">Preprocessing</a></li><li><a class="toctext" href="#Features-1">Features</a></li><li><a class="toctext" href="#Dimensionality-reduction-1">Dimensionality reduction</a></li><li><a class="toctext" href="#Semantic-Analysis-1">Semantic Analysis</a></li></ul></li><li><a class="toctext" href="../doc_extensions/">More on documents</a></li><li><a class="toctext" href="../api/">API Reference</a></li></ul></nav><article id="docs"><header><nav><ul><li><a href>Usage examples</a></li></ul><a class="edit-page" href="https://github.com/zgornel/StringAnalysis.jl/blob/master/docs/src/examples.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Usage examples</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Usage-examples-1" href="#Usage-examples-1">Usage examples</a></h1><h2><a class="nav-anchor" id="Documents-1" href="#Documents-1">Documents</a></h2><p>Documents are simple wrappers around basic structures that contain text. The underlying data representation can be simple strings, dictionaries or vectors of strings. All document types are subtypes of the parametric type <code>AbstractDocument{T}</code> where <code>T&lt;:AbstractString</code>.</p><pre><code class="language-julia-repl">julia&gt; using StringAnalysis
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Usage examples ·   </title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><a href="../"><img class="logo" src="../assets/logo.png" alt="   logo"/></a><h1>  </h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li><a class="toctext" href="../">Introduction</a></li><li class="current"><a class="toctext" href>Usage examples</a><ul class="internal"><li><a class="toctext" href="#Documents-1">Documents</a></li><li><a class="toctext" href="#Documents-and-types-1">Documents and types</a></li><li><a class="toctext" href="#Metadata-1">Metadata</a></li><li><a class="toctext" href="#Corpus-1">Corpus</a></li><li><a class="toctext" href="#The-lexicon-and-inverse-index-1">The lexicon and inverse index</a></li><li><a class="toctext" href="#Preprocessing-1">Preprocessing</a></li><li><a class="toctext" href="#Features-1">Features</a></li><li><a class="toctext" href="#Dimensionality-reduction-1">Dimensionality reduction</a></li><li><a class="toctext" href="#Semantic-Analysis-1">Semantic Analysis</a></li></ul></li><li><a class="toctext" href="../doc_extensions/">More on documents</a></li><li><a class="toctext" href="../api/">API Reference</a></li></ul></nav><article id="docs"><header><nav><ul><li><a href>Usage examples</a></li></ul><a class="edit-page" href="https://github.com/zgornel/StringAnalysis.jl/blob/master/docs/src/examples.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Usage examples</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Usage-examples-1" href="#Usage-examples-1">Usage examples</a></h1><h2><a class="nav-anchor" id="Documents-1" href="#Documents-1">Documents</a></h2><p>Documents are simple wrappers around basic structures that contain text. The underlying data representation can be simple strings, dictionaries or vectors of strings. All document types are subtypes of the parametric type <code>AbstractDocument{T}</code> where <code>T&lt;:AbstractString</code>.</p><pre><code class="language-julia-repl">julia&gt; using StringAnalysis
 
 julia&gt; sd = StringDocument(&quot;this is a string document&quot;)
 A StringDocument{String}
@@ -136,19 +136,31 @@ OrderedCollections.OrderedDict{String,Array{Int64,1}} with 7 entries:
   &quot;is&quot;       =&gt; [1, 2, 3]
   &quot;a&quot;        =&gt; [1, 2, 3]
   &quot;ngram&quot;    =&gt; [2]
-  &quot;token&quot;    =&gt; [3]</code></pre><p>The ngram complexity can be specified as well:</p><pre><code class="language-julia-repl">julia&gt; update_inverse_index!(crps, 2)
+  &quot;token&quot;    =&gt; [3]</code></pre><p>It is possible to explicitly create the lexicon and inverse index:</p><pre><code class="language-julia-repl">julia&gt; create_lexicon(Corpus([sd]))
+OrderedCollections.OrderedDict{String,Int64} with 5 entries:
+  &quot;string&quot;   =&gt; 1
+  &quot;document&quot; =&gt; 1
+  &quot;this&quot;     =&gt; 1
+  &quot;is&quot;       =&gt; 1
+  &quot;a&quot;        =&gt; 1
 
-julia&gt; crps.inverse_index
-OrderedCollections.OrderedDict{String,Array{Int64,1}} with 7 entries:
+julia&gt; create_inverse_index(Corpus([sd]))
+OrderedCollections.OrderedDict{String,Array{Int64,1}} with 5 entries:
   &quot;string&quot;   =&gt; [1]
-  &quot;document&quot; =&gt; [1, 2, 3]
-  &quot;this&quot;     =&gt; [1, 2, 3]
-  &quot;is&quot;       =&gt; [1, 2, 3]
-  &quot;a&quot;        =&gt; [1, 2, 3]
-  &quot;ngram&quot;    =&gt; [2]
-  &quot;token&quot;    =&gt; [3]
-
-julia&gt; update_inverse_index!(crps)  # default ngram complexity is 1</code></pre><div class="admonition note"><div class="admonition-title">Note</div><div class="admonition-text"><p>From version <code>v0.3.9</code>, the lexicon and inverse index can be created with the <code>create_lexicon</code> and <code>create_inverse_index</code> functions respectively. Both functions support specifying the ngram complexity.</p></div></div><h2><a class="nav-anchor" id="Preprocessing-1" href="#Preprocessing-1">Preprocessing</a></h2><p>The text preprocessing mainly consists of the <code>prepare</code> and <code>prepare!</code> functions and preprocessing flags which start mostly with <code>strip_</code> except for <code>stem_words</code>. The preprocessing function <code>prepare</code> works on <code>AbstractDocument</code>, <code>Corpus</code> and <code>AbstractString</code> types, returning new objects; <code>prepare!</code> works only on <code>AbstractDocument</code>s and <code>Corpus</code> as strings are immutable.</p><pre><code class="language-julia-repl">julia&gt; str=&quot;This is a text containing words, some more words, a bit of punctuation and 1 number...&quot;;
+  &quot;document&quot; =&gt; [1]
+  &quot;this&quot;     =&gt; [1]
+  &quot;is&quot;       =&gt; [1]
+  &quot;a&quot;        =&gt; [1]</code></pre><p>Ngram complexity can be specified as a second parameter</p><pre><code class="language-julia-repl">julia&gt; create_lexicon(Corpus([sd]), 2)
+OrderedCollections.OrderedDict{String,Int64} with 9 entries:
+  &quot;this is&quot;         =&gt; 1
+  &quot;string&quot;          =&gt; 1
+  &quot;document&quot;        =&gt; 1
+  &quot;this&quot;            =&gt; 1
+  &quot;is&quot;              =&gt; 1
+  &quot;string document&quot; =&gt; 1
+  &quot;is a&quot;            =&gt; 1
+  &quot;a&quot;               =&gt; 1
+  &quot;a string&quot;        =&gt; 1</code></pre><div class="admonition note"><div class="admonition-title">Note</div><div class="admonition-text"><p>The <code>create_lexicon</code> and <code>create_inverse_index</code> functions are available from <code>v0.3.9</code>. Both functions support specifying the ngram complexity.</p></div></div><h2><a class="nav-anchor" id="Preprocessing-1" href="#Preprocessing-1">Preprocessing</a></h2><p>The text preprocessing mainly consists of the <code>prepare</code> and <code>prepare!</code> functions and preprocessing flags which start mostly with <code>strip_</code> except for <code>stem_words</code>. The preprocessing function <code>prepare</code> works on <code>AbstractDocument</code>, <code>Corpus</code> and <code>AbstractString</code> types, returning new objects; <code>prepare!</code> works only on <code>AbstractDocument</code>s and <code>Corpus</code> as strings are immutable.</p><pre><code class="language-julia-repl">julia&gt; str=&quot;This is a text containing words, some more words, a bit of punctuation and 1 number...&quot;;
 
 julia&gt; sd = StringDocument(str);
 
@@ -340,12 +352,9 @@ julia&gt; Matrix(coom(C))
 julia&gt; density = 0.2;  # percentage of non-zero elements
 
 julia&gt; R = StringAnalysis.random_projection_matrix(m, k, T, density)
-10×2 SparseArrays.SparseMatrixCSC{Float32,Int64} with 5 stored entries:
-  [9 ,  1]  =  -0.707107
-  [1 ,  2]  =  0.707107
-  [2 ,  2]  =  0.707107
-  [3 ,  2]  =  0.707107
-  [10,  2]  =  -0.707107</code></pre><p>Building a random projection model from a <code>DocumentTermMatrix</code> or <code>Corpus</code> is straightforward</p><pre><code class="language-julia-repl">julia&gt; M = DocumentTermMatrix{Float32}(crps)
+10×2 SparseArrays.SparseMatrixCSC{Float32,Int64} with 2 stored entries:
+  [1 ,  1]  =  0.707107
+  [1 ,  2]  =  0.707107</code></pre><p>Building a random projection model from a <code>DocumentTermMatrix</code> or <code>Corpus</code> is straightforward</p><pre><code class="language-julia-repl">julia&gt; M = DocumentTermMatrix{Float32}(crps)
 A 7x3 DocumentTermMatrix{Float32}
 
 julia&gt; model = RPModel(M, k=2, density=0.5, stats=:tf)
@@ -357,38 +366,36 @@ A StringDocument{String}
 
 julia&gt; embed_document(model, doc)
 2-element SparseArrays.SparseVector{Float32,Int64} with 1 stored entry:
-  [1]  =  -1.0
+  [1]  =  1.0
 
 julia&gt; embed_document(model2, doc)
-17-element SparseArrays.SparseVector{Float32,Int64} with 6 stored entries:
-  [1 ]  =  -0.267261
-  [3 ]  =  -0.267261
-  [5 ]  =  -0.267261
-  [7 ]  =  -0.267261
-  [8 ]  =  -0.267261
-  [14]  =  0.801784</code></pre><p>Embedding a DTM or corpus can be done in a similar way:</p><pre><code class="language-julia-repl">julia&gt; Matrix(embed_document(model, M))
+17-element SparseArrays.SparseVector{Float32,Int64} with 4 stored entries:
+  [1 ]  =  -0.5
+  [5 ]  =  -0.5
+  [13]  =  -0.5
+  [16]  =  -0.5</code></pre><p>Embedding a DTM or corpus can be done in a similar way:</p><pre><code class="language-julia-repl">julia&gt; Matrix(embed_document(model, M))
 2×3 Array{Float32,2}:
- -1.0  -1.0  -0.894427
-  0.0   0.0   0.447214
+ 1.0  1.0  1.0
+ 0.0  0.0  0.0
 
 julia&gt; Matrix(embed_document(model2, crps))
 17×3 Array{Float32,2}:
- -0.236757  -0.236405  -0.267261
-  0.0        0.0        0.0
- -0.236757  -0.236405  -0.267261
-  0.0        0.0        0.0
- -0.236757  -0.236405  -0.267261
-  0.0        0.0        0.0
- -0.236757  -0.236405  -0.267261
-  0.230385  -0.236405  -0.267261
-  0.0        0.0        0.0
-  0.0       -0.466448   0.0
-  0.0        0.0        0.0
- -0.467142   0.0        0.0
-  0.0        0.0        0.0
-  0.710271   0.709216   0.801784
+ -0.357144  -0.357144  -0.5
   0.0        0.0        0.0
   0.0        0.0        0.0
+  0.0        0.0        0.0
+ -0.357144  -0.357144  -0.5
+ -0.704675   0.0        0.0
+  0.0        0.0        0.0
+  0.0        0.704675   0.0
+  0.0        0.0        0.0
+  0.0        0.0        0.0
+  0.0        0.0        0.0
+  0.0        0.0        0.0
+  0.347532  -0.357144  -0.5
+  0.0        0.0        0.0
+  0.0        0.0        0.0
+ -0.357144   0.347532  -0.5
   0.0        0.0        0.0</code></pre><p>Random projection models can be saved/loaded to/from disk using a text format.</p><pre><code class="language-julia-repl">julia&gt; file = &quot;model.txt&quot;
 &quot;model.txt&quot;
 
@@ -398,7 +405,7 @@ Random Projection model (tf), 7 terms, dimensionality 2, Float32 vectors
 julia&gt; save_rp_model(model, file)  # model saved
 
 julia&gt; print(join(readlines(file)[1:5], &quot;\n&quot;))  # first five lines
-Random Projection Model saved at 2019-09-02T15:45:06.551
+Random Projection Model saved at 2019-09-03T08:49:38.183
 7 2
 true
 tf
@@ -440,55 +447,55 @@ LSA Model (tfidf), 38 terms, dimensionality 4, Float32 vectors</code></pre><p>On
 
 julia&gt; embed_document(lm, query)
 4-element Array{Float32,1}:
-  0.7322525
- -0.14379697
-  0.31717208
- -0.58526045</code></pre><p>embed the corpus,</p><pre><code class="language-julia-repl">julia&gt; V = embed_document(lm, crps)
+ -0.73225164
+ -0.14379373
+  0.31717396
+  0.58526134</code></pre><p>embed the corpus,</p><pre><code class="language-julia-repl">julia&gt; V = embed_document(lm, crps)
 4×5 Array{Float32,2}:
-  0.735055    0.822174   0.361583   0.369554   0.267475
-  0.127935   -0.281856  -0.155935  -0.312649   0.925018
-  0.0854204   0.393243   0.43253   -0.844547  -0.16556
- -0.660325   -0.299911   0.811085   0.228955   0.213047</code></pre><p>search for matching documents,</p><pre><code class="language-julia-repl">julia&gt; idxs, corrs = cosine(lm, crps, query);
+ -0.735057   -0.822172  -0.361583  -0.369556  -0.267474
+  0.127936   -0.28185   -0.155934  -0.312649   0.92502
+  0.0854164   0.393247   0.43253   -0.844546  -0.165552
+  0.660323    0.299915  -0.811086  -0.228956  -0.213045</code></pre><p>search for matching documents,</p><pre><code class="language-julia-repl">julia&gt; idxs, corrs = cosine(lm, crps, query);
 
 julia&gt; for (idx, corr) in zip(idxs, corrs)
            println(&quot;$corr -&gt; \&quot;$(crps[idx].text)\&quot;&quot;);
        end
-0.9428209 -&gt; &quot;Pears and apples are good but not exotic  An apple a day keeps the doctor away &quot;
-0.9334045 -&gt; &quot;This is a text about an apple  There are many texts about apples &quot;
--0.05031693 -&gt; &quot;Fruits are good for you &quot;
--0.08630064 -&gt; &quot;This phrase has nothing to do with the others &quot;
--0.11435445 -&gt; &quot;Simple text  little info inside&quot;</code></pre><p>or check for structure within the data</p><pre><code class="language-julia-repl">julia&gt; U = lm.Uᵀ;
+0.9428219 -&gt; &quot;Pears and apples are good but not exotic  An apple a day keeps the doctor away &quot;
+0.93340397 -&gt; &quot;This is a text about an apple  There are many texts about apples &quot;
+-0.050317943 -&gt; &quot;Fruits are good for you &quot;
+-0.08630258 -&gt; &quot;This phrase has nothing to do with the others &quot;
+-0.11434965 -&gt; &quot;Simple text  little info inside&quot;</code></pre><p>or check for structure within the data</p><pre><code class="language-julia-repl">julia&gt; U = lm.Uᵀ;
 
 julia&gt; V&#39;*V  # document to document similarity
 5×5 Array{Float32,2}:
-  1.0          0.799914    -0.252799     0.00831687   0.160129
-  0.799914     1.0          0.268071    -0.00881855  -0.169811
- -0.252799     0.268071     1.0          0.00278728   0.0536615
-  0.00831687  -0.00881855   0.00278728   1.0         -0.00175903
-  0.160129    -0.169811     0.0536615   -0.00175903   1.0
+  1.0          0.799915    -0.252799     0.00832212   0.160133
+  0.799915     1.0          0.268068    -0.00882414  -0.169806
+ -0.252799     0.268068     1.0          0.00278896   0.0536638
+  0.00832212  -0.00882414   0.00278896   1.0         -0.00176652
+  0.160133    -0.169806     0.0536638   -0.00176652   1.0
 
 julia&gt; U&#39;*U  # term to term similarity
 38×38 Array{Float32,2}:
-  0.0487289    0.0633796    0.0633796   …   0.00940035    0.00940036
-  0.0633796    0.0906999    0.0906999      -0.00766004   -0.00766004
-  0.0633796    0.0906999    0.0906999      -0.00766004   -0.00766004
-  0.0633796    0.0906999    0.0906999      -0.00766004   -0.00766004
-  0.0487289    0.0633796    0.0633796       0.00940035    0.00940036
-  0.0487289    0.0633796    0.0633796   …   0.00940036    0.00940036
-  0.0487289    0.0633796    0.0633796       0.00940036    0.00940036
-  0.0689131    0.0896323    0.0896323       0.0132941     0.0132941
-  0.0341387    0.0431568    0.0431568       0.00776704    0.00776703
-  0.025        0.0599408    0.0599408       0.00433529    0.00433528
+  0.0487286    0.0633794    0.0633794   …   0.0094007     0.0094007
+  0.0633794    0.0907001    0.0907001      -0.00765949   -0.0076595
+  0.0633794    0.0907001    0.0907001      -0.00765949   -0.00765949
+  0.0633794    0.0907001    0.0907001      -0.00765949   -0.00765949
+  0.0487286    0.0633794    0.0633794       0.0094007     0.0094007
+  0.0487286    0.0633794    0.0633794   …   0.0094007     0.0094007
+  0.0487286    0.0633794    0.0633794       0.0094007     0.0094007
+  0.0689126    0.0896321    0.0896321       0.0132946     0.0132946
+  0.0341389    0.0431568    0.0431568       0.00776632    0.00776631
+  0.0249999    0.0599409    0.0599409       0.00433602    0.00433601
   ⋮                                     ⋱
- -0.00542834  -0.00864061  -0.00864061      0.00045115    0.000451143
- -0.00542834  -0.00864061  -0.00864061  …   0.000451147   0.000451139
- -0.00542834  -0.00864061  -0.00864061      0.000451142   0.000451135
- -0.00542834  -0.00864061  -0.00864061      0.000451147   0.000451139
- -0.00542834  -0.00864061  -0.00864062      0.00045114    0.000451133
-  0.00940035  -0.00766005  -0.00766004      0.207997      0.207997
-  0.00940035  -0.00766005  -0.00766005  …   0.207997      0.207997
-  0.00940035  -0.00766004  -0.00766004      0.207997      0.207997
-  0.00940036  -0.00766004  -0.00766004      0.207997      0.207997</code></pre><p>LSA models can be saved/loaded to/from disk using a text format similar to the random projection model one.</p><pre><code class="language-julia-repl">julia&gt; file = &quot;model.txt&quot;
+ -0.00542768  -0.00864051  -0.00864051      0.000449872   0.000449874
+ -0.00542768  -0.00864051  -0.00864051  …   0.000449877   0.000449875
+ -0.00542768  -0.00864052  -0.00864051      0.000449876   0.000449878
+ -0.00542768  -0.00864052  -0.00864051      0.000449872   0.000449874
+ -0.00542768  -0.00864052  -0.00864051      0.000449876   0.000449878
+  0.0094007   -0.0076595   -0.00765949      0.207998      0.207998
+  0.0094007   -0.0076595   -0.00765949  …   0.207998      0.207998
+  0.0094007   -0.00765949  -0.00765949      0.207998      0.207998
+  0.0094007   -0.0076595   -0.00765949      0.207998      0.207998</code></pre><p>LSA models can be saved/loaded to/from disk using a text format similar to the random projection model one.</p><pre><code class="language-julia-repl">julia&gt; file = &quot;model.txt&quot;
 &quot;model.txt&quot;
 
 julia&gt; lm
@@ -497,7 +504,7 @@ LSA Model (tfidf), 38 terms, dimensionality 4, Float32 vectors
 julia&gt; save_lsa_model(lm, file)  # model saved
 
 julia&gt; print(join(readlines(file)[1:5], &quot;\n&quot;))  # first five lines
-LSA Model saved at 2019-09-02T15:45:13.618
+LSA Model saved at 2019-09-03T08:49:45.074
 38 4
 tfidf
 1.9162908 1.5108256 1.5108256 1.5108256 1.9162908 1.9162908 1.9162908 1.9162908 1.5108256 1.2231436 1.5108256 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.5108256 1.9162908 1.9162908 1.5108256 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908 1.9162908
