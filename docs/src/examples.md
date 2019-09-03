@@ -94,16 +94,20 @@ crps.lexicon
 update_inverse_index!(crps)
 crps.inverse_index
 ```
-The ngram complexity can be specified as well:
+It is possible to explicitly create the lexicon and inverse index:
 ```@repl index
-update_inverse_index!(crps, 2)
-crps.inverse_index
-update_inverse_index!(crps)  # default ngram complexity is 1
+create_lexicon(Corpus([sd]))
+create_inverse_index(Corpus([sd]))
 ```
+Ngram complexity can be specified as a second parameter
+```@repl index
+create_lexicon(Corpus([sd]), 2)
+```
+
 !!! note
 
-    From version `v0.3.9`, the lexicon and inverse index can be created with the `create_lexicon` and
-    `create_inverse_index` functions respectively. Both functions support specifying the ngram complexity.
+    The `create_lexicon` and `create_inverse_index` functions are available from `v0.3.9`.
+    Both functions support specifying the ngram complexity.
 
 ## Preprocessing
 The text preprocessing mainly consists of the `prepare` and `prepare!` functions and preprocessing flags which start mostly with `strip_` except for `stem_words`. The preprocessing function `prepare` works on `AbstractDocument`, `Corpus` and `AbstractString` types, returning new objects; `prepare!` works only on `AbstractDocument`s and `Corpus` as strings are immutable.
