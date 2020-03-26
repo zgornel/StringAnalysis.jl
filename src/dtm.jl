@@ -34,25 +34,26 @@ columnindices = rowindices
 
 
 """
-    DocumentTermMatrix{T}(crps::Corpus [,terms] [; ngram_complexity=DEFAULT_NGRAM_COMPLEXITY, tokenizer=DEFAULT_TOKENIZER])
+    DocumentTermMatrix{T}(docs [,terms] [; ngram_complexity=DEFAULT_NGRAM_COMPLEXITY, tokenizer=DEFAULT_TOKENIZER])
 
 Auxiliary constructor(s) of the `DocumentTermMatrix` type. The type `T` has to be
-a subtype of `Real`. The constructor(s) requires a corpus `crps` and
-a `terms` structure representing the lexicon of the corpus. The latter
+a subtype of `Real`. The constructor(s) requires a corpus or vector of strings `docs`
+and a `terms` structure representing the lexicon of the corpus. The latter
 can be a `Vector{String}`, an `AbstractDict` where the keys are the lexicon, or can
 be missing, in which case the `lexicon` field of the corpus is used.
 """
-function DocumentTermMatrix{T}(crps::Corpus,
+function DocumentTermMatrix{T}(docs::Union{Corpus, AbstractVector{S}},
                                terms::Vector{String};
                                ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY,
-                               tokenizer::Symbol=DEFAULT_TOKENIZER) where {T<:Real}
+                               tokenizer::Symbol=DEFAULT_TOKENIZER
+                              ) where {S<:AbstractString,T<:Real}
     row_indices = rowindices(terms)
     m = length(terms)
-    n = length(crps)
+    n = length(docs)
     rows = Vector{Int}(undef, 0)
     columns = Vector{Int}(undef, 0)
     values = Vector{T}(undef, 0)
-    for (i, doc) in enumerate(crps)
+    for (i, doc) in enumerate(docs)
         ngs = ngrams(doc, ngram_complexity, tokenizer=tokenizer)
         for ngram in keys(ngs)
             j = get(row_indices, ngram, 0)
@@ -72,35 +73,35 @@ function DocumentTermMatrix{T}(crps::Corpus,
     return DocumentTermMatrix(dtm, terms, row_indices)
 end
 
-DocumentTermMatrix(crps::Corpus,
+DocumentTermMatrix(docs::Union{Corpus, AbstractVector{S}},
                    terms::Vector{String};
                    ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY,
-                   tokenizer::Symbol=DEFAULT_TOKENIZER) =
-    DocumentTermMatrix{DEFAULT_DTM_TYPE}(crps, terms, ngram_complexity=ngram_complexity, tokenizer=tokenizer)
+                   tokenizer::Symbol=DEFAULT_TOKENIZER) where {S} =
+    DocumentTermMatrix{DEFAULT_DTM_TYPE}(docs, terms, ngram_complexity=ngram_complexity, tokenizer=tokenizer)
 
-DocumentTermMatrix{T}(crps::Corpus,
+DocumentTermMatrix{T}(docs::Union{Corpus, AbstractVector{S}},
                       lex::AbstractDict;
                       ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY,
-                      tokenizer::Symbol=DEFAULT_TOKENIZER) where {T<:Real} =
-    DocumentTermMatrix{T}(crps, collect(keys(lex)), ngram_complexity=ngram_complexity, tokenizer=tokenizer)
+                      tokenizer::Symbol=DEFAULT_TOKENIZER) where {S,T<:Real} =
+    DocumentTermMatrix{T}(docs, collect(keys(lex)), ngram_complexity=ngram_complexity, tokenizer=tokenizer)
 
-DocumentTermMatrix(crps::Corpus,
+DocumentTermMatrix(docs::Union{Corpus, AbstractVector{S}},
                    lex::AbstractDict;
                    ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY,
-                   tokenizer::Symbol=DEFAULT_TOKENIZER) =
-    DocumentTermMatrix{DEFAULT_DTM_TYPE}(crps, lex, ngram_complexity=ngram_complexity, tokenizer=tokenizer)
+                   tokenizer::Symbol=DEFAULT_TOKENIZER) where {S} =
+    DocumentTermMatrix{DEFAULT_DTM_TYPE}(docs, lex, ngram_complexity=ngram_complexity, tokenizer=tokenizer)
 
-DocumentTermMatrix{T}(crps::Corpus;
+DocumentTermMatrix{T}(docs::Union{Corpus, AbstractVector{S}};
                       ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY,
-                      tokenizer::Symbol=DEFAULT_TOKENIZER) where {T<:Real} = begin
-    DocumentTermMatrix{T}(crps, create_lexicon(crps, ngram_complexity),
+                      tokenizer::Symbol=DEFAULT_TOKENIZER) where {S,T<:Real} = begin
+    DocumentTermMatrix{T}(docs, create_lexicon(docs, ngram_complexity),
                           ngram_complexity=ngram_complexity, tokenizer=tokenizer)
 end
 
-DocumentTermMatrix(crps::Corpus;
+DocumentTermMatrix(docs::Union{Corpus, AbstractVector{S}};
                    ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY,
-                   tokenizer::Symbol=DEFAULT_TOKENIZER) = begin
-    DocumentTermMatrix{DEFAULT_DTM_TYPE}(crps, create_lexicon(crps, ngram_complexity),
+                   tokenizer::Symbol=DEFAULT_TOKENIZER) where {S} = begin
+    DocumentTermMatrix{DEFAULT_DTM_TYPE}(docs, create_lexicon(docs, ngram_complexity),
                                          ngram_complexity=ngram_complexity, tokenizer=tokenizer)
 end
 
@@ -116,18 +117,18 @@ Access the matrix of a `DocumentTermMatrix` `d`.
 dtm(d::DocumentTermMatrix) = d.dtm
 
 """
-    dtm(crps::Corpus, eltype::Type{T}=DEFAULT_DTM_TYPE [; ngram_complexity=DEFAULT_NGRAM_COMPLEXITY, tokenizer=DEFAULT_TOKENIZER])
+    dtm(docs::Corpus, eltype::Type{T}=DEFAULT_DTM_TYPE [; ngram_complexity=DEFAULT_NGRAM_COMPLEXITY, tokenizer=DEFAULT_TOKENIZER])
 
-Access the matrix of the DTM associated with the corpus `crps`. The
+Access the matrix of the DTM associated with the corpus `docs`. The
 `DocumentTermMatrix{T}` will first have to be created in order for
 the actual matrix to be accessed.
 """
-dtm(crps::Corpus,
+dtm(docs::Union{Corpus, AbstractVector{S}},
     eltype::Type{T}=DEFAULT_DTM_TYPE;
     ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY,
     tokenizer::Symbol=DEFAULT_TOKENIZER
-   ) where {T<:Real} =
-    dtm(DocumentTermMatrix{T}(crps, ngram_complexity=ngram_complexity, tokenizer=tokenizer))
+   ) where {S,T<:Real} =
+    dtm(DocumentTermMatrix{T}(docs, ngram_complexity=ngram_complexity, tokenizer=tokenizer))
 
 
 # Produce the signature of a DTM entry for a document
