@@ -4,23 +4,22 @@ os:
   - linux
   - osx
 julia:
-  - 1.0
+  - 1.3
   - nightly
+
 notifications:
   email: false
+
 git:
   depth: 99999999
 
-## uncomment the following lines to allow failures on nightly julia
-## (tests will run but not make your overall status red)
-matrix:
+jobs:
   allow_failures:
   - julia: nightly
 
-jobs:
   include:
     - stage: "Documentation"
-      julia: 1.0
+      julia: 1.3
       os: linux
       script:
         - julia --project=docs/ -e 'using Pkg;
@@ -32,8 +31,4 @@ jobs:
 
 
 after_success:
-  # generate documentation
-  #- julia -e 'using Pkg; ps=Pkg.PackageSpec(name="Documenter", version="0.20"); Pkg.add(ps); Pkg.pin(ps); Pkg.add("StringAnalysis")'
-  #- julia -e 'using Pkg; cd(Pkg.dir("StringAnalysis")); include(joinpath("docs", "make.jl"))'
-  # push coverage results to Coveralls
   - julia -e '(VERSION >= v"0.7" && using Pkg); Pkg.add("Coverage"); cd(Pkg.dir("StringAnalysis")); using Coverage; Coveralls.submit(process_folder()); Codecov.submit(process_folder())'
