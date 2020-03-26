@@ -33,12 +33,10 @@ module StringAnalysis
     using TSVD
     using Languages
     using AutoHashEquals
-    using Snowball
 
     # Imports
     import Base: size, show, summary, names
     import Languages: name
-    import Snowball: stem_all, stem, Stemmer, stemmer_types, release
     import WordTokenizers
 
     # Exports
@@ -94,5 +92,14 @@ module StringAnalysis
     include("lda.jl")
     include("preprocessing.jl")
     include("show.jl")
+
+    # Load libstemmer from our deps.jl
+    const depsjl_path = joinpath(dirname(@__FILE__), "..", "deps", "deps.jl")
+    if !isfile(depsjl_path)
+        error("Snowball Stemmer not installed properly, " *
+              "run Pkg.build(\"StringAnalysis\"), restart " *
+              "Julia and try again.")
+    end
+    include(depsjl_path)
 
 end

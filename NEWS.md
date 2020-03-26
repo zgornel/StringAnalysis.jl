@@ -3,7 +3,6 @@
 v0.4.0
 ------
  - A vector of strings is equivalent to a corpus for DTM, inverse index, lexicon
- - Stemming depedency on Snowball.jl
 
 v0.3.9
 ------

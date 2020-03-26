@@ -5,13 +5,13 @@ version = "0.4.0"
 
 [deps]
 AutoHashEquals = "15f4f7f2-30c1-5605-9d31-71845cf9641f"
+BinaryProvider = "b99e7846-7c00-51b0-8f62-c81ae34c0232"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 Languages = "8ef0a80b-9436-5d2c-a485-80b904378c43"
 Libdl = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
-Snowball = "fb8f903a-0164-4e73-9ffe-431110250c3b"
 SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 TSVD = "9449cd9e-2762-5aa3-a617-5413e99d722e"
@@ -20,6 +20,7 @@ WordTokenizers = "796a5d58-b03d-544a-977e-18100b691f6e"
 
 [compat]
 AutoHashEquals = "^0.2"
+BinaryProvider = "^0.5"
 DataStructures = "^0.17"
 Languages = "^0.4"
 TSVD = "^0.4"
