@@ -34,6 +34,15 @@
         @test inverse_index(crps) == create_inverse_index(crps, ngram_complexity)
     end
 
+    crps3 = Corpus([StringDocument(sample_text1), StringDocument(sample_text2)])
+    docs = [sample_text1, sample_text2]
+    for ngram_complexity in [1,2]
+        @test create_lexicon(crps3, ngram_complexity) ==
+            create_lexicon(docs, ngram_complexity)
+        @test create_inverse_index(crps3, ngram_complexity) ==
+            create_inverse_index(docs, ngram_complexity)
+    end
+
     @test hash_function(hash_function(crps)) === hash
     hash_function!(crps, TextHashFunction(hash, 10))
     @test hash_function(hash_function(crps)) === hash

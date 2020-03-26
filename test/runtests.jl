@@ -1,6 +1,8 @@
 module TestStringAnalysis
 
 using Test
+using Logging
+global_logger(ConsoleLogger(stdout, Logging.Error))  # supress test warnings
 using SparseArrays
 using LinearAlgebra
 using StringAnalysis

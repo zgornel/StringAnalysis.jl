@@ -18,6 +18,7 @@ end
     fd = FileDocument(sample_file)
     sd = StringDocument(text(fd))
 
+    docs = [text(fd), text(sd)]
     crps = Corpus([fd, sd])
     for ngram_complexity in [1, 2]
         m = DocumentTermMatrix(crps, ngram_complexity=ngram_complexity)
@@ -28,6 +29,7 @@ end
 
         m = DocumentTermMatrix(crps, ngram_complexity=ngram_complexity)
         dtm(m)
+        @test dtm(DocumentTermMatrix(docs; ngram_complexity=ngram_complexity)) == dtm(m)
 
         tf_idf(dtm(m))
 

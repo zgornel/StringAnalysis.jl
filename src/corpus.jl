@@ -155,11 +155,11 @@ function update_lexicon!(crps::Corpus,
     end
 end
 
-function create_lexicon(crps::Corpus{S,T},
+function create_lexicon(docs::Union{AbstractVector{S}, Corpus{S,T}},
                         ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY
                        ) where {S,T}
     lexicon = OrderedDict{S, Int}()
-    for doc in crps
+    for doc in docs
         ngs = ngrams(doc, ngram_complexity)
         for (ngram, counts) in ngs
             lexicon[ngram] = get(lexicon, ngram, 0) + counts
@@ -177,13 +177,12 @@ lexical_frequency(crps::Corpus, term::AbstractString) =
 # Work with the Corpus's inverse index
 inverse_index(crps::Corpus) = crps.inverse_index
 
-function create_inverse_index(crps::Corpus{S,T},
+function create_inverse_index(docs::Union{AbstractVector{S}, Corpus{S,T}},
                               ngram_complexity::Int=DEFAULT_NGRAM_COMPLEXITY
                              ) where {S,T}
     idx = OrderedDict{S, Vector{Int}}()
-    for i in 1:length(crps)
-        doc = crps.documents[i]
-        ngram_arr = collect(S, keys(ngrams(doc, ngram_complexity)))
+    @inbounds for i in 1:length(docs)
+        ngram_arr = collect(S, keys(ngrams(docs[i], ngram_complexity)))
         for ngram in ngram_arr
             if haskey(idx, ngram)
                 push!(idx[ngram], i)
