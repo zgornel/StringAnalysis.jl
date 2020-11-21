@@ -93,13 +93,7 @@ module StringAnalysis
     include("preprocessing.jl")
     include("show.jl")
 
-    # Load libstemmer from our deps.jl
-    const depsjl_path = joinpath(dirname(@__FILE__), "..", "deps", "deps.jl")
-    if !isfile(depsjl_path)
-        error("Snowball Stemmer not installed properly, " *
-              "run Pkg.build(\"StringAnalysis\"), restart " *
-              "Julia and try again.")
-    end
-    include(depsjl_path)
+    # Load libstemmer from Snowball_jll
+    using Snowball_jll
 
 end
