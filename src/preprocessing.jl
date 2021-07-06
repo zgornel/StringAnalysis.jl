@@ -134,7 +134,12 @@ for fname in [:remove_corrupt_utf8, :remove_case, :remove_accents, :remove_html_
     eval(Meta.parse(definition))
 end
 
-
+function write_sub(to::IOBuffer, a::AbstractArray{UInt8}, offs, nel)
+     if offs+nel-1 > length(a) || offs < 1 || nel < 0
+         throw(BoundsError())
+     end
+     GC.@preserve a unsafe_write(to, pointer(a, offs), UInt(nel))
+ end
 
 """
     remove_patterns(s, rex)
@@ -149,13 +154,13 @@ function remove_patterns(s::AbstractString, rex::Regex)
     for m in eachmatch(rex, s, overlap=true)
         len = m.match.offset-ibegin+1
         if len > 0
-            Base.write_sub(iob, v, ibegin, len)
+            write_sub(iob, v, ibegin, len)
             write(iob, ' ')
         end
         ibegin = nextind(s, lastindex(m.match)+m.match.offset)
     end
     len = length(v) - ibegin + 1
-    (len > 0) && Base.write_sub(iob, v, ibegin, len)
+    (len > 0) && write_sub(iob, v, ibegin, len)
     String(take!(iob))
 end
 
@@ -167,13 +172,13 @@ function remove_patterns(s::SubString{T}, rex::Regex) where T <: String
     for m in eachmatch(rex, s, overlap=true)
         len = m.match.offset-ibegin+1
         if len > 0
-            Base.write_sub(iob, data, ibegin+ioffset, len)
+            write_sub(iob, data, ibegin+ioffset, len)
             write(iob, ' ')
         end
         ibegin = nextind(s, lastindex(m.match)+m.match.offset)
     end
     len = lastindex(s) - ibegin + 1
-    (len > 0) && Base.write_sub(iob, data, ibegin+ioffset, len)
+    (len > 0) && write_sub(iob, data, ibegin+ioffset, len)
     String(take!(iob))
 end
 
