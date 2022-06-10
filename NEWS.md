@@ -1,5 +1,14 @@
 ## StringAnalysis Release Notes
 
+
+v0.4.2
+------
+ - Bugfixes
+
+v0.4.1
+------
+ - New snowball stemmer
+
 v0.4.0
 ------
  - A vector of strings is equivalent to a corpus for DTM, inverse index, lexicon

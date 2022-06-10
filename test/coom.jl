@@ -5,7 +5,7 @@
     td = TokenDocument{String}(doc)
     nd = NGramDocument{String}(doc)
     crps = Corpus([sd, td])
-    T = Float16
+    T = Float32
     # Results for window = 5, all terms in document used
     expected_result = [ # for window == 5
         0.0 2.0 1.0 2/3 0.5 0.4 0.0 0.0
