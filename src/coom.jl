@@ -1,4 +1,12 @@
-# Co-occurence matrix
+# This file originally copied from StringAnalysis.jl
+# Copyright (c) 2018: Corneliu Cofaru.
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 """
     coo_matrix(::Type{T}, doc::Vector{AbstractString}, vocab::OrderedDict{AbstractString, Int}, window::Int, normalize::Bool)
 
@@ -9,13 +17,14 @@ terms (in order)`. The keywords `window` and `normalize` indicate the size of th
 sliding word window in which co-occurrences are counted and whether to normalize
 of not the counts by the distance between word positions.
 
-# Examples
+# Example
 ```
 julia> using StringAnalysis
        doc = StringDocument("This is a text about an apple. There are many texts about apples.")
-       docv = tokenize(text(doc))
+       docv = tokenize(language(doc), text(doc))
        vocab = OrderedDict("This"=>1, "is"=>2, "apple."=>3)
-       StringAnalysis.coo_matrix(Float16, docv, vocab, 5, true)
+       StringAnalysis.coo_matrix(Float16, docv, vocab, 5, true, true)
+
 3×3 SparseArrays.SparseMatrixCSC{Float16,Int64} with 4 stored entries:
   [2, 1]  =  2.0
   [1, 2]  =  2.0
@@ -24,22 +33,51 @@ julia> using StringAnalysis
 ```
 """
 function coo_matrix(::Type{T},
-                    doc::Vector{<:AbstractString},
-                    vocab::OrderedDict{<:AbstractString, Int},
-                    window::Int,
-                    normalize::Bool=true) where T<:AbstractFloat
+    doc::Vector{<:AbstractString},
+    vocab::OrderedDict{<:AbstractString,Int},
+    window::Int,
+    direction::Bool,
+    normalize::Bool) where {T<:AbstractFloat}
+    direction || return coo_matrix(T, doc, vocab, window, normalize)
     n = length(vocab)
     m = length(doc)
     coom = spzeros(T, n, n)
     # Count co-occurrences
     for (i, token) in enumerate(doc)
-        @inbounds for j in max(1, i-window):min(m, i+window)
+        # looking forward
+        @inbounds for j in i:min(m, i + window)
+            # @inbounds for j in max(1, i-window):min(m, i+window)
             wtoken = doc[j]
-            nm = T(ifelse(normalize, abs(i-j), 1))
+            nm = T(ifelse(normalize, abs(i - j), 1))
             row = get(vocab, token, nothing)
             col = get(vocab, wtoken, nothing)
-            if i!=j && row != nothing && col != nothing
-                coom[row, col] += one(T)/nm
+            if i != j && row != nothing && col != nothing
+                coom[row, col] += one(T) / nm
+                # avoiding to create a symmetric matrix and keep the forward looking coocurrence from above.
+                # coom[col, row] = coom[row, col]
+            end
+        end
+    end
+    return coom
+end
+
+function coo_matrix(::Type{T},
+    doc::Vector{<:AbstractString},
+    vocab::OrderedDict{<:AbstractString,Int},
+    window::Int,
+    normalize::Bool=true) where {T<:AbstractFloat}
+    n = length(vocab)
+    m = length(doc)
+    coom = spzeros(T, n, n)
+    # Count co-occurrences
+    for (i, token) in enumerate(doc)
+        @inbounds for j in max(1, i - window):min(m, i + window)
+            wtoken = doc[j]
+            nm = T(ifelse(normalize, abs(i - j), 1))
+            row = get(vocab, token, nothing)
+            col = get(vocab, wtoken, nothing)
+            if i != j && row != nothing && col != nothing
+                coom[row, col] += one(T) / nm
                 coom[col, row] = coom[row, col]
             end
         end
@@ -47,12 +85,14 @@ function coo_matrix(::Type{T},
     return coom
 end
 
+coo_matrix(::Type{T}, doc::Vector{<:AbstractString}, vocab::Dict{<:AbstractString, Int},
+                    window::Int, direction::Bool, normalize::Bool=true) where T<:AbstractFloat =
+            coo_matrix(T, doc, OrderedDict(vocab), window, direction, normalize)
 
 """
 Basic Co-occurrence Matrix (COOM) type.
-
 # Fields
-  * `coomm::SparseMatriCSC{T,Int}` the actual COOM; elements represent
+  * `coom::SparseMatriCSC{T,Int}` the actual COOM; elements represent
 co-occurrences of two terms within a given window
   * `terms::Vector{String}` a list of terms that represent the lexicon of
 the document or corpus
@@ -78,61 +118,67 @@ or can be omitted, in which case the `lexicon` field of the corpus is used.
 function CooMatrix{T}(crps::Corpus,
                       terms::Vector{String};
                       window::Int=5,
+                      direction::Bool=false,
                       normalize::Bool=true) where T<:AbstractFloat
-    column_indices = columnindices(terms)
+    column_indices = OrderedDict(columnindices(terms))
     n = length(terms)
     coom = spzeros(T, n, n)
     for doc in crps
-        docv = tokens(doc)
-        coom .+= coo_matrix(T, docv, column_indices, window, normalize)
+        coom .+= coo_matrix(T, tokens(doc), column_indices, window,direction, normalize)
     end
     return CooMatrix{T}(coom, terms, column_indices)
 end
 
-CooMatrix(crps::Corpus, terms::Vector{String}; window::Int=5, normalize::Bool=true) =
-    CooMatrix{DEFAULT_FLOAT_TYPE}(crps, terms, window=window, normalize=normalize)
+CooMatrix(crps::Corpus, terms::Vector{String}; window::Int=5, direction::Bool=false, normalize::Bool=true) =
+    CooMatrix{Float64}(crps, terms, window=window, direction=direction, normalize=normalize)
 
-CooMatrix{T}(crps::Corpus, lex::AbstractDict; window::Int=5, normalize::Bool=true
+CooMatrix{T}(crps::Corpus, lex::AbstractDict; window::Int=5, direction::Bool=false, normalize::Bool=true
             ) where T<:AbstractFloat =
-    CooMatrix{T}(crps, collect(keys(lex)), window=window, normalize=normalize)
+    CooMatrix{T}(crps, collect(keys(lex)), window=window, direction=direction, normalize=normalize)
 
-CooMatrix(crps::Corpus, lex::AbstractDict; window::Int=5, normalize::Bool=true) =
-    CooMatrix{DEFAULT_FLOAT_TYPE}(crps, lex, window=window, normalize=normalize)
+CooMatrix(crps::Corpus, lex::AbstractDict; window::Int=5, direction::Bool=false, normalize::Bool=true) =
+    CooMatrix{Float64}(crps, lex, window=window, direction=direction, normalize=normalize)
 
-CooMatrix{T}(crps::Corpus; window::Int=5, normalize::Bool=true) where T<:AbstractFloat = begin
+CooMatrix{T}(crps::Corpus; window::Int=5, direction::Bool=false, normalize::Bool=true) where T<:AbstractFloat = begin
     isempty(lexicon(crps)) && update_lexicon!(crps)
-    CooMatrix{T}(crps, lexicon(crps), window=window, normalize=normalize)
+    CooMatrix{T}(crps, lexicon(crps), window=window, direction=direction, normalize=normalize)
 end
 
-CooMatrix(crps::Corpus; window::Int=5, normalize::Bool=true) = begin
+CooMatrix(crps::Corpus; window::Int=5, direction::Bool=false, normalize::Bool=true) = begin
     isempty(lexicon(crps)) && update_lexicon!(crps)
-    CooMatrix{DEFAULT_FLOAT_TYPE}(crps, lexicon(crps), window=window, normalize=normalize)
+    CooMatrix{Float64}(crps, lexicon(crps), window=window, direction=direction, normalize=normalize)
 end
 
-# AbstractString, AbstractDocument methods
-function CooMatrix{T}(doc,
+# Document methods
+function CooMatrix{T}(doc::AbstractDocument,
                       terms::Vector{String};
                       window::Int=5,
+                      direction::Bool=false,
                       normalize::Bool=true) where T<:AbstractFloat
     # Initializations
-    column_indices = columnindices(terms)
-    docv = tokens(doc)
-    coom = coo_matrix(T, docv, column_indices, window, normalize)
+    column_indices = OrderedDict(columnindices(terms))
+    coom = coo_matrix(T, tokens(doc), column_indices, window, direction, normalize)
     return CooMatrix{T}(coom, terms, column_indices)
 end
 
-CooMatrix(doc, terms::Vector{String}; window::Int=5, normalize::Bool=true
-         ) where T<:AbstractFloat =
-    CooMatrix{DEFAULT_FLOAT_TYPE}(doc, terms, window=window, normalize=normalize)
-
-function CooMatrix{T}(doc; window::Int=5, normalize::Bool=true) where T<:AbstractFloat
-    terms = unique(String.(tokens(doc)))
-    CooMatrix{T}(doc, terms, window=window, normalize=normalize)
+function CooMatrix{T}(doc::NGramDocument,
+                      terms::Vector{String};
+                      window::Int=5,
+                      direction::Bool=false,
+                      normalize::Bool=true) where T <: AbstractFloat
+    error("The Co occurrence matrix of an NGramDocument can't be created.")
 end
 
-CooMatrix(doc; window::Int=5, normalize::Bool=true) where T<:AbstractFloat =
-    CooMatrix{DEFAULT_FLOAT_TYPE}(doc, window=window, normalize=normalize)
+CooMatrix(doc, terms::Vector{String}; window::Int=5, direction::Bool=false, normalize::Bool=true) =
+    CooMatrix{Float64}(doc, terms, window=window, direction=direction, normalize=normalize)
 
+function CooMatrix{T}(doc; window::Int=5, direction::Bool=false, normalize::Bool=true) where T<:AbstractFloat
+    terms = unique(String.(tokens(doc)))
+    CooMatrix{T}(doc, terms, window=window, direction=direction, normalize=normalize)
+end
+
+CooMatrix(doc; window::Int=5, direction::Bool=false, normalize::Bool=true) where T<:AbstractFloat =
+    CooMatrix{Float64}(doc, window=window, direction=direction, normalize=normalize)
 
 """
     coom(c::CooMatrix)
@@ -148,6 +194,6 @@ Access the co-occurrence matrix of the `CooMatrix` associated
 with the `entity`. The `CooMatrix{T}` will first have to
 be created in order for the actual matrix to be accessed.
 """
-coom(entity, eltype::Type{T}=DEFAULT_FLOAT_TYPE;
-        window::Int=5, normalize::Bool=true) where T<:AbstractFloat =
-    coom(CooMatrix{T}(entity, window=window, normalize=normalize))
+coom(entity, eltype::Type{T}=Float;
+        window::Int=5, direction::Bool=false, normalize::Bool=true) where T<:AbstractFloat =
+    coom(CooMatrix{T}(entity, window=window, direction=direction, normalize=normalize))
