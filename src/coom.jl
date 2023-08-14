@@ -187,7 +187,7 @@ sparse([2, 3, 4, 5, 6, 1, 3, 4, 5, 6, 7, 1, 2, 4, 5, 6, 7, 8, 1, 2, 3, 5, 6, 7, 
 ```
 """
 function CooMatrix{T}(doc,
-                      terms::Vector{String};
+                      terms::Vector{Union{String, SubString{String}}};
                       window::Int=5,
                       direction::Bool=false,
                       normalize::Bool=true) where T<:AbstractFloat
@@ -198,14 +198,14 @@ function CooMatrix{T}(doc,
 end
 
 function CooMatrix{T}(doc::NGramDocument,
-                      terms::Vector{String};
+                      terms::Vector{Union{String, SubString{String}}};
                       window::Int=5,
                       direction::Bool=false,
                       normalize::Bool=true) where T <: AbstractFloat
     error("The Co occurrence matrix of an NGramDocument can't be created.")
 end
 
-CooMatrix(doc, terms::Vector{String}; window::Int=5, direction::Bool=false, normalize::Bool=true) =
+CooMatrix(doc, terms::Vector{Union{String, SubString{String}}}; window::Int=5, direction::Bool=false, normalize::Bool=true) =
     CooMatrix{Float64}(doc, terms, window=window, direction=direction, normalize=normalize)
 
 function CooMatrix{T}(doc; window::Int=5, direction::Bool=false, normalize::Bool=true) where T<:AbstractFloat
